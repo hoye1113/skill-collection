@@ -49,6 +49,7 @@ all-skills/
 | | [skill-forge](skill-management/skill-forge/) | 生产级 Skill 锻造（token 效率优先） |
 | | [skill-review](skill-management/skill-review/) | Skill 质量审查与审计 |
 | | [nuwa-skill](skill-management/nuwa-skill/) | 女娲造人：深度调研→思维框架提炼→生成人物 Skill |
+| | [darwin-skill](skill-management/darwin-skill/) | 达尔文.skill：评估→改进→实测→保留或回滚，自主循环优化 Skill 质量 |
 | **agent** | [openclaw-agent-forge](agent/openclaw-agent-forge/) | OpenClaw/FlowyClaw Agent 工作空间生成与优化 |
 
 ## 来源
@@ -62,3 +63,4 @@ all-skills/
 | [superpowers](https://github.com/) | 开发方法论框架 |
 | [nuwa-skill](https://github.com/) | 女娲造人 Skill |
 | [impeccable](https://github.com/) | 产品级前端设计 Skill |
+| [darwin-skill](https://github.com/alchaincyf/darwin-skill) | 达尔文 Skill 自主优化系统 |

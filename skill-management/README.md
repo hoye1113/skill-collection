@@ -12,6 +12,7 @@ Skill 生命周期管理类 Skills —— 覆盖创建、发现、审查、进�
 | [skill-forge](skill-forge/) | 生产级 Skill 锻造：token 效率、关键词优化、工作流设计、打包流水线 | sanyuan-skills |
 | [skill-review](skill-review/) | Skill 质量审查与审计：结构、描述、工作流、token 效率、反模式检测 | sanyuan-skills |
 | [nuwa-skill](nuwa-skill/) | 女娲造人：输入人名/主题→深度调研→思维框架提炼→生成可运行的人物 Skill | nuwa-skill |
+| [darwin-skill](darwin-skill/) | 达尔文.skill：评估→改进→测试→保留或回滚，自主优化 Skill 质量（Karpathy autoresearch 启发） | [alchaincyf/darwin-skill](https://github.com/alchaincyf/darwin-skill) |
 
 ## 使用场景
 
