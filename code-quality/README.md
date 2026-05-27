@@ -11,6 +11,7 @@
 | [code-review-expert](code-review-expert/) | 以高级工程师视角进行 SOLID 违规、安全风险检测，提出可执行改进方案 | sanyuan-skills |
 | [neat-freak](neat-freak/) | 会话结束后的文档与记忆同步清理，确保 CLAUDE.md、README、docs 与代码一致 | khazix-skills |
 | [humanizer-zh](humanizer-zh/) | 去除中文文本中 AI 生成痕迹，24 种模式识别 + 50 分质量评分体系 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
+| [reality-check](reality-check/) | 深度代码审计：检测虚假测试、mock 滥用、浅层健康检查等误导性模式 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 
 ## 使用场景
 

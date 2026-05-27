@@ -8,6 +8,8 @@
 |-------|------|------|
 | [superpowers](superpowers/) | 完整的开发方法论框架，包含 14 个子 Skill，覆盖构思→计划→执行→调试→测试→验证→收尾全流程 | superpowers |
 | [remotion](remotion/) | Remotion (React 视频创作框架) 最佳实践参考，30+ 规则文件覆盖动画/字幕/音频/3D/转场 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
+| [html-to-pdf](html-to-pdf/) | HTML 转 PDF，Puppeteer 引擎 + 像素级渲染 + RTL 自动检测 + 5 次修复验证 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [html-to-pptx](html-to-pptx/) | HTML 转 PowerPoint，文本/截图双模式 + 自动幻灯片分割 + RTL 检测 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 
 ### Superpowers 子 Skills
 

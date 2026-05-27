@@ -15,6 +15,9 @@
 | [sigma](sigma/) | Bloom 2-Sigma 精通学习 AI 家教：苏格拉底式提问、自适应诊断、可视化路线图 | sanyuan-skills |
 | [wiki-ingest](wiki-ingest/) | 将文章/文档/笔记编译为带双向链接的结构化 Wiki 知识库 | sanyuan-skills |
 | [news-aggregator-skill](news-aggregator-skill/) | 综合新闻聚合器，覆盖 28 信源（HN/GitHub/微博/华尔街见闻等），深度分析 + 关键词过滤 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
+| [learn](learn/) | 元技能：教 Claude 学习任意主题并保留为永久 skill，Context7 集成 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [deep-interview](deep-interview/) | 自适应深度访谈提取知识，ASK-LISTEN-WRITE-DEEPEN 循环，3 种深度级别 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [presentation-architect](presentation-architect/) | 创意→逐页演示脚本，9 元素框架（内容/布局/排版/视觉/风格/叙事…） | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 
 ## 使用场景
 

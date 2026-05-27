@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .container {
+      width: 100%;
+      height: 100%;
+      padding: 12mm;
+      font-family: 'Heebo', Arial, sans-serif;
+      color: #1a1a2e;
+      line-height: 1.3;
+      font-size: 12px;
+      background: #fff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 18px 20px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .header .emoji { font-size: 32px; margin-bottom: 6px; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+    .header .subtitle { opacity: 0.9; margin-top: 6px; font-size: 14px; }
+    .intro {
+      background: #f0f4ff;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .use-cases { display: flex; flex-direction: column; gap: 8px; }
+    .use-case {
+      background: #f8f9fa;
+      border-right: 4px solid #667eea;
+      padding: 10px 14px;
+      border-radius: 0 8px 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .use-case-content { flex: 1; }
+    .use-case h3 { margin: 0; font-size: 14px; font-weight: 600; }
+    .use-case p { margin: 3px 0 0 0; font-size: 11px; color: #64748b; }
+    .stars { color: #f59e0b; font-size: 12px; letter-spacing: 1px; }
+    .time-saved {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .example-box {
+      background: #1e1e2e;
+      color: #a6e3a1;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin: 14px 0;
+      font-family: monospace;
+      direction: ltr;
+      text-align: left;
+      font-size: 12px;
+    }
+    .example-box .prompt { color: #89b4fa; }
+    .example-box .response { color: #f9e2af; margin-top: 6px; }
+    .cta {
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .cta h3 { margin: 0; font-size: 16px; }
+    .cta p { margin: 6px 0 0 0; font-size: 13px; opacity: 0.9; }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+    .footer a { color: #667eea; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="emoji">{{EMOJI}}</div>
+      <h1>ניתוח Claudability: {{PROFESSION}}</h1>
+      <div class="subtitle">איך Claude Code יכול לחסוך לך {{TOTAL_HOURS}}+ שעות בשבוע</div>
+    </div>
+
+    <div class="intro">
+      <strong>Claude Code</strong> = סוכן AI בטרמינל שלך עם גישה לקבצים, וואטסאפ, יומן ועוד.<br>
+      הנה {{NUM_CASES}} דברים שהוא יכול לעשות בשבילך:
+    </div>
+
+    <div class="use-cases">
+      {{USE_CASES}}
+      <!-- Example use case structure:
+      <div class="use-case">
+        <div class="use-case-content">
+          <h3>📋 שם התרחיש <span class="stars">⭐⭐⭐⭐⭐</span></h3>
+          <p>תיאור קצר של מה זה עושה</p>
+        </div>
+        <span class="time-saved">X שע׳/שבוע</span>
+      </div>
+      -->
+    </div>
+
+    <div class="example-box">
+      <div class="prompt">$ claude "{{EXAMPLE_COMMAND}}"</div>
+      <div class="response">{{EXAMPLE_RESPONSE}}</div>
+    </div>
+
+    <div class="cta">
+      <h3>🚀 הצעד הבא</h3>
+      <p>{{NEXT_STEP}}</p>
+    </div>
+
+    <div class="footer">
+      <span>נוצר עם Claude Code | AVIZ</span>
+      <a href="https://linktr.ee/aviz85">linktr.ee/aviz85</a>
+    </div>
+  </div>
+</body>
+</html>
