@@ -12,6 +12,7 @@
 | [ui-ux-pro-max](ui-ux-pro-max/) | UI/UX 设计智能系统：50+ 风格、97 色板、57 字体搭配、9 技术栈 | hoye-skills |
 | [web-design-engineer](web-design-engineer/) | 高视觉品质 Web 制品构建：页面、仪表盘、原型、幻灯片、动画 | garden-skills |
 | [web-visual-artifacts](web-visual-artifacts/) | 独立视觉 Web 制品：落地页概念、交互原型、HTML 幻灯片、动画演示 | hoye-skills |
+| [impeccable](impeccable/) | 产品级前端设计 Skill：7 领域参考 + 23 命令 + 27 反模式规则 + CLI + 浏览器扩展 | impeccable |
 
 ## 使用场景
 

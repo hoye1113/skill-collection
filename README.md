@@ -30,6 +30,7 @@ all-skills/
 | | [ui-ux-pro-max](frontend-ui/ui-ux-pro-max/) | UI/UX 设计智能系统（50+ 风格、97 色板） |
 | | [web-design-engineer](frontend-ui/web-design-engineer/) | 高视觉品质 Web 制品构建（页面/仪表盘/原型） |
 | | [web-visual-artifacts](frontend-ui/web-visual-artifacts/) | 独立视觉 Web 制品（落地页/原型/动画演示） |
+| | [impeccable](frontend-ui/impeccable/) | 产品级前端设计（7 领域参考 + 23 命令 + 27 反模式规则 + CLI + 浏览器扩展） |
 | **ai-generation** | [gpt-image-2](ai-generation/gpt-image-2/) | GPT Image 2 图像生成/编辑（80+ 模板） |
 | | [guizang-ppt-skill](ai-generation/guizang-ppt-skill/) | 杂志风横向翻页网页 PPT 生成 |
 | | [seedance2-skill-main](ai-generation/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
@@ -60,3 +61,4 @@ all-skills/
 | [khazix-skills](https://github.com/) | 卡兹克技能集 |
 | [superpowers](https://github.com/) | 开发方法论框架 |
 | [nuwa-skill](https://github.com/) | 女娲造人 Skill |
+| [impeccable](https://github.com/) | 产品级前端设计 Skill |
