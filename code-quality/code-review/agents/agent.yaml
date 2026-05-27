@@ -1,0 +1,7 @@
+interface:
+  display_name: "Code Review"
+  short_description: "代码变更审查：团队规则 + 架构、安全、性能、冗余代码深度检查"
+  default_prompt: "Review the current code changes using the unified code-review workflow. Start by identifying the review target, produce a structured summary and findings with [Required]/[Optional]/[Question]/[FYI], and include deep architecture/security/quality analysis when the change or request warrants it."
+
+# Agent-agnostic skill - works with any LLM provider.
+# No provider-specific configuration required.

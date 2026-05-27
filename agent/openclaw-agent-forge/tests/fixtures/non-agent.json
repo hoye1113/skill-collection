@@ -1,0 +1,148 @@
+{
+  "judgment_result": "附属 skill",
+  "promotion_rationale": [
+    "这是一个有清晰 workflow 的子能力，但没有独立长期身份。"
+  ],
+  "host_profile": "flowyclaw",
+  "preferred_control_pattern": "prompt chaining",
+  "agent_promotion_analysis": {
+    "skill_name": "demo-sidecar-skill",
+    "host_profile": "flowyclaw",
+    "promotion_decision": "附属 skill",
+    "core_role": "Sidecar workflow",
+    "primary_value": "Package a bounded workflow.",
+    "lazy_default_to_avoid": "Promoting every workflow into an agent.",
+    "non_negotiable_quality_bar": "Keep it inside another workspace instead of generating root files.",
+    "canonical_deliverables": [
+      "Skill proposal"
+    ],
+    "workflow_state": [
+      "workflow notes"
+    ],
+    "resume_entry_files": [
+      "SKILL.md"
+    ],
+    "native_capabilities": [
+      "Route a bounded workflow"
+    ],
+    "conditional_capabilities": [
+      {
+        "name": "Host-specific scripts",
+        "classification": "dev-time-only",
+        "reason": "This is a sidecar skill, not an independent agent; scripts are dev-time packaging aids."
+      }
+    ],
+    "non_capabilities": [
+      "Independent agent workspace"
+    ],
+    "what_stays_in_skill_md": [
+      "all workflow steps"
+    ],
+    "what_moves_to_root_files": [
+      "nothing in V1"
+    ]
+  },
+  "workspace_semantics": [
+    {
+      "type": "Final deliverables",
+      "path": "skills/",
+      "purpose": "Packaged skill output",
+      "persistent": "Yes",
+      "overwrite_rule": "Ask first",
+      "shipped": true
+    },
+    {
+      "type": "Workflow state",
+      "path": "state/",
+      "purpose": "Local notes",
+      "persistent": "Yes",
+      "overwrite_rule": "Controlled",
+      "shipped": true
+    },
+    {
+      "type": "Scratch / preview",
+      "path": "scratch/",
+      "purpose": "Draft notes",
+      "persistent": "No",
+      "overwrite_rule": "Regenerable",
+      "shipped": false
+    },
+    {
+      "type": "Export / package",
+      "path": "exports/",
+      "purpose": "Optional package output",
+      "persistent": "Optional",
+      "overwrite_rule": "Usually replaceable",
+      "shipped": false
+    },
+    {
+      "type": "Skill resources",
+      "path": "references/",
+      "purpose": "Reference files",
+      "persistent": "Yes",
+      "overwrite_rule": "Do not edit by default",
+      "shipped": true
+    }
+  ],
+  "name": "Sidecar Skill Demo",
+  "role": "Sidecar workflow capability",
+  "public_identity": "A bounded workflow that should remain a skill.",
+  "non_negotiables": [
+    "Do not scaffold root files for non-agent decisions."
+  ],
+  "enduring_style": [
+    "Minimal",
+    "Scoped"
+  ],
+  "workspace_positioning": "This input should remain a skill proposal, not a standalone workspace.",
+  "session_startup": [
+    "Read SKILL.md first."
+  ],
+  "red_lines": [
+    "Do not scaffold root files for non-agent decisions.",
+    "Keep compaction-critical rules in Session Startup or Red Lines."
+  ],
+  "default_behavior": [
+    "Return an alternative instead of scaffolding."
+  ],
+  "boundaries": [
+    "No root-file scaffold in V1 for non-agent inputs."
+  ],
+  "workspace_layout": [
+    "skills/ - packaged skills"
+  ],
+  "output_roots": [
+    "skills/ - canonical packaged output"
+  ],
+  "local_conventions": [
+    "Prefer skill packaging over workspace scaffolding for bounded workflows."
+  ],
+  "capabilities": {
+    "native": [
+      "Produce a proposal"
+    ],
+    "conditional": [
+      "Script-assisted packaging if added later"
+    ],
+    "unsupported": [
+      "Independent agent scaffold"
+    ]
+  },
+  "skill_resources": {
+    "primary_skill_entrypoints": [
+      "skills/demo-sidecar/SKILL.md"
+    ],
+    "high_priority_references": []
+  },
+  "resume_strategy": {
+    "global_resume_file": "SKILL.md",
+    "task_topic_resume_file": "state/notes.md",
+    "deliverable_inspection_path": "skills/",
+    "if_state_missing": "Restart from the skill brief.",
+    "never_assume": "Never assume a standalone workspace is required."
+  },
+  "risks_and_non_capabilities": [
+    "Scaffold mode must reject this spec."
+  ],
+  "lazy_default_to_avoid": "Promoting every bounded workflow into an independent agent."
+}
