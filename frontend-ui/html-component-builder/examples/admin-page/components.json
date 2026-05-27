@@ -1,0 +1,13 @@
+{
+  "pages": {
+    "home": {
+      "title": "管理后台 - 首页",
+      "components": [
+        { "name": "navbar", "scope": "shared" },
+        { "name": "sidebar", "scope": "shared" },
+        { "name": "hero", "scope": "page" },
+        { "name": "modal-confirm", "scope": "shared" }
+      ]
+    }
+  }
+}

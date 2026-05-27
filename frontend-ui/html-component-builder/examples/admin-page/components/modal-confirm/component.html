@@ -1,0 +1,147 @@
+<!-- components/modal-confirm/component.html -->
+<div class="cmp-modal-confirm" data-component="modal-confirm" style="display:none">
+  <style>
+    .cmp-modal-confirm {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+    }
+
+    .cmp-modal-confirm--visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .cmp-modal-confirm__overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+
+    .cmp-modal-confirm__content {
+      position: relative;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 28px 32px;
+      width: 400px;
+      max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.25s ease;
+    }
+
+    .cmp-modal-confirm--visible .cmp-modal-confirm__content {
+      transform: translateY(0) scale(1);
+    }
+
+    .cmp-modal-confirm__title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin: 0 0 12px 0;
+    }
+
+    .cmp-modal-confirm__message {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.6;
+      margin: 0 0 24px 0;
+    }
+
+    .cmp-modal-confirm__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .cmp-modal-confirm__btn {
+      padding: 8px 20px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+
+    .cmp-modal-confirm__btn--cancel {
+      background: #f0f2f5;
+      color: #555;
+    }
+
+    .cmp-modal-confirm__btn--cancel:hover {
+      background: #e4e6eb;
+    }
+
+    .cmp-modal-confirm__btn--confirm {
+      background: #d93025;
+      color: #ffffff;
+    }
+
+    .cmp-modal-confirm__btn--confirm:hover {
+      background: #b52a1f;
+    }
+  </style>
+
+  <div class="cmp-modal-confirm__overlay"></div>
+
+  <div class="cmp-modal-confirm__content">
+    <h3 class="cmp-modal-confirm__title">确认操作</h3>
+    <p class="cmp-modal-confirm__message">确定要执行此操作吗？</p>
+    <div class="cmp-modal-confirm__actions">
+      <button class="cmp-modal-confirm__btn cmp-modal-confirm__btn--cancel">取消</button>
+      <button class="cmp-modal-confirm__btn cmp-modal-confirm__btn--confirm">确认</button>
+    </div>
+  </div>
+
+  <script>
+  (function(componentRoot) {
+    var overlay = componentRoot.querySelector('.cmp-modal-confirm__overlay');
+    var cancelBtn = componentRoot.querySelector('.cmp-modal-confirm__btn--cancel');
+    var confirmBtn = componentRoot.querySelector('.cmp-modal-confirm__btn--confirm');
+    var titleEl = componentRoot.querySelector('.cmp-modal-confirm__title');
+    var messageEl = componentRoot.querySelector('.cmp-modal-confirm__message');
+
+    function showModal(detail) {
+      if (detail && detail.title) titleEl.textContent = detail.title;
+      if (detail && detail.message) messageEl.textContent = detail.message;
+      componentRoot.style.display = 'flex';
+      requestAnimationFrame(function() {
+        componentRoot.classList.add('cmp-modal-confirm--visible');
+      });
+    }
+
+    function hideModal() {
+      componentRoot.classList.remove('cmp-modal-confirm--visible');
+      setTimeout(function() {
+        componentRoot.style.display = 'none';
+      }, 250);
+    }
+
+    document.addEventListener('open-modal', function(e) {
+      if (!e.detail || e.detail.modalId === 'confirm') {
+        showModal(e.detail);
+      }
+    });
+
+    overlay.addEventListener('click', hideModal);
+    cancelBtn.addEventListener('click', function() {
+      hideModal();
+      document.dispatchEvent(new CustomEvent('modal-cancel', { detail: { modalId: 'confirm' } }));
+    });
+    confirmBtn.addEventListener('click', function() {
+      hideModal();
+      document.dispatchEvent(new CustomEvent('modal-confirm', { detail: { modalId: 'confirm' } }));
+    });
+  })(window._loadRoot || document.currentScript.parentElement);
+  </script>
+</div>

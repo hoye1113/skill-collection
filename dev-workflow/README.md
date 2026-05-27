@@ -7,6 +7,7 @@
 | Skill | 说明 | 来源 |
 |-------|------|------|
 | [superpowers](superpowers/) | 完整的开发方法论框架，包含 14 个子 Skill，覆盖构思→计划→执行→调试→测试→验证→收尾全流程 | superpowers |
+| [remotion](remotion/) | Remotion (React 视频创作框架) 最佳实践参考，30+ 规则文件覆盖动画/字幕/音频/3D/转场 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 
 ### Superpowers 子 Skills
 

@@ -1,0 +1,102 @@
+<!-- components/sidebar/component.html -->
+<div class="cmp-sidebar" data-component="sidebar" style="display:none">
+  <style>
+    .cmp-sidebar {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 240px;
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+      overflow-y: auto;
+    }
+
+    .cmp-sidebar__header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .cmp-sidebar__header-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.45);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin: 0;
+    }
+
+    .cmp-sidebar__menu {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 8px;
+      gap: 2px;
+    }
+
+    .cmp-sidebar__menu-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+
+    .cmp-sidebar__menu-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+
+    .cmp-sidebar__menu-item--active {
+      background: rgba(26, 115, 232, 0.2);
+      color: #7ab3ff;
+      font-weight: 600;
+    }
+
+    .cmp-sidebar__menu-item--active:hover {
+      background: rgba(26, 115, 232, 0.28);
+    }
+
+    .cmp-sidebar__divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 8px 16px;
+    }
+  </style>
+
+  <div class="cmp-sidebar__header">
+    <p class="cmp-sidebar__header-title">菜单</p>
+  </div>
+
+  <nav class="cmp-sidebar__menu">
+    <span class="cmp-sidebar__menu-item cmp-sidebar__menu-item--active">仪表盘</span>
+    <span class="cmp-sidebar__menu-item">数据分析</span>
+    <span class="cmp-sidebar__menu-item">系统设置</span>
+    <div class="cmp-sidebar__divider"></div>
+    <span class="cmp-sidebar__menu-item">退出登录</span>
+  </nav>
+
+  <script>
+  (function(componentRoot) {
+    var menuItems = componentRoot.querySelectorAll('.cmp-sidebar__menu-item');
+
+    for (var i = 0; i < menuItems.length; i++) {
+      menuItems[i].addEventListener('click', function() {
+        if (this.textContent === '退出登录') {
+          document.dispatchEvent(new CustomEvent('logout-request'));
+          return;
+        }
+        for (var j = 0; j < menuItems.length; j++) {
+          menuItems[j].classList.remove('cmp-sidebar__menu-item--active');
+        }
+        this.classList.add('cmp-sidebar__menu-item--active');
+        document.dispatchEvent(new CustomEvent('sidebar-navigate', {
+          detail: { item: this.textContent.trim() }
+        }));
+      });
+    }
+  })(window._loadRoot || document.currentScript.parentElement);
+  </script>
+</div>

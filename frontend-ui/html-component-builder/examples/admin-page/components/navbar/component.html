@@ -1,0 +1,108 @@
+<!-- components/navbar/component.html -->
+<div class="cmp-navbar" data-component="navbar" style="display:none">
+  <style>
+    .cmp-navbar {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 24px;
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      z-index: 100;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+    }
+
+    .cmp-navbar__logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      margin-right: 40px;
+    }
+
+    .cmp-navbar__menu {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .cmp-navbar__menu-item {
+      padding: 8px 16px;
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+
+    .cmp-navbar__menu-item:hover {
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+
+    .cmp-navbar__menu-item--active {
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+
+    .cmp-navbar__action {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cmp-navbar__delete-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      color: #d93025;
+      background: #fce8e6;
+      border: 1px solid #fad2d2;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: inherit;
+    }
+
+    .cmp-navbar__delete-btn:hover {
+      background: #f8c9c5;
+    }
+  </style>
+
+  <div class="cmp-navbar__logo">管理后台</div>
+
+  <nav class="cmp-navbar__menu">
+    <span class="cmp-navbar__menu-item cmp-navbar__menu-item--active">首页</span>
+    <span class="cmp-navbar__menu-item">用户管理</span>
+    <span class="cmp-navbar__menu-item">设置</span>
+  </nav>
+
+  <div class="cmp-navbar__action">
+    <button class="cmp-navbar__delete-btn">删除</button>
+  </div>
+
+  <script>
+  (function(componentRoot) {
+    var deleteBtn = componentRoot.querySelector('.cmp-navbar__delete-btn');
+    var menuItems = componentRoot.querySelectorAll('.cmp-navbar__menu-item');
+
+    deleteBtn.addEventListener('click', function() {
+      document.dispatchEvent(new CustomEvent('open-modal', {
+        detail: { modalId: 'confirm', title: '确认删除', message: '确定要删除所选项目吗？此操作不可撤销。' }
+      }));
+    });
+
+    for (var i = 0; i < menuItems.length; i++) {
+      menuItems[i].addEventListener('click', function() {
+        for (var j = 0; j < menuItems.length; j++) {
+          menuItems[j].classList.remove('cmp-navbar__menu-item--active');
+        }
+        this.classList.add('cmp-navbar__menu-item--active');
+      });
+    }
+  })(window._loadRoot || document.currentScript.parentElement);
+  </script>
+</div>

@@ -14,6 +14,7 @@
 | [prompts](prompts/) | 横纵分析法纯文本提示词模板，可在任意 Deep Research 模型中使用 | khazix-skills |
 | [sigma](sigma/) | Bloom 2-Sigma 精通学习 AI 家教：苏格拉底式提问、自适应诊断、可视化路线图 | sanyuan-skills |
 | [wiki-ingest](wiki-ingest/) | 将文章/文档/笔记编译为带双向链接的结构化 Wiki 知识库 | sanyuan-skills |
+| [news-aggregator-skill](news-aggregator-skill/) | 综合新闻聚合器，覆盖 28 信源（HN/GitHub/微博/华尔街见闻等），深度分析 + 关键词过滤 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 
 ## 使用场景
 

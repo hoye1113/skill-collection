@@ -1,0 +1,114 @@
+<!-- pages/home/components/hero/component.html -->
+<div class="cmp-hero" data-component="hero" style="display:none">
+  <style>
+    .cmp-hero {
+      padding: 48px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      margin: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+    }
+
+    .cmp-hero__title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0 0 8px 0;
+      line-height: 1.2;
+    }
+
+    .cmp-hero__subtitle {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0 0 36px 0;
+    }
+
+    .cmp-hero__stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .cmp-hero__stat-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 20px 24px;
+      transition: background 0.2s;
+    }
+
+    .cmp-hero__stat-card:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .cmp-hero__stat-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      margin: 0 0 8px 0;
+    }
+
+    .cmp-hero__stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    @media (max-width: 600px) {
+      .cmp-hero__stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <h1 class="cmp-hero__title">欢迎回来</h1>
+  <p class="cmp-hero__subtitle">今天有 128 条新消息</p>
+
+  <div class="cmp-hero__stats">
+    <div class="cmp-hero__stat-card">
+      <p class="cmp-hero__stat-label">活跃用户</p>
+      <p class="cmp-hero__stat-value" data-target="2846">0</p>
+    </div>
+    <div class="cmp-hero__stat-card">
+      <p class="cmp-hero__stat-label">今日订单</p>
+      <p class="cmp-hero__stat-value" data-target="384">0</p>
+    </div>
+    <div class="cmp-hero__stat-card">
+      <p class="cmp-hero__stat-label">收入(元)</p>
+      <p class="cmp-hero__stat-value" data-target="12750">0</p>
+    </div>
+  </div>
+
+  <script>
+  (function(componentRoot) {
+    var statValues = componentRoot.querySelectorAll('.cmp-hero__stat-value');
+
+    function animateCounter(el, target) {
+      var duration = 1200;
+      var startTime = null;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var easedProgress = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(easedProgress * target);
+        el.textContent = current.toLocaleString('zh-CN');
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = target.toLocaleString('zh-CN');
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    for (var i = 0; i < statValues.length; i++) {
+      var target = parseInt(statValues[i].getAttribute('data-target'), 10) || 0;
+      animateCounter(statValues[i], target);
+    }
+  })(window._loadRoot || document.currentScript.parentElement);
+  </script>
+</div>

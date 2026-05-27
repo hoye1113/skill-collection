@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - 首页</title>
+  <style>
+    /* ===== 全局样式重置 ===== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+
+    /* ===== 页面级 CSS Grid 布局 ===== */
+    /* 将页面划分为侧边栏、顶部导航、主内容区域 */
+    .page-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 60px 1fr;
+      grid-template-areas:
+        "sidebar navbar"
+        "sidebar main";
+      height: 100vh;
+    }
+
+    /* 侧边栏占据左侧整列 */
+    .page-layout__sidebar {
+      grid-area: sidebar;
+    }
+
+    /* 导航栏占据右上区域 */
+    .page-layout__navbar {
+      grid-area: navbar;
+    }
+
+    /* 主内容区域占据右下区域，超出时滚动 */
+    .page-layout__main {
+      grid-area: main;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 页面主布局容器 -->
+  <div class="page-layout">
+
+    <!-- 侧边栏插槽 -->
+    <div class="page-layout__sidebar">
+      <div id="component-sidebar"></div>
+    </div>
+
+    <!-- 导航栏插槽 -->
+    <div class="page-layout__navbar">
+      <div id="component-navbar"></div>
+    </div>
+
+    <!-- 主内容区域插槽 -->
+    <div class="page-layout__main">
+      <div id="component-hero"></div>
+    </div>
+  </div>
+
+  <!-- 模态框放在布局之外，因为它使用 fixed 定位覆盖整个页面 -->
+  <div id="component-modal-confirm"></div>
+
+  <script>
+  /**
+   * 组件加载器
+   *
+   * 核心思路：
+   * 1. 通过 fetch() 请求 component.html 文件
+   * 2. 将返回的 HTML 注入到对应的容器元素中
+   * 3. 找到注入 HTML 中的 <script> 标签并执行
+   *
+   * 每个 component.html 都是一个自包含的文件，
+   * 包含 <style>（作用域样式）、HTML 结构和 <script>（IIFE 逻辑）。
+   * script 中使用 document.currentScript.parentElement 获取组件根节点，
+   * 确保 JS 逻辑只操作自己组件内的 DOM。
+   */
+
+  /**
+   * 加载单个 组件到指定容器
+   * @param {string} componentPath - component.html 的路径
+   * @param {string} targetId - 目标容器的 DOM ID
+   * @returns {Promise<void>}
+   */
+  function loadComponent(componentPath, targetId) {
+    var container = document.getElementById(targetId);
+    if (!container) {
+      console.error('[组件加载器] 找不到容器: #' + targetId);
+      return Promise.resolve();
+    }
+
+    return fetch(componentPath)
+      .then(function(response) {
+        if (!response.ok) throw new Error('加载失败: ' + componentPath + ' (' + response.status + ')');
+        return response.text();
+      })
+      .then(function(html) {
+        // 将 component.html 内容注入容器
+        container.innerHTML = html;
+
+        // 找到组件根元素并使其可见
+        // 每个 component.html 的第一个子元素默认 display:none
+        // 加载完成后移除该隐藏样式
+        var root = container.firstElementChild;
+        if (root) {
+          root.style.display = '';
+        }
+
+        // 提取并执行所有 <script> 标签
+        // innerHTML 插入的 script 不会自动执行，需要手动重新创建
+        // 使用全局标志 _loadRoot 传递组件根节点，因为 document.currentScript.parentElement
+        // 在动态创建的 script 中可能不可靠
+        window._loadRoot = root;
+        var scripts = Array.from(container.querySelectorAll('script'));
+        for (var i = 0; i < scripts.length; i++) {
+          var scriptEl = scripts[i];
+          var newScript = document.createElement('script');
+          newScript.textContent = scriptEl.textContent;
+          scriptEl.parentNode.replaceChild(newScript, scriptEl);
+        }
+        window._loadRoot = null;
+      })
+      .catch(function(err) {
+        console.error('[组件加载器] ' + err.message);
+        container.innerHTML = '<div style="padding:20px;color:#d93025;">组件加载失败: ' + componentPath + '</div>';
+      });
+  }
+
+  /**
+   * 按顺序加载所有组件
+   *
+   * 加载顺序很重要：
+   * 1. navbar - 顶部导航（无依赖）
+   * 2. sidebar - 侧边菜单（无依赖）
+   * 3. hero - 主内容区（无依赖）
+   * 4. modal-confirm - 模态框（监听其他组件发出的事件，最后加载）
+   */
+  var components = [
+    { name: 'navbar',        path: 'components/navbar/component.html',            target: 'component-navbar' },
+    { name: 'sidebar',       path: 'components/sidebar/component.html',           target: 'component-sidebar' },
+    { name: 'hero',          path: 'pages/home/components/hero/component.html',   target: 'component-hero' },
+    { name: 'modal-confirm', path: 'components/modal-confirm/component.html',     target: 'component-modal-confirm' }
+  ];
+
+  // 逐个加载组件，保证前一个加载完成后再加载下一个
+  // 这样确保 modal-confirm 的事件监听器在所有交互组件之后注册
+  components.reduce(function(promise, comp) {
+    return promise.then(function() {
+      return loadComponent(comp.path, comp.target);
+    });
+  }, Promise.resolve()).then(function() {
+    console.log('[组件加载器] 所有组件加载完成');
+  });
+
+  // ===== 监听全局事件示例 =====
+
+  // 监听模态框确认/取消事件
+  document.addEventListener('modal-confirm', function(e) {
+    console.log('[事件] 用户确认了操作', e.detail);
+  });
+
+  document.addEventListener('modal-cancel', function(e) {
+    console.log('[事件] 用户取消了操作', e.detail);
+  });
+
+  // 监听侧边栏导航事件
+  document.addEventListener('sidebar-navigate', function(e) {
+    console.log('[事件] 用户点击了侧边栏:', e.detail.item);
+  });
+
+  // 监听退出登录请求
+  document.addEventListener('logout-request', function() {
+    console.log('[事件] 用户请求退出登录');
+  });
+  </script>
+
+</body>
+</html>

@@ -13,6 +13,9 @@
 | [web-design-engineer](web-design-engineer/) | 高视觉品质 Web 制品构建：页面、仪表盘、原型、幻灯片、动画 | garden-skills |
 | [web-visual-artifacts](web-visual-artifacts/) | 独立视觉 Web 制品：落地页概念、交互原型、HTML 幻灯片、动画演示 | hoye-skills |
 | [impeccable](impeccable/) | 产品级前端设计 Skill：7 领域参考 + 23 命令 + 27 反模式规则 + CLI + 浏览器扩展 | impeccable |
+| [apple-kickstarter-landing-page](apple-kickstarter-landing-page/) | 仿 Apple 产品页风格的 Kickstarter 众筹落地页生成器，含设计 token、模块化组件、滚动动画 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
+| [frontend-slides-main](frontend-slides-main/) | 零依赖 HTML 演示文稿创建工具，12 种风格预设、PPT 转换、PDF 导出、Vercel 部署 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
+| [html-component-builder](html-component-builder/) | 组件化 HTML 页面构建规范，CSS 命名空间隔离、JS IIFE 闭包、fetch 动态加载、验证脚本 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 
 ## 使用场景
 
