@@ -45,8 +45,6 @@ all-skills/
 | | [frontend-slides-main](frontend-ui/frontend-slides-main/) | 零依赖 HTML 演示文稿（12 种风格 / PPT 转换 / PDF 导出） |
 | | [html-component-builder](frontend-ui/html-component-builder/) | 组件化 HTML 构建规范（CSS 命名空间隔离 + 验证脚本） |
 | | [cinematic-slides](frontend-ui/cinematic-slides/) | AI 视频背景电影级 HTML 演示文稿 + GitHub Pages 部署 |
-| | [pptx](frontend-ui/pptx/) | PowerPoint 生成（PPTD 抽象层 / 视觉设计模式） |
-| | [pptx-swarm](frontend-ui/pptx-swarm/) | 长演示/批量 PPT 协作生成 |
 | **ai-generation** | [gpt-image-2](ai-generation/gpt-image-2/) | GPT Image 2 图像生成/编辑（80+ 模板） |
 | | [guizang-ppt-skill](ai-generation/guizang-ppt-skill/) | 杂志风横向翻页网页 PPT 生成 |
 | | [seedance2-skill-main](ai-generation/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
