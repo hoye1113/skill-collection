@@ -12,9 +12,7 @@
 | [neat-freak](neat-freak/) | 会话结束后的文档与记忆同步清理，确保 CLAUDE.md、README、docs 与代码一致 | khazix-skills |
 | [humanizer-zh](humanizer-zh/) | 去除中文文本中 AI 生成痕迹，24 种模式识别 + 50 分质量评分体系 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 | [reality-check](reality-check/) | 深度代码审计：检测虚假测试、mock 滥用、浅层健康检查等误导性模式 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
-| [xlsx](xlsx/) | Excel 创建与分析，公式强制规则、财务建模、双主题样式系统 | [kimi-desktop](https://kimi.com) |
-| [docx](docx/) | Word 文档创建/编辑/转换，渐进式披露、XSD 验证、OOXML 专业处理 | [kimi-desktop](https://kimi.com) |
-| [pdf](pdf/) | PDF 创建与处理，ReportLab/md2pdf/Process 三路由、GB/T 7714 引用标准 | [kimi-desktop](https://kimi.com) |
+| [ai-humanizer](ai-humanizer/) | 去除英文 AI 写作痕迹：24 种模式检测、统计信号（burstiness/TTR）、词汇 3 tier 分级 | [qclaw](https://clawic.com) |
 
 ## 使用场景
 
@@ -22,3 +20,4 @@
 - 评估仓库是否适合引入 AI Agent
 - 会话结束时清理过时文档和记忆
 - 对代码变更进行架构/安全层面的深度审查
+- 去除中文或英文文本中的 AI 生成痕迹

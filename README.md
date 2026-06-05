@@ -6,11 +6,13 @@ Claude Code 技能合集，收录来自多个来源的 Skills，按功能域分�
 
 ```
 all-skills/
-├── code-quality/       # 代码质量 — 审查、清理、审计
+├── code-quality/       # 代码质量 — 审查、清理、审计、AI 痕迹去除
 ├── dev-workflow/       # 开发工作流 — 构思、计划、执行、调试、验证
-├── frontend-ui/        # 前端/UI — 组件、设计系统、视觉工程
-├── ai-generation/      # AI 生成 — 图像、视频、PPT
-├── knowledge/          # 知识学习 — 阅读、研究、检索、写作
+├── frontend-ui/        # 前端/UI — 组件、设计系统、视觉工程、设计工具
+├── ai-generation/      # AI 生成 — 图像、视频、音频、PPT
+├── research/           # 研究分析 — 市场、竞品、趋势、SEO/GEO、用户洞察
+├── knowledge/          # 知识学习 — 阅读、投研、知识库构建
+├── productivity/       # 效率工具 — 文档处理、邮件收发、数据导出
 ├── skill-management/   # Skill 管理 — 创建、发现、进化
 └── agent/              # Agent 相关 — 工作空间生成与优化
 ```
@@ -25,9 +27,7 @@ all-skills/
 | | [neat-freak](code-quality/neat-freak/) | 会话结束后文档与记忆的洁癖级清理 |
 | | [humanizer-zh](code-quality/humanizer-zh/) | 去除中文 AI 痕迹（24 种模式 + 50 分评分体系） |
 | | [reality-check](code-quality/reality-check/) | 深度代码审计：虚假测试 / mock 滥用 / 浅层健康检查检测 |
-| | [xlsx](code-quality/xlsx/) | Excel 创建与分析（公式强制规则 / 财务建模 / 双主题样式） |
-| | [docx](code-quality/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
-| | [pdf](code-quality/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
+| | [ai-humanizer](code-quality/ai-humanizer/) | 去除英文 AI 写作痕迹：24 种模式检测、统计信号、词汇 3 tier 分级 |
 | **dev-workflow** | [superpowers](dev-workflow/superpowers/) | 完整开发方法论框架（14 个子 Skill：构思→计划→执行→调试→测试→验证→收尾） |
 | | [remotion](dev-workflow/remotion/) | Remotion React 视频框架最佳实践（30+ 规则文件） |
 | | [html-to-pdf](dev-workflow/html-to-pdf/) | HTML 转 PDF（Puppeteer + 像素级渲染 + RTL 自动检测） |
@@ -41,6 +41,7 @@ all-skills/
 | | [web-design-engineer](frontend-ui/web-design-engineer/) | 高视觉品质 Web 制品构建（页面/仪表盘/原型） |
 | | [web-visual-artifacts](frontend-ui/web-visual-artifacts/) | 独立视觉 Web 制品（落地页/原型/动画演示） |
 | | [impeccable](frontend-ui/impeccable/) | 产品级前端设计（7 领域参考 + 23 命令 + 27 反模式规则 + CLI + 浏览器扩展） |
+| | [figma](frontend-ui/figma/) | Figma REST API 全接口 Skill（45 个 API、Token 安全契约、组件/样式/评论/Webhook/Variables） |
 | | [apple-kickstarter-landing-page](frontend-ui/apple-kickstarter-landing-page/) | 仿 Apple 风格 Kickstarter 众筹落地页生成器 |
 | | [frontend-slides-main](frontend-ui/frontend-slides-main/) | 零依赖 HTML 演示文稿（12 种风格 / PPT 转换 / PDF 导出） |
 | | [html-component-builder](frontend-ui/html-component-builder/) | 组件化 HTML 构建规范（CSS 命名空间隔离 + 验证脚本） |
@@ -58,12 +59,20 @@ all-skills/
 | | [copy-editing](ai-generation/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
 | | [ad-creative](ai-generation/ad-creative/) | 高性能广告创意生成（Google/Meta/LinkedIn/TikTok/Twitter 全平台） |
 | | [general-writing](ai-generation/general-writing/) | 通用写作（12 种体裁路由 / 反 AI 写作规则） |
+| **research** | [hv-analysis](research/hv-analysis/) | 横纵分析法深度研究：纵向时间线 + 横向竞品对比，产出 PDF 报告 |
+| | [prompts](research/prompts/) | 横纵分析法纯文本提示词模板，可在任意 Deep Research 模型中使用 |
+| | [market-research](research/market-research/) | 市场研究：TAM/SAM/SOM 分层、4 种研究模式、证据质量分级 |
+| | [competitive-analysis](research/competitive-analysis/) | 深度竞品分析：6 层情报框架（Strategy/Product/Pricing/Marketing/Reviews/Health） |
+| | [competitor-monitoring](research/competitor-monitoring/) | 竞品持续监测：pricing/feature/positioning 信号追踪，战略档案维护 |
+| | [trend-researcher](research/trend-researcher/) | 行业趋势分析：信号识别、生命周期判断、技术前瞻、完整趋势报告模板 |
+| | [serp-analysis](research/serp-analysis/) | SERP 搜索结果分析：排名因子、SERP Feature 映射、AI Overview 模式识别 |
+| | [geo-content-optimizer](research/geo-content-optimizer/) | GEO 生成式引擎优化：为 ChatGPT/Perplexity/AI Overviews 优化内容可引用性 |
+| | [reddit-insights](research/reddit-insights/) | Reddit 语义搜索：用户痛点挖掘、利基市场发现、产品验证 |
+| | [jtbd-analyzer](research/jtbd-analyzer/) | Jobs-To-Be-Done 分析：功能/情感/社会三维动机框架 |
 | **knowledge** | [aihot](knowledge/aihot/) | AI HOT 中文 AI 资讯日报查询 |
 | | [book-study](knowledge/book-study/) | 系统化阅读教练（精读/测试/复习） |
-| | [hv-analysis](knowledge/hv-analysis/) | 横纵分析法深度研究（产出 PDF 报告） |
 | | [kb-retriever](knowledge/kb-retriever/) | 本地知识库检索与问答 |
 | | [khazix-writer](knowledge/khazix-writer/) | 卡兹克风格公众号长文写作 |
-| | [prompts](knowledge/prompts/) | 横纵分析法纯文本提示词模板 |
 | | [sigma](knowledge/sigma/) | Bloom 2-Sigma 精通学习 AI 家教 |
 | | [wiki-ingest](knowledge/wiki-ingest/) | 文章/笔记编译为结构化 Wiki 知识库 |
 | | [news-aggregator-skill](knowledge/news-aggregator-skill/) | 28 信源综合新闻聚合（深度分析 + 关键词过滤） |
@@ -77,6 +86,11 @@ all-skills/
 | | [churn-prevention](knowledge/churn-prevention/) | SaaS 客户流失预防（五阶段取消流程 / 动态挽留） |
 | | [pricing-strategy](knowledge/pricing-strategy/) | SaaS 定价策略设计（三轴框架 / Van Westendorp 测量） |
 | | [seo-audit](knowledge/seo-audit/) | 全面 SEO 审计（技术 / 页面 / 内容 / 权威性） |
+| | [paywall-upgrade-cro](knowledge/paywall-upgrade-cro/) | 应用内付费墙与升级页面 CRO：4 类触发点、价值优先原则 |
+| **productivity** | [xlsx](productivity/xlsx/) | Excel 创建与分析（公式强制规则 / 财务建模 / 双主题样式） |
+| | [docx](productivity/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
+| | [pdf](productivity/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
+| | [imap-smtp-email](productivity/imap-smtp-email/) | IMAP/SMTP 个人邮箱：6 平台支持、中文别名映射、反幻觉设计 |
 | **skill-management** | [find-skills](skill-management/find-skills/) | 发现和安装 Agent Skills |
 | | [github-skills-main](skill-management/github-skills-main/) | GitHub 仓库转 Skill / Skill 管理与进化 |
 | | [skill-creator](skill-management/skill-creator/) | Skill 创建指南（6 步流程） |
@@ -105,3 +119,4 @@ all-skills/
 | [openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) | OpenClaw Agent 技能商店（other-skills 精选） |
 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) | Claude Skills Library（12 精选：AI 生成/演示/审计/知识…） |
 | [kimi-desktop](https://kimi.com) | Kimi Desktop Daimon Skills（20 精选：投研/写作/编码/SaaS/SEO…） |
+| [qclaw](https://clawic.com) | QClaw Skills（12 精选：Figma/竞品/趋势/SERP/GEO/JTBD/邮件…） |
