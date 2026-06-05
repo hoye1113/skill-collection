@@ -10,6 +10,7 @@ Agent 工作空间生成与优化类 Skills。
 | [agent-browser](agent-browser/) | AI Agent 浏览器自动化 CLI：页面导航、表单填写、截图、数据抓取、Electron 桌面应用自动化 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 | [claudability-analyzer](claudability-analyzer/) | 分析各职业的 Claude Code 自动化机会，6 维度框架 + 用例生成 + PDF 报告 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [kimi-webbridge](kimi-webbridge/) | 控制用户真实浏览器（含登录态）：导航、点击、输入、截图、PDF 导出，通过本地 daemon 交互 | kimi-webbridge |
+| [deep-research-swarm](deep-research-swarm/) | 多智能体深度研究编排，4 种研究路由、7 个执行阶段、跨维度交叉验证 | [kimi-desktop](https://kimi.com) |
 
 ## 使用场景
 

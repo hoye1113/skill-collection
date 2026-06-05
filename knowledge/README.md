@@ -18,6 +18,13 @@
 | [learn](learn/) | 元技能：教 Claude 学习任意主题并保留为永久 skill，Context7 集成 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [deep-interview](deep-interview/) | 自适应深度访谈提取知识，ASK-LISTEN-WRITE-DEEPEN 循环，3 种深度级别 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [presentation-architect](presentation-architect/) | 创意→逐页演示脚本，9 元素框架（内容/布局/排版/视觉/风格/叙事…） | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [equity-researcher](equity-researcher/) | 机构级投研报告生成，投资速览/深度研报双模式、三层估值、六维分析框架 | [kimi-desktop](https://kimi.com) |
+| [value-invest-scorer](value-invest-scorer/) | 巴菲特/格雷厄姆价值投资评估，护城河/管理层/财务/估值四大维度 20 项评分 | [kimi-desktop](https://kimi.com) |
+| [financial-report-reader](financial-report-reader/) | 财报三表深度解读，10 项异常检测、三表联动分析 | [kimi-desktop](https://kimi.com) |
+| [stock-finance-profiler](stock-finance-profiler/) | 20+ 财务指标计算 + 杜邦分析，盈利/偿债/流动性/营运/每股/现金流/成长 7 大类 | [kimi-desktop](https://kimi.com) |
+| [churn-prevention](churn-prevention/) | SaaS 客户流失预防，五阶段取消流程、动态挽留优惠、催款序列 | [kimi-desktop](https://kimi.com) |
+| [pricing-strategy](pricing-strategy/) | SaaS 定价策略设计，三轴定价框架、Van Westendorp 价格敏感度测量 | [kimi-desktop](https://kimi.com) |
+| [seo-audit](seo-audit/) | 全面 SEO 审计，技术/页面/内容/权威性、按网站类型定制 | [kimi-desktop](https://kimi.com) |
 
 ## 使用场景
 

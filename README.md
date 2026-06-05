@@ -25,10 +25,15 @@ all-skills/
 | | [neat-freak](code-quality/neat-freak/) | 会话结束后文档与记忆的洁癖级清理 |
 | | [humanizer-zh](code-quality/humanizer-zh/) | 去除中文 AI 痕迹（24 种模式 + 50 分评分体系） |
 | | [reality-check](code-quality/reality-check/) | 深度代码审计：虚假测试 / mock 滥用 / 浅层健康检查检测 |
+| | [xlsx](code-quality/xlsx/) | Excel 创建与分析（公式强制规则 / 财务建模 / 双主题样式） |
+| | [docx](code-quality/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
+| | [pdf](code-quality/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
 | **dev-workflow** | [superpowers](dev-workflow/superpowers/) | 完整开发方法论框架（14 个子 Skill：构思→计划→执行→调试→测试→验证→收尾） |
 | | [remotion](dev-workflow/remotion/) | Remotion React 视频框架最佳实践（30+ 规则文件） |
 | | [html-to-pdf](dev-workflow/html-to-pdf/) | HTML 转 PDF（Puppeteer + 像素级渲染 + RTL 自动检测） |
 | | [html-to-pptx](dev-workflow/html-to-pptx/) | HTML 转 PowerPoint（文本/截图双模式 + 自动分割） |
+| | [swarm-coding](dev-workflow/swarm-coding/) | 多智能体编码协调（git worktree 隔离 / 设计优先 Web 应用） |
+| | [batch-download](dev-workflow/batch-download/) | 批量下载与数据采集编排（四阶段工作流） |
 | **frontend-ui** | [frontend-interface-design](frontend-ui/frontend-interface-design/) | 生产级前端界面构建与审查 |
 | | [react-best-practices](frontend-ui/react-best-practices/) | Vercel 出品的 React/Next.js 性能优化规则集 |
 | | [semi-ui-skills](frontend-ui/semi-ui-skills/) | Semi Design 企业级组件库使用指南 |
@@ -40,6 +45,8 @@ all-skills/
 | | [frontend-slides-main](frontend-ui/frontend-slides-main/) | 零依赖 HTML 演示文稿（12 种风格 / PPT 转换 / PDF 导出） |
 | | [html-component-builder](frontend-ui/html-component-builder/) | 组件化 HTML 构建规范（CSS 命名空间隔离 + 验证脚本） |
 | | [cinematic-slides](frontend-ui/cinematic-slides/) | AI 视频背景电影级 HTML 演示文稿 + GitHub Pages 部署 |
+| | [pptx](frontend-ui/pptx/) | PowerPoint 生成（PPTD 抽象层 / 视觉设计模式） |
+| | [pptx-swarm](frontend-ui/pptx-swarm/) | 长演示/批量 PPT 协作生成 |
 | **ai-generation** | [gpt-image-2](ai-generation/gpt-image-2/) | GPT Image 2 图像生成/编辑（80+ 模板） |
 | | [guizang-ppt-skill](ai-generation/guizang-ppt-skill/) | 杂志风横向翻页网页 PPT 生成 |
 | | [seedance2-skill-main](ai-generation/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
@@ -48,6 +55,11 @@ all-skills/
 | | [music-generator](ai-generation/music-generator/) | ElevenLabs AI 音乐生成（简单/详细双模式） |
 | | [kinetic-video-creator](ai-generation/kinetic-video-creator/) | 动态排版视频：脚本→TTS→音乐→动画（Remotion） |
 | | [tutorial-creator](ai-generation/tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发） |
+| | [report-writing](ai-generation/report-writing/) | 端到端长报告创建（4 阶段流水线 / 依赖图分析） |
+| | [paper-writing](ai-generation/paper-writing/) | 端到端学术论文创建（贡献声明 / 4 级审校） |
+| | [copy-editing](ai-generation/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
+| | [ad-creative](ai-generation/ad-creative/) | 高性能广告创意生成（Google/Meta/LinkedIn/TikTok/Twitter 全平台） |
+| | [general-writing](ai-generation/general-writing/) | 通用写作（12 种体裁路由 / 反 AI 写作规则） |
 | **knowledge** | [aihot](knowledge/aihot/) | AI HOT 中文 AI 资讯日报查询 |
 | | [book-study](knowledge/book-study/) | 系统化阅读教练（精读/测试/复习） |
 | | [hv-analysis](knowledge/hv-analysis/) | 横纵分析法深度研究（产出 PDF 报告） |
@@ -60,6 +72,13 @@ all-skills/
 | | [learn](knowledge/learn/) | 元技能：教 Claude 学习任意主题并保留为永久 skill |
 | | [deep-interview](knowledge/deep-interview/) | 自适应深度访谈提取知识，构建结构化知识库 |
 | | [presentation-architect](knowledge/presentation-architect/) | 创意→逐页演示脚本（9 元素框架） |
+| | [equity-researcher](knowledge/equity-researcher/) | 机构级投研报告生成（投资速览 / 深度研报 / 六维分析） |
+| | [value-invest-scorer](knowledge/value-invest-scorer/) | 巴菲特/格雷厄姆价值投资评估（四大维度 20 项评分） |
+| | [financial-report-reader](knowledge/financial-report-reader/) | 财报三表深度解读（10 项异常检测 / 三表联动分析） |
+| | [stock-finance-profiler](knowledge/stock-finance-profiler/) | 20+ 财务指标 + 杜邦分析（7 大类） |
+| | [churn-prevention](knowledge/churn-prevention/) | SaaS 客户流失预防（五阶段取消流程 / 动态挽留） |
+| | [pricing-strategy](knowledge/pricing-strategy/) | SaaS 定价策略设计（三轴框架 / Van Westendorp 测量） |
+| | [seo-audit](knowledge/seo-audit/) | 全面 SEO 审计（技术 / 页面 / 内容 / 权威性） |
 | **skill-management** | [find-skills](skill-management/find-skills/) | 发现和安装 Agent Skills |
 | | [github-skills-main](skill-management/github-skills-main/) | GitHub 仓库转 Skill / Skill 管理与进化 |
 | | [skill-creator](skill-management/skill-creator/) | Skill 创建指南（6 步流程） |
@@ -71,6 +90,7 @@ all-skills/
 | | [agent-browser](agent/agent-browser/) | AI Agent 浏览器自动化 CLI（导航/表单/截图/抓取） |
 | | [claudability-analyzer](agent/claudability-analyzer/) | 分析各职业 Claude Code 自动化机会（6 维度 + PDF 报告） |
 | | [kimi-webbridge](agent/kimi-webbridge/) | 控制真实浏览器（导航/点击/输入/截图/PDF），通过本地 daemon 交互 |
+| | [deep-research-swarm](agent/deep-research-swarm/) | 多智能体深度研究编排（4 种路由 / 7 阶段 / 交叉验证） |
 
 ## 来源
 
@@ -86,3 +106,4 @@ all-skills/
 | [darwin-skill](https://github.com/alchaincyf/darwin-skill) | 达尔文 Skill 自主优化系统 |
 | [openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) | OpenClaw Agent 技能商店（other-skills 精选） |
 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) | Claude Skills Library（12 精选：AI 生成/演示/审计/知识…） |
+| [kimi-desktop](https://kimi.com) | Kimi Desktop Daimon Skills（20 精选：投研/写作/编码/SaaS/SEO…） |

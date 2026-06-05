@@ -10,6 +10,8 @@
 | [remotion](remotion/) | Remotion (React 视频创作框架) 最佳实践参考，30+ 规则文件覆盖动画/字幕/音频/3D/转场 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 | [html-to-pdf](html-to-pdf/) | HTML 转 PDF，Puppeteer 引擎 + 像素级渲染 + RTL 自动检测 + 5 次修复验证 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [html-to-pptx](html-to-pptx/) | HTML 转 PowerPoint，文本/截图双模式 + 自动幻灯片分割 + RTL 检测 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [swarm-coding](swarm-coding/) | 多智能体编码协调，git worktree 隔离、设计优先 Web 应用构建 | [kimi-desktop](https://kimi.com) |
+| [batch-download](batch-download/) | 批量下载与数据采集编排，四阶段工作流、"永不伪造 URL"原则 | [kimi-desktop](https://kimi.com) |
 
 ### Superpowers 子 Skills
 

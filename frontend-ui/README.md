@@ -17,6 +17,8 @@
 | [frontend-slides-main](frontend-slides-main/) | 零依赖 HTML 演示文稿创建工具，12 种风格预设、PPT 转换、PDF 导出、Vercel 部署 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 | [html-component-builder](html-component-builder/) | 组件化 HTML 页面构建规范，CSS 命名空间隔离、JS IIFE 闭包、fetch 动态加载、验证脚本 | [alchaincyf/openclaw-agent-store](https://github.com/alchaincyf/openclaw-agent-store) |
 | [cinematic-slides](cinematic-slides/) | 创建带 AI 视频背景的电影级 HTML 演示文稿，部署到 GitHub Pages | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [pptx](pptx/) | PowerPoint 生成（PPTD 抽象层），完整领域语言、视觉设计模式 | [kimi-desktop](https://kimi.com) |
+| [pptx-swarm](pptx-swarm/) | 长演示/批量 PPT 协作生成，主 agent 负责视觉/大纲 | [kimi-desktop](https://kimi.com) |
 
 ## 使用场景
 

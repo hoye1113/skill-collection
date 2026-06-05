@@ -14,6 +14,11 @@ AI 内容生成类 Skills —— 覆盖图像生成、视频提示词、PPT 制�
 | [music-generator](music-generator/) | ElevenLabs AI 音乐生成，简单/详细双模式，JSON 编曲格式 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [kinetic-video-creator](kinetic-video-creator/) | 动态排版视频全流程：脚本→TTS→音乐→动画，Remotion 集成 | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
 | [tutorial-creator](tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发），编排器集成 6 个子 skill | [claude-skills-library](https://github.com/nicepkg/claude-skills-library) |
+| [report-writing](report-writing/) | 端到端长报告创建，4 阶段流水线、依赖图分析、引用去重 | [kimi-desktop](https://kimi.com) |
+| [paper-writing](paper-writing/) | 端到端学术论文创建，贡献声明、方法论规划、4 级审校流水线 | [kimi-desktop](https://kimi.com) |
+| [copy-editing](copy-editing/) | 七轮逐层文案编辑：清晰度→语调→价值→证据→具体性→情感→零风险 | [kimi-desktop](https://kimi.com) |
+| [ad-creative](ad-creative/) | 高性能广告创意生成，Google/Meta/LinkedIn/TikTok/Twitter 全平台规格 | [kimi-desktop](https://kimi.com) |
+| [general-writing](general-writing/) | 通用写作（12 种体裁路由），小说/诗歌/剧本/游戏文案等、反 AI 写作规则 | [kimi-desktop](https://kimi.com) |
 
 ## 使用场景
 
