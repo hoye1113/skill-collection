@@ -70,6 +70,7 @@ all-skills/
 | **agent** | [openclaw-agent-forge](agent/openclaw-agent-forge/) | OpenClaw/FlowyClaw Agent 工作空间生成与优化 |
 | | [agent-browser](agent/agent-browser/) | AI Agent 浏览器自动化 CLI（导航/表单/截图/抓取） |
 | | [claudability-analyzer](agent/claudability-analyzer/) | 分析各职业 Claude Code 自动化机会（6 维度 + PDF 报告） |
+| | [kimi-webbridge](agent/kimi-webbridge/) | 控制真实浏览器（导航/点击/输入/截图/PDF），通过本地 daemon 交互 |
 
 ## 来源
 
