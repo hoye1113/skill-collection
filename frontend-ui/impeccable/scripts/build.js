@@ -19,6 +19,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { readSourceFiles, readPatterns, stashPerProjectArtifacts, restorePerProjectArtifacts } from './lib/utils.js';
+import { generateApiData } from './lib/api-data.js';
 import { createTransformer, PROVIDERS } from './lib/transformers/index.js';
 import { createAllZips } from './lib/zip.js';
 import { ANTIPATTERNS } from '../cli/engine/registry/antipatterns.mjs';
@@ -149,6 +150,10 @@ function validateProse(rootDir) {
     'README.npm.md',
   ];
   const extensions = new Set(['.html', '.md', '.js', '.mjs', '.css', '.astro']);
+  // The slop catalog documents every antipattern by example, so it must
+  // contain em dashes, buzzwords, and the rest as specimens. Exempt it from
+  // the prose gate: its job is to show the slop, not to avoid it.
+  const excludedPrefixes = ['site/pages/slop'];
   const emDashPatterns = [/—/g, /&mdash;/gi, /&#8212;/gi, /&#x2014;/gi];
   // Phrase rules: { re, rationale }. Add to STYLE.md when adding here.
   const phraseRules = [
@@ -202,6 +207,7 @@ function validateProse(rootDir) {
   };
 
   const scan = (absPath, rel) => {
+    if (excludedPrefixes.some(p => rel === p || rel.startsWith(p + '/'))) return;
     const stat = fs.statSync(absPath);
     if (stat.isDirectory()) {
       for (const entry of fs.readdirSync(absPath)) {
@@ -332,6 +338,56 @@ function validateSiteHeader(_rootDir) {
 }
 
 /**
+ * Guard the kinpaku default. Kinpaku is the site-wide default theme: the legacy
+ * --color-* names in tokens.css now carry dark-lacquer / gold-accent values, and
+ * the per-page kinpaku styling assumes that. If someone reintroduces the retired
+ * light-mode palette (white --color-paper, magenta --color-accent) the whole site
+ * silently regresses to light. Fail the build instead. Scoped to the token source
+ * — that's where the default lives; page CSS may still use light values locally
+ * for the deliberate AI-slop demonstrations.
+ */
+function validateTheme(rootDir) {
+  const tokensPath = path.join(rootDir, 'site', 'styles', 'tokens.css');
+  if (!fs.existsSync(tokensPath)) {
+    console.log('✓ Theme guard skipped (tokens.css not found)');
+    return 0;
+  }
+  const css = fs.readFileSync(tokensPath, 'utf8');
+  let errors = 0;
+
+  // Surfaces must be dark lacquer: either a --ks-* reference or a dark oklch
+  // (lightness < 35%). A high-lightness oklch means the light palette is back.
+  for (const name of ['color-paper', 'color-cream', 'color-bg']) {
+    const m = css.match(new RegExp(`--${name}:\\s*([^;]+);`));
+    if (!m) continue; // token removed entirely is fine
+    const val = m[1].trim();
+    if (val.includes('var(--ks-')) continue;
+    const light = val.match(/oklch\(\s*([\d.]+)%/);
+    if (light && Number(light[1]) >= 35) {
+      console.error(`  ❌ tokens.css: --${name} is light (${val}). Kinpaku is the default; surfaces must be dark lacquer (var(--ks-lacquer*) or oklch < 35%).`);
+      errors++;
+    }
+  }
+
+  // Accent must be kinpaku gold, not the retired magenta (hue ~350).
+  const accent = css.match(/--color-accent:\s*([^;]+);/);
+  if (accent && !accent[1].includes('var(--ks-')) {
+    const hue = accent[1].match(/oklch\(\s*[\d.]+%?\s+[\d.]+\s+([\d.]+)/);
+    if (hue && Number(hue[1]) >= 300 && Number(hue[1]) <= 360) {
+      console.error(`  ❌ tokens.css: --color-accent is magenta (${accent[1].trim()}). The accent is kinpaku gold — use var(--ks-kinpaku).`);
+      errors++;
+    }
+  }
+
+  if (errors > 0) {
+    console.error(`\n❌ ${errors} theme regression(s): light-mode defaults reintroduced in tokens.css.`);
+  } else {
+    console.log('✓ Theme defaults are kinpaku (dark surfaces, gold accent)');
+  }
+  return errors;
+}
+
+/**
  * Copy directory recursively
  */
 function copyDirSync(src, dest) {
@@ -405,88 +461,6 @@ These are hidden folders (dotfiles). Press Cmd+Shift+. in Finder to see them.
 }
 
 /**
- * Generate static API data for Cloudflare Pages deployment.
- * Pre-builds all API responses as JSON files so they can be served
- * as static assets via _redirects rewrites (no function invocations needed).
- */
-function generateApiData(buildDir, skills, patterns) {
-  const apiDir = path.join(buildDir, '_data', 'api');
-  fs.mkdirSync(apiDir, { recursive: true });
-
-  // skills.json
-  const skillsData = skills.map(s => ({
-    id: path.basename(path.dirname(s.filePath)),
-    name: s.name,
-    description: s.description,
-    userInvocable: s.userInvocable,
-  }));
-  fs.writeFileSync(path.join(apiDir, 'skills.json'), JSON.stringify(skillsData));
-
-  // commands.json - after v3.0 consolidation, commands are sub-commands of
-  // /impeccable. Load them from command-metadata.json and include the root
-  // impeccable skill itself so UI surfaces like the cheatsheet can list them.
-  // Each entry also picks up a short `tagline` from its editorial file
-  // (site/content/skills/<id>.md) when one exists. Taglines are used by UI
-  // surfaces that need a human-friendly one-liner, while `description` stays
-  // optimized for auto-trigger keyword matching in the AI harness.
-  const readTagline = (id) => {
-    const editorialPath = path.join(ROOT_DIR, 'site/content/skills', `${id}.md`);
-    if (!fs.existsSync(editorialPath)) return null;
-    const raw = fs.readFileSync(editorialPath, 'utf-8');
-    const match = raw.match(/^---\n([\s\S]*?)\n---/);
-    if (!match) return null;
-    const taglineMatch = match[1].match(/tagline:\s*"([^"]+)"/);
-    return taglineMatch ? taglineMatch[1] : null;
-  };
-
-  const metadataPath = path.join(ROOT_DIR, 'skill/scripts/command-metadata.json');
-  if (!fs.existsSync(metadataPath)) {
-    throw new Error(`command-metadata.json is missing at ${metadataPath}. This file is required to generate the commands API.`);
-  }
-  const impeccable = skills.find(s => s.name === 'impeccable');
-  if (!impeccable) {
-    throw new Error('impeccable skill not found at skill/SKILL.md. The build system expects exactly one skill at that path.');
-  }
-
-  const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
-  const commandsData = [
-    {
-      id: 'impeccable',
-      name: 'impeccable',
-      description: impeccable.description,
-      tagline: readTagline('impeccable'),
-      userInvocable: true,
-    },
-    ...Object.entries(metadata).map(([id, meta]) => ({
-      id,
-      name: id,
-      description: meta.description,
-      tagline: readTagline(id),
-      userInvocable: true,
-    })),
-  ];
-  fs.writeFileSync(path.join(apiDir, 'commands.json'), JSON.stringify(commandsData));
-
-  // patterns.json
-  fs.writeFileSync(path.join(apiDir, 'patterns.json'), JSON.stringify(patterns));
-
-  // command-source/{id}.json (one per skill)
-  const cmdSourceDir = path.join(apiDir, 'command-source');
-  fs.mkdirSync(cmdSourceDir, { recursive: true });
-  for (const skill of skills) {
-    const id = path.basename(path.dirname(skill.filePath));
-    const content = fs.readFileSync(skill.filePath, 'utf-8');
-    fs.writeFileSync(
-      path.join(cmdSourceDir, `${id}.json`),
-      JSON.stringify({ content })
-    );
-  }
-
-  const skillWord = skillsData.length === 1 ? 'skill' : 'skills';
-  console.log(`✓ Generated static API data (${skillsData.length} ${skillWord}, ${commandsData.length} commands)`);
-}
-
-/**
  * Copy dist files to build output for Cloudflare Pages Functions access.
  * Download functions use env.ASSETS.fetch() to read these files.
  */
@@ -556,12 +530,15 @@ function generateCFConfig(buildDir) {
   // Plus permanent redirects for legacy URLs.
   const redirects = `/api/skills /_data/api/skills.json 200
 /api/commands /_data/api/commands.json 200
+/api/version /_data/api/version.json 200
 /api/patterns /_data/api/patterns.json 200
 /api/command-source/:id /_data/api/command-source/:id.json 200
 /gallery /slop#try-it-live 301
 /cheatsheet /docs 301
 /skills /docs 301
+/skills/teach /docs/init 301
 /skills/:id /docs/:id 301
+/docs/teach /docs/init 301
 /anti-patterns /slop#catalog 301
 /visual-mode /slop#see-it 301
 /neon-mirai /neo-mirai/ 301
@@ -636,7 +613,7 @@ async function build() {
   // Astro wipes build/ before writing, so anything written directly to build/
   // during build:skills would be destroyed when build:site runs.
   const publicDir = path.join(ROOT_DIR, 'site', 'public');
-  generateApiData(publicDir, skills, patterns);
+  generateApiData(publicDir, skills, patterns, ROOT_DIR);
   generateCFConfig(publicDir);
 
   // Copy all provider outputs to project root for local testing.
@@ -747,6 +724,9 @@ async function build() {
   // Verify every hand-authored HTML page carries the shared site header
   const headerErrors = validateSiteHeader(ROOT_DIR);
 
+  // Guard the kinpaku default: fail if light-mode token values are reintroduced
+  const themeErrors = validateTheme(ROOT_DIR);
+
   // Scan user-facing copy for AI tells (em dashes, marketing fluff, denylisted phrases)
   const proseErrors = validateProse(ROOT_DIR);
 
@@ -754,7 +734,7 @@ async function build() {
   // that has no technical reading. Hardening repetition is intentionally allowed.
   const skillProseErrors = validateSkillProse(ROOT_DIR);
 
-  if (countErrors > 0 || headerErrors > 0 || proseErrors > 0 || skillProseErrors > 0) {
+  if (countErrors > 0 || headerErrors > 0 || themeErrors > 0 || proseErrors > 0 || skillProseErrors > 0) {
     process.exit(1);
   }
 

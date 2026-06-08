@@ -166,9 +166,10 @@ export async function stopDevServer(child) {
  * @param {object} opts.fixture           fixture.json contents
  * @param {import('playwright').Browser} opts.browser   shared browser instance
  * @param {object} opts.agent             VariantAgent (defaults to fake)
+ * @param {object|function=} opts.wrapTarget live-wrap target or event mapper
  * @param {(msg: string) => void} [opts.log]
  */
-export async function bootFixtureSession({ name, fixture, browser, agent, log = () => {} }) {
+export async function bootFixtureSession({ name, fixture, browser, agent, wrapTarget, log = () => {} }) {
   const runtime = fixture.runtime;
   if (!runtime) throw new Error(`fixture ${name} has no runtime block`);
 
@@ -186,6 +187,12 @@ export async function bootFixtureSession({ name, fixture, browser, agent, log = 
     try { if (dev?.child) await stopDevServer(dev.child); } catch {}
     try { if (live) stopLiveServer(tmp); } catch {}
     try { rmSync(tmp, { recursive: true, force: true }); } catch {}
+  };
+
+  const stopLiveForDeferredWork = () => {
+    if (!live) return;
+    stopLiveServer(tmp);
+    live = null;
   };
 
   try {
@@ -212,8 +219,11 @@ export async function bootFixtureSession({ name, fixture, browser, agent, log = 
       port: live.port,
       token: live.token,
       agent,
+      wrapTarget,
       signal: agentAbort.signal,
       log: (m) => log('[agent] ' + m),
+      steerSourceFile: runtime.steer?.sourceFile,
+      steerTarget: runtime.steer?.target,
     });
 
     const scheme = runtime.scheme || 'http';
@@ -241,6 +251,7 @@ export async function bootFixtureSession({ name, fixture, browser, agent, log = 
       dev,
       live,
       consoleErrors,
+      stopLiveServer: stopLiveForDeferredWork,
       teardown,
     };
   } catch (err) {

@@ -212,3 +212,80 @@
 [11:11:37] WARN sanyuan-skills: pull/rebase failed
 [11:11:38] Committed changes. Do NOT push.
 [11:11:38] === Skills sync finished ===
+[11:37:08] === Skills sync started ===
+[11:37:08] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[11:37:08] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[11:37:10] SYNC agent-readiness : first run (713df26)
+[11:37:12]   whole -> code-quality/agent-readiness
+[11:37:13] SYNC impeccable : first run (1aedbcf)
+[11:37:17]   whole -> frontend-ui/impeccable
+[11:37:18] SYNC nuwa-skill : first run (8ff461d)
+[11:37:20]   whole -> skill-management/nuwa-skill
+[11:37:22] SYNC huashu-design : first run (55ff7cc)
+[11:37:24]   whole -> frontend-ui/huashu-design
+[11:37:26] SYNC superpowers : first run (6fd4507)
+[11:37:28]   filtered skills -> dev-workflow/superpowers\skills
+[11:37:29] SYNC claude-skills-library : first run (97fa23f)
+[11:37:31]   mapped skills/cinematic-slides -> frontend-ui/cinematic-slides
+[11:37:31]   mapped skills/claudability-analyzer -> agent/claudability-analyzer
+[11:37:31]   mapped skills/deep-interview -> learning/deep-interview
+[11:37:31]   mapped skills/html-to-pdf -> dev-workflow/html-to-pdf
+[11:37:31]   mapped skills/html-to-pptx -> dev-workflow/html-to-pptx
+[11:37:31]   mapped skills/image-generation -> creative/image-generation
+[11:37:31]   mapped skills/kinetic-video-creator -> creative/kinetic-video-creator
+[11:37:31]   mapped skills/learn -> learning/learn
+[11:37:31]   mapped skills/music-generator -> creative/music-generator
+[11:37:31]   mapped skills/presentation-architect -> writing/presentation-architect
+[11:37:31]   mapped skills/reality-check -> code-quality/reality-check
+[11:37:31]   mapped skills/tutorial-creator -> creative/tutorial-creator
+[11:37:33] SYNC web-design-skill : first run (e3e9ada)
+[11:37:35]   mapped skills/gpt-image-2 -> creative/gpt-image-2
+[11:37:35]   mapped skills/kb-retriever -> learning/kb-retriever
+[11:37:35]   mapped skills/web-design-engineer -> frontend-ui/web-design-engineer
+[11:37:35]   mapped skills/web-video-presentation -> creative/web-video-presentation
+[11:37:37] SYNC khazix-skills : first run (9c315d7)
+[11:37:38]   mapped aihot -> writing/aihot
+[11:37:38]   mapped hv-analysis -> research/hv-analysis
+[11:37:38]   mapped khazix-writer -> writing/khazix-writer
+[11:37:38]   mapped neat-freak -> code-quality/neat-freak
+[11:37:40] SYNC sanyuan-skills : first run (08b6572)
+[11:37:42]   mapped skills/book-study -> learning/book-study
+[11:37:42]   mapped skills/code-review-expert -> code-quality/code-review-expert
+[11:37:42]   mapped skills/sigma -> learning/sigma
+[11:37:42]   mapped skills/skill-forge -> skill-management/skill-forge
+[11:37:42]   mapped skills/skill-review -> skill-management/skill-review
+[11:37:42]   mapped skills/wiki-ingest -> learning/wiki-ingest
+[11:55:59] Committed changes. Do NOT push.
+[11:55:59] === Skills sync finished ===
+[15:11:19] === Skills sync started ===
+[15:11:19] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[15:11:19] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[15:11:21] OK   agent-readiness : no remote changes (713df26)
+[15:11:23] OK   impeccable : no remote changes (1aedbcf)
+[15:11:25] OK   nuwa-skill : no remote changes (8ff461d)
+[15:11:27] OK   huashu-design : no remote changes (55ff7cc)
+[15:11:30] OK   superpowers : no remote changes (6fd4507)
+[15:11:32] OK   claude-skills-library : no remote changes (97fa23f)
+[15:11:33] OK   web-design-skill : no remote changes (e3e9ada)
+[15:11:36] OK   khazix-skills : no remote changes (9c315d7)
+[15:11:38] OK   sanyuan-skills : no remote changes (08b6572)
+[15:11:40] SYNC ecc : first run (90dfd95)
+[15:11:41] WARN ecc : pull failed, attempting rebase --abort
+[15:11:41] Committed changes. Do NOT push.
+[15:11:41] === Skills sync finished ===
+[15:12:29] === Skills sync started ===
+[15:12:29] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[15:12:29] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[15:12:31] OK   agent-readiness : no remote changes (713df26)
+[15:12:33] OK   impeccable : no remote changes (1aedbcf)
+[15:12:34] OK   nuwa-skill : no remote changes (8ff461d)
+[15:12:36] OK   huashu-design : no remote changes (55ff7cc)
+[15:12:38] OK   superpowers : no remote changes (6fd4507)
+[15:12:39] OK   claude-skills-library : no remote changes (97fa23f)
+[15:12:41] OK   web-design-skill : no remote changes (e3e9ada)
+[15:12:42] OK   khazix-skills : no remote changes (9c315d7)
+[15:12:44] OK   sanyuan-skills : no remote changes (08b6572)
+[15:12:46] SYNC ecc : first run (90dfd95)
+[15:12:47] WARN ecc : pull failed, attempting rebase --abort
+[15:12:47] Committed changes. Do NOT push.
+[15:12:47] === Skills sync finished ===

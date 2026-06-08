@@ -3,7 +3,8 @@
 
 $ErrorActionPreference = "Continue"
 
-$OpsDir       = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
+$OpsDir       = Split-Path -Parent $ScriptDir
 $ProjectRoot  = Split-Path -Parent $OpsDir
 $ConfigFile   = Join-Path $OpsDir "sync-config.json"
 $StateFile    = Join-Path $OpsDir "sync-state.json"
@@ -45,6 +46,8 @@ function RoboSync($src, $dst) {
 
 # --- main ---
 Log "=== Skills sync started ==="
+Log "ProjectRoot: $ProjectRoot"
+Log "ConfigFile: $ConfigFile"
 
 $config = Get-Content $ConfigFile -Raw | ConvertFrom-Json
 $state = LoadState
@@ -67,16 +70,20 @@ foreach ($repo in $config.repos) {
     $lastHash = ""
     if ($state.PSObject.Properties[$name]) { $lastHash = $state.$name }
 
-    if ($remoteHash -eq $lastHash) {
+    if ($remoteHash -eq $lastHash -and $lastHash -ne "") {
         Log "OK   $name : no remote changes ($($remoteHash.Substring(0,7)))"
         continue
     }
 
-    Log "SYNC $name : $lastHash -> $($remoteHash.Substring(0,7))"
+    if ($lastHash -eq "") {
+        Log "SYNC $name : first run ($($remoteHash.Substring(0,7)))"
+    } else {
+        Log "SYNC $name : $($lastHash.Substring(0,7)) -> $($remoteHash.Substring(0,7))"
+    }
 
     # Step 2: ensure local clone exists and pull
     if (-not (Test-Path $repoPath)) {
-        Log "SKIP $name : local path not found ($repoPath)"
+        Log "SKIP $name : local path not found"
         continue
     }
 

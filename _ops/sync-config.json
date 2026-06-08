@@ -37,7 +37,9 @@
       "remoteUrl": "https://github.com/obra/superpowers.git",
       "path": "D:\\workSpace\\git_clone_test\\superpowers",
       "strategy": "filtered",
-      "include": ["skills"],
+      "include": [
+        "skills"
+      ],
       "target": "dev-workflow/superpowers"
     },
     {
@@ -46,18 +48,54 @@
       "path": "D:\\workSpace\\git_clone_test\\claude-skills-library",
       "strategy": "mapped",
       "mappings": [
-        { "source": "skills/cinematic-slides", "target": "frontend-ui/cinematic-slides" },
-        { "source": "skills/claudability-analyzer", "target": "agent/claudability-analyzer" },
-        { "source": "skills/deep-interview", "target": "learning/deep-interview" },
-        { "source": "skills/html-to-pdf", "target": "dev-workflow/html-to-pdf" },
-        { "source": "skills/html-to-pptx", "target": "dev-workflow/html-to-pptx" },
-        { "source": "skills/image-generation", "target": "creative/image-generation" },
-        { "source": "skills/kinetic-video-creator", "target": "creative/kinetic-video-creator" },
-        { "source": "skills/learn", "target": "learning/learn" },
-        { "source": "skills/music-generator", "target": "creative/music-generator" },
-        { "source": "skills/presentation-architect", "target": "writing/presentation-architect" },
-        { "source": "skills/reality-check", "target": "code-quality/reality-check" },
-        { "source": "skills/tutorial-creator", "target": "creative/tutorial-creator" }
+        {
+          "source": "skills/cinematic-slides",
+          "target": "frontend-ui/cinematic-slides"
+        },
+        {
+          "source": "skills/claudability-analyzer",
+          "target": "agent/claudability-analyzer"
+        },
+        {
+          "source": "skills/deep-interview",
+          "target": "learning/deep-interview"
+        },
+        {
+          "source": "skills/html-to-pdf",
+          "target": "dev-workflow/html-to-pdf"
+        },
+        {
+          "source": "skills/html-to-pptx",
+          "target": "dev-workflow/html-to-pptx"
+        },
+        {
+          "source": "skills/image-generation",
+          "target": "creative/image-generation"
+        },
+        {
+          "source": "skills/kinetic-video-creator",
+          "target": "creative/kinetic-video-creator"
+        },
+        {
+          "source": "skills/learn",
+          "target": "learning/learn"
+        },
+        {
+          "source": "skills/music-generator",
+          "target": "creative/music-generator"
+        },
+        {
+          "source": "skills/presentation-architect",
+          "target": "writing/presentation-architect"
+        },
+        {
+          "source": "skills/reality-check",
+          "target": "code-quality/reality-check"
+        },
+        {
+          "source": "skills/tutorial-creator",
+          "target": "creative/tutorial-creator"
+        }
       ]
     },
     {
@@ -66,10 +104,22 @@
       "path": "D:\\workSpace\\git_clone_test\\web-design-skill",
       "strategy": "mapped",
       "mappings": [
-        { "source": "skills/gpt-image-2", "target": "creative/gpt-image-2" },
-        { "source": "skills/kb-retriever", "target": "learning/kb-retriever" },
-        { "source": "skills/web-design-engineer", "target": "frontend-ui/web-design-engineer" },
-        { "source": "skills/web-video-presentation", "target": "creative/web-video-presentation" }
+        {
+          "source": "skills/gpt-image-2",
+          "target": "creative/gpt-image-2"
+        },
+        {
+          "source": "skills/kb-retriever",
+          "target": "learning/kb-retriever"
+        },
+        {
+          "source": "skills/web-design-engineer",
+          "target": "frontend-ui/web-design-engineer"
+        },
+        {
+          "source": "skills/web-video-presentation",
+          "target": "creative/web-video-presentation"
+        }
       ]
     },
     {
@@ -78,10 +128,22 @@
       "path": "D:\\workSpace\\git_clone_test\\khazix-skills",
       "strategy": "mapped",
       "mappings": [
-        { "source": "aihot", "target": "writing/aihot" },
-        { "source": "hv-analysis", "target": "research/hv-analysis" },
-        { "source": "khazix-writer", "target": "writing/khazix-writer" },
-        { "source": "neat-freak", "target": "code-quality/neat-freak" }
+        {
+          "source": "aihot",
+          "target": "writing/aihot"
+        },
+        {
+          "source": "hv-analysis",
+          "target": "research/hv-analysis"
+        },
+        {
+          "source": "khazix-writer",
+          "target": "writing/khazix-writer"
+        },
+        {
+          "source": "neat-freak",
+          "target": "code-quality/neat-freak"
+        }
       ]
     },
     {
@@ -90,15 +152,51 @@
       "path": "D:\\workSpace\\git_clone_test\\sanyuan-skills",
       "strategy": "mapped",
       "mappings": [
-        { "source": "skills/book-study", "target": "learning/book-study" },
-        { "source": "skills/code-review-expert", "target": "code-quality/code-review-expert" },
-        { "source": "skills/sigma", "target": "learning/sigma" },
-        { "source": "skills/skill-forge", "target": "skill-management/skill-forge" },
-        { "source": "skills/skill-review", "target": "skill-management/skill-review" },
-        { "source": "skills/wiki-ingest", "target": "learning/wiki-ingest" }
+        {
+          "source": "skills/book-study",
+          "target": "learning/book-study"
+        },
+        {
+          "source": "skills/code-review-expert",
+          "target": "code-quality/code-review-expert"
+        },
+        {
+          "source": "skills/sigma",
+          "target": "learning/sigma"
+        },
+        {
+          "source": "skills/skill-forge",
+          "target": "skill-management/skill-forge"
+        },
+        {
+          "source": "skills/skill-review",
+          "target": "skill-management/skill-review"
+        },
+        {
+          "source": "skills/wiki-ingest",
+          "target": "learning/wiki-ingest"
+        }
       ]
+    },
+    {
+      "name": "ecc",
+      "remoteUrl": "https://github.com/affaan-m/ECC.git",
+      "path": "D:\\workSpace\\git_clone_test\\ECC",
+      "strategy": "filtered",
+      "include": [
+        "skills",
+        "agents",
+        "commands",
+        "rules",
+        "examples"
+      ],
+      "target": "dev-workflow/ecc"
     }
   ],
-  "excludePatterns": [".git", "node_modules", ".env"],
+  "excludePatterns": [
+    ".git",
+    "node_modules",
+    ".env"
+  ],
   "projectRoot": "D:\\workSpace\\hoye-skills-main\\skill-collection"
 }
