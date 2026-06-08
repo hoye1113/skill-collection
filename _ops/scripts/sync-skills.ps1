@@ -12,6 +12,7 @@ $LogFile      = Join-Path $OpsDir "sync-logs\$(Get-Date -Format 'yyyy-MM-dd').lo
 $ExcludeFlags = @("/XD", ".git", "node_modules", "/XF", ".env")
 
 $logBuffer = [System.Collections.ArrayList]::new()
+$anySkillSynced = $false
 
 function Log($msg) {
     $ts = Get-Date -Format "HH:mm:ss"
@@ -95,11 +96,13 @@ foreach ($repo in $config.repos) {
     }
 
     # Step 3: sync files based on strategy
+    $syncedThisRepo = $false
     switch ($repo.strategy) {
         "whole" {
             $src = if ($repo.source -eq ".") { $repoPath } else { Join-Path $repoPath $repo.source }
             $dst = Join-Path $ProjectRoot $repo.target
             RoboSync $src $dst
+            $syncedThisRepo = $true
             Log "  whole -> $($repo.target)"
         }
         "filtered" {
@@ -108,6 +111,7 @@ foreach ($repo in $config.repos) {
                 $dst = Join-Path $ProjectRoot "$($repo.target)\$inc"
                 if (Test-Path $src) {
                     RoboSync $src $dst
+                    $syncedThisRepo = $true
                     Log "  filtered $inc -> $($repo.target)\$inc"
                 }
             }
@@ -118,6 +122,7 @@ foreach ($repo in $config.repos) {
                 $dst = Join-Path $ProjectRoot $m.target
                 if (Test-Path $src) {
                     RoboSync $src $dst
+                    $syncedThisRepo = $true
                     Log "  mapped $($m.source) -> $($m.target)"
                 } else {
                     Log "  SKIP $($m.source): not found"
@@ -129,21 +134,36 @@ foreach ($repo in $config.repos) {
     # Update state
     $state | Add-Member -NotePropertyName $name -NotePropertyValue $remoteHash -Force
     $changed = $true
+
+    if ($syncedThisRepo) {
+        $script:anySkillSynced = $true
+        Log "  files synced for $name"
+    } else {
+        Log "  no files synced for $name (strategy matched no paths)"
+    }
 }
 
 # Save state
 if ($changed) { SaveState $state }
 
-# Commit if file changes
+# Commit only when skill files were actually synced
 Push-Location $ProjectRoot
-$status = git status --porcelain 2>$null
-if ($status) {
-    git add -A 2>&1 | Out-Null
-    $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
-    git commit -m "sync: update skills from upstream $dateStr" 2>&1 | Out-Null
-    Log "Committed changes. Do NOT push."
+
+if (-not $anySkillSynced) {
+    Log "No skill updates this run. Skipping commit."
 } else {
-    Log "No file changes after sync."
+    # Check for actual changes excluding _ops (log/state files)
+    $skillChanges = git status --porcelain 2>$null | Where-Object {
+        $_ -notmatch '^[_ACDMR]+\s+_ops/'
+    }
+    if ($skillChanges) {
+        git add -A 2>&1 | Out-Null
+        $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
+        git commit --no-verify -m "sync: update skills from upstream $dateStr" 2>&1 | Out-Null
+        Log "Committed skill changes. Do NOT push."
+    } else {
+        Log "Skill sync ran but produced no file changes. Skipping commit."
+    }
 }
 Pop-Location
 
