@@ -200,3 +200,15 @@
 [09:49:51]   git commit:  create mode 100644 sync-logs/2026-06-08.log
 [09:49:51] Committed changes. Do NOT push.
 [09:49:51] === Skills sync finished ===
+[11:11:35] === Skills sync started ===
+[11:11:35] WARN agent-readiness: pull/rebase failed
+[11:11:35] WARN impeccable: pull/rebase failed
+[11:11:36] WARN nuwa-skill: pull/rebase failed
+[11:11:36] WARN huashu-design: pull/rebase failed
+[11:11:36] WARN superpowers: pull/rebase failed
+[11:11:36] WARN claude-skills-library: pull/rebase failed
+[11:11:37] WARN web-design-skill: pull/rebase failed
+[11:11:37] WARN khazix-skills: pull/rebase failed
+[11:11:37] WARN sanyuan-skills: pull/rebase failed
+[11:11:38] Committed changes. Do NOT push.
+[11:11:38] === Skills sync finished ===

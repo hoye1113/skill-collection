@@ -1,9 +1,13 @@
 # sync-skills.ps1 - Skills upstream sync script
+# Uses git ls-remote to check remote changes, only pulls when needed
+
 $ErrorActionPreference = "Continue"
 
-$ProjectRoot  = "D:\workSpace\hoye-skills-main\skill-collection"
-$ConfigFile   = Join-Path $ProjectRoot "sync-config.json"
-$LogFile      = Join-Path $ProjectRoot "sync-logs\$(Get-Date -Format 'yyyy-MM-dd').log"
+$OpsDir       = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot  = Split-Path -Parent $OpsDir
+$ConfigFile   = Join-Path $OpsDir "sync-config.json"
+$StateFile    = Join-Path $OpsDir "sync-state.json"
+$LogFile      = Join-Path $OpsDir "sync-logs\$(Get-Date -Format 'yyyy-MM-dd').log"
 $ExcludeFlags = @("/XD", ".git", "node_modules", "/XF", ".env")
 
 $logBuffer = [System.Collections.ArrayList]::new()
@@ -16,10 +20,21 @@ function Log($msg) {
 }
 
 function FlushLog {
-    if (-not (Test-Path (Split-Path $LogFile -Parent))) {
-        New-Item -ItemType Directory -Path (Split-Path $LogFile -Parent) -Force | Out-Null
-    }
+    $logDir = Split-Path $LogFile -Parent
+    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
     $script:logBuffer | Add-Content -Path $LogFile
+}
+
+function LoadState {
+    if (Test-Path $StateFile) {
+        return Get-Content $StateFile -Raw | ConvertFrom-Json
+    }
+    return [PSCustomObject]@{}
+}
+
+function SaveState($state) {
+    $json = $state | ConvertTo-Json -Depth 5
+    [System.IO.File]::WriteAllText($StateFile, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 function RoboSync($src, $dst) {
@@ -28,38 +43,51 @@ function RoboSync($src, $dst) {
     & robocopy @args | Out-Null
 }
 
+# --- main ---
 Log "=== Skills sync started ==="
 
 $config = Get-Content $ConfigFile -Raw | ConvertFrom-Json
+$state = LoadState
+$changed = $false
 
 foreach ($repo in $config.repos) {
+    $name = $repo.name
+    $remoteUrl = $repo.remoteUrl
     $repoPath = $repo.path
+
+    # Step 1: check remote HEAD via ls-remote
+    $remoteHead = git ls-remote $remoteUrl HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $remoteHead) {
+        Log "SKIP $name : ls-remote failed"
+        continue
+    }
+    $remoteHash = ($remoteHead -split "`t")[0]
+
+    # Compare with last known hash
+    $lastHash = ""
+    if ($state.PSObject.Properties[$name]) { $lastHash = $state.$name }
+
+    if ($remoteHash -eq $lastHash) {
+        Log "OK   $name : no remote changes ($($remoteHash.Substring(0,7)))"
+        continue
+    }
+
+    Log "SYNC $name : $lastHash -> $($remoteHash.Substring(0,7))"
+
+    # Step 2: ensure local clone exists and pull
     if (-not (Test-Path $repoPath)) {
-        Log "SKIP $($repo.name): path not found"
+        Log "SKIP $name : local path not found ($repoPath)"
         continue
     }
 
-    $oldHead = git -C $repoPath rev-parse HEAD 2>$null
+    git -C $repoPath pull --rebase 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Log "SKIP $($repo.name): not a git repo"
-        continue
-    }
-
-    $pullOut = git -C $repoPath pull --rebase 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Log "WARN $($repo.name): pull/rebase failed"
+        Log "WARN $name : pull failed, attempting rebase --abort"
         git -C $repoPath rebase --abort 2>$null
         continue
     }
 
-    $newHead = git -C $repoPath rev-parse HEAD 2>$null
-    if ($oldHead -eq $newHead) {
-        Log "OK   $($repo.name): no changes"
-        continue
-    }
-
-    Log "SYNC $($repo.name): $($oldHead.Substring(0,7)) -> $($newHead.Substring(0,7))"
-
+    # Step 3: sync files based on strategy
     switch ($repo.strategy) {
         "whole" {
             $src = if ($repo.source -eq ".") { $repoPath } else { Join-Path $repoPath $repo.source }
@@ -90,8 +118,16 @@ foreach ($repo in $config.repos) {
             }
         }
     }
+
+    # Update state
+    $state | Add-Member -NotePropertyName $name -NotePropertyValue $remoteHash -Force
+    $changed = $true
 }
 
+# Save state
+if ($changed) { SaveState $state }
+
+# Commit if file changes
 Push-Location $ProjectRoot
 $status = git status --porcelain 2>$null
 if ($status) {
