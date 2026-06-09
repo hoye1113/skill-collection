@@ -1,12 +1,12 @@
 {
-  "agent-readiness": "713df263a1f8704b68366a47b4554d4dc530a7d4",
-  "impeccable": "1aedbcf538e3fa6694ccbf00294cc18e59ba1f21",
-  "nuwa-skill": "8ff461d4a1d562993ae27eb3802378351c87817f",
-  "huashu-design": "55ff7cc03e0817a39a7987a6331b7eef17faf40c",
-  "superpowers": "6fd4507659784c351abbd2bc264c7162cfd386dc",
-  "claude-skills-library": "97fa23f51c47b5453ecb8bf1a962d48760a48904",
-  "web-design-skill": "e3e9ada877f47d984916d8169b7cf310ea0e2227",
-  "khazix-skills": "9c315d7a71776dae5139b3f717a53e89b7b835c1",
-  "sanyuan-skills": "08b6572ef108f22d4e8a3ecf9182a4bbef097744",
-  "ecc": "90dfd9500000000000000000000000000000000"
+    "agent-readiness":  "713df263a1f8704b68366a47b4554d4dc530a7d4",
+    "nuwa-skill":  "8ff461d4a1d562993ae27eb3802378351c87817f",
+    "huashu-design":  "55ff7cc03e0817a39a7987a6331b7eef17faf40c",
+    "superpowers":  "6fd4507659784c351abbd2bc264c7162cfd386dc",
+    "claude-skills-library":  "97fa23f51c47b5453ecb8bf1a962d48760a48904",
+    "web-design-skill":  "e3e9ada877f47d984916d8169b7cf310ea0e2227",
+    "khazix-skills":  "9c315d7a71776dae5139b3f717a53e89b7b835c1",
+    "sanyuan-skills":  "08b6572ef108f22d4e8a3ecf9182a4bbef097744",
+    "impeccable":  "018a16eb13eca8fbf879194a06cfbcdb11521fd1",
+    "ecc":  "90dfd9505dc860714cf3cc8216ad7bbb96d93365"
 }
