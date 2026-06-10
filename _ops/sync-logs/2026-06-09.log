@@ -32,3 +32,70 @@
 [09:19:01] WARN ecc : pull failed, attempting rebase --abort
 [09:19:01] No skill updates this run. Skipping commit.
 [09:19:01] === Skills sync finished ===
+[09:19:30] === Skills sync started ===
+[09:19:30] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[09:19:30] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[09:19:32] OK   agent-readiness : no remote changes (713df26)
+[09:19:33] SYNC impeccable : 1aedbcf -> 018a16e
+[09:19:35]   whole -> frontend-ui/impeccable
+[09:19:35]   files synced for impeccable
+[09:19:36] OK   nuwa-skill : no remote changes (8ff461d)
+[09:19:37] OK   huashu-design : no remote changes (55ff7cc)
+[09:19:38] OK   superpowers : no remote changes (6fd4507)
+[09:19:40] OK   claude-skills-library : no remote changes (97fa23f)
+[09:19:41] OK   web-design-skill : no remote changes (e3e9ada)
+[09:19:42] OK   khazix-skills : no remote changes (9c315d7)
+[09:19:44] OK   sanyuan-skills : no remote changes (08b6572)
+[09:19:46] SYNC ecc : 90dfd95 -> 90dfd95
+[09:19:48]   filtered skills -> dev-workflow/ecc\skills
+[09:19:48]   filtered agents -> dev-workflow/ecc\agents
+[09:19:48]   filtered commands -> dev-workflow/ecc\commands
+[09:19:48]   filtered rules -> dev-workflow/ecc\rules
+[09:19:48]   filtered examples -> dev-workflow/ecc\examples
+[09:19:48]   files synced for ecc
+[09:19:49] Committed skill changes. Do NOT push.
+[09:19:49] === Skills sync finished ===
+[11:11:32] === Skills sync started ===
+[11:11:32] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[11:11:32] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[11:11:34] OK   agent-readiness : no remote changes (713df26)
+[11:11:35] SYNC impeccable : 018a16e -> f636bd0
+[11:11:36] WARN impeccable : pull failed, attempting rebase --abort
+[11:11:37] OK   nuwa-skill : no remote changes (8ff461d)
+[11:11:38] OK   huashu-design : no remote changes (55ff7cc)
+[11:11:40] OK   superpowers : no remote changes (6fd4507)
+[11:11:41] OK   claude-skills-library : no remote changes (97fa23f)
+[11:11:42] OK   web-design-skill : no remote changes (e3e9ada)
+[11:11:43] OK   khazix-skills : no remote changes (9c315d7)
+[11:11:44] OK   sanyuan-skills : no remote changes (08b6572)
+[11:11:45] SYNC ecc : 90dfd95 -> edebcc8
+[11:11:45] WARN ecc : pull failed, attempting rebase --abort
+[11:11:45] No skill updates this run. Skipping commit.
+[11:11:45] === Skills sync finished ===
+[11:34:35] === Skills sync started ===
+[11:34:35] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[11:34:35] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[11:34:37] OK   agent-readiness : no remote changes (713df26)
+[11:34:38] SYNC impeccable : 018a16e -> f636bd0
+[11:34:38]   cloning impeccable into cache...
+[11:35:05]   cloned impeccable (shallow)
+[11:35:08]   whole -> frontend-ui/impeccable
+[11:35:08]   files synced for impeccable
+[11:35:09] OK   nuwa-skill : no remote changes (8ff461d)
+[11:35:10] OK   huashu-design : no remote changes (55ff7cc)
+[11:35:11] OK   superpowers : no remote changes (6fd4507)
+[11:35:12] OK   claude-skills-library : no remote changes (97fa23f)
+[11:35:14] OK   web-design-skill : no remote changes (e3e9ada)
+[11:35:15] OK   khazix-skills : no remote changes (9c315d7)
+[11:35:16] OK   sanyuan-skills : no remote changes (08b6572)
+[11:35:21] SYNC ecc : 90dfd95 -> edebcc8
+[11:35:21]   cloning ecc into cache...
+[11:35:32]   cloned ecc (shallow)
+[11:35:32]   filtered skills -> dev-workflow/ecc\skills
+[11:35:32]   filtered agents -> dev-workflow/ecc\agents
+[11:35:33]   filtered commands -> dev-workflow/ecc\commands
+[11:35:33]   filtered rules -> dev-workflow/ecc\rules
+[11:35:33]   filtered examples -> dev-workflow/ecc\examples
+[11:35:33]   files synced for ecc
+[11:35:34] Committed skill changes. Do NOT push.
+[11:35:34] === Skills sync finished ===

@@ -3,7 +3,6 @@
     {
       "name": "agent-readiness",
       "remoteUrl": "https://github.com/superduck-ai/agent-readiness.git",
-      "path": "D:\\workSpace\\git_clone_test\\agent-readiness",
       "strategy": "whole",
       "source": "agent-readiness",
       "target": "code-quality/agent-readiness"
@@ -11,7 +10,6 @@
     {
       "name": "impeccable",
       "remoteUrl": "https://github.com/pbakaus/impeccable.git",
-      "path": "D:\\workSpace\\git_clone_test\\impeccable",
       "strategy": "whole",
       "source": ".",
       "target": "frontend-ui/impeccable"
@@ -19,7 +17,6 @@
     {
       "name": "nuwa-skill",
       "remoteUrl": "https://github.com/alchaincyf/nuwa-skill.git",
-      "path": "D:\\workSpace\\git_clone_test\\nuwa-skill",
       "strategy": "whole",
       "source": ".",
       "target": "skill-management/nuwa-skill"
@@ -27,7 +24,6 @@
     {
       "name": "huashu-design",
       "remoteUrl": "https://github.com/alchaincyf/huashu-design.git",
-      "path": "D:\\workSpace\\git_clone_test\\huashu-design",
       "strategy": "whole",
       "source": ".",
       "target": "frontend-ui/huashu-design"
@@ -35,7 +31,6 @@
     {
       "name": "superpowers",
       "remoteUrl": "https://github.com/obra/superpowers.git",
-      "path": "D:\\workSpace\\git_clone_test\\superpowers",
       "strategy": "filtered",
       "include": [
         "skills"
@@ -45,7 +40,6 @@
     {
       "name": "claude-skills-library",
       "remoteUrl": "https://github.com/aviz85/claude-skills-library.git",
-      "path": "D:\\workSpace\\git_clone_test\\claude-skills-library",
       "strategy": "mapped",
       "mappings": [
         {
@@ -101,7 +95,6 @@
     {
       "name": "web-design-skill",
       "remoteUrl": "https://github.com/ConardLi/web-design-skill.git",
-      "path": "D:\\workSpace\\git_clone_test\\web-design-skill",
       "strategy": "mapped",
       "mappings": [
         {
@@ -125,7 +118,6 @@
     {
       "name": "khazix-skills",
       "remoteUrl": "https://github.com/KKKKhazix/khazix-skills.git",
-      "path": "D:\\workSpace\\git_clone_test\\khazix-skills",
       "strategy": "mapped",
       "mappings": [
         {
@@ -149,7 +141,6 @@
     {
       "name": "sanyuan-skills",
       "remoteUrl": "https://github.com/sanyuan0704/sanyuan-skills.git",
-      "path": "D:\\workSpace\\git_clone_test\\sanyuan-skills",
       "strategy": "mapped",
       "mappings": [
         {
@@ -181,7 +172,6 @@
     {
       "name": "ecc",
       "remoteUrl": "https://github.com/affaan-m/ECC.git",
-      "path": "D:\\workSpace\\git_clone_test\\ECC",
       "strategy": "filtered",
       "include": [
         "skills",

@@ -1,5 +1,6 @@
 # sync-skills.ps1 - Skills upstream sync script
 # Uses git ls-remote to check remote changes, only pulls when needed
+# Clone cache lives at _ops/.sync-cache/<name> (inside project, sandbox-safe)
 
 $ErrorActionPreference = "Continue"
 
@@ -9,6 +10,7 @@ $ProjectRoot  = Split-Path -Parent $OpsDir
 $ConfigFile   = Join-Path $OpsDir "sync-config.json"
 $StateFile    = Join-Path $OpsDir "sync-state.json"
 $LogFile      = Join-Path $OpsDir "sync-logs\$(Get-Date -Format 'yyyy-MM-dd').log"
+$CacheDir     = Join-Path $OpsDir ".sync-cache"
 $ExcludeFlags = @("/XD", ".git", "node_modules", "/XF", ".env")
 
 $logBuffer = [System.Collections.ArrayList]::new()
@@ -57,7 +59,7 @@ $changed = $false
 foreach ($repo in $config.repos) {
     $name = $repo.name
     $remoteUrl = $repo.remoteUrl
-    $repoPath = $repo.path
+    $repoPath = Join-Path $CacheDir $name
 
     # Step 1: check remote HEAD via ls-remote
     $remoteHead = git ls-remote $remoteUrl HEAD 2>$null
@@ -84,15 +86,29 @@ foreach ($repo in $config.repos) {
 
     # Step 2: ensure local clone exists and pull
     if (-not (Test-Path $repoPath)) {
-        Log "SKIP $name : local path not found"
-        continue
-    }
-
-    git -C $repoPath pull --rebase 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Log "WARN $name : pull failed, attempting rebase --abort"
-        git -C $repoPath rebase --abort 2>$null
-        continue
+        Log "  cloning $name into cache..."
+        if (-not (Test-Path $CacheDir)) { New-Item -ItemType Directory -Path $CacheDir -Force | Out-Null }
+        git clone --depth 1 $remoteUrl $repoPath 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Log "SKIP $name : clone failed"
+            continue
+        }
+        Log "  cloned $name (shallow)"
+    } else {
+        git -C $repoPath pull --rebase 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Log "WARN $name : pull failed, attempting rebase --abort"
+            git -C $repoPath rebase --abort 2>$null
+            # Nuke and re-clone on persistent failure
+            Log "  re-cloning $name..."
+            Remove-Item -Recurse -Force $repoPath 2>$null
+            git clone --depth 1 $remoteUrl $repoPath 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Log "SKIP $name : re-clone failed"
+                continue
+            }
+            Log "  re-cloned $name (shallow)"
+        }
     }
 
     # Step 3: sync files based on strategy
