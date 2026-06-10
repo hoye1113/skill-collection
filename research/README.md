@@ -7,7 +7,7 @@
 | Skill | 说明 | 来源 |
 |-------|------|------|
 | [hv-analysis](hv-analysis/) | 横纵分析法深度研究：纵向时间线 + 横向竞品对比，产出 PDF | khazix-skills |
-| [prompts](prompts/) | 横纵分析法纯文本提示词模板，可在任意 Deep Research 模型中使用 | khazix-skills |
+| [prompts](prompts/) | 纯文本提示词模板集合，可在任意 Deep Research 模型中使用（横纵分析法、公司结构、圆桌讨论） | khazix-skills / lijigang |
 | [market-research](market-research/) | 市场研究：TAM/SAM/SOM 分层、4 种研究模式、证据质量分级 | qclaw |
 | [competitive-analysis](competitive-analysis/) | 深度竞品分析：6 层情报框架 | qclaw |
 | [competitor-monitoring](competitor-monitoring/) | 竞品持续监测：pricing/feature/positioning 信号追踪 | qclaw |
