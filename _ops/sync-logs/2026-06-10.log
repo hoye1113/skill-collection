@@ -22,3 +22,31 @@
 [06:02:45] OK   ecc : no remote changes (edebcc8)
 [06:02:47] Committed skill changes. Do NOT push.
 [06:02:47] === Skills sync finished ===
+[10:04:21] === Skills sync started ===
+[10:04:21] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[10:04:21] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[10:04:22] OK   agent-readiness : no remote changes (713df26)
+[10:04:23] SYNC impeccable : 983b75c -> 1863a44
+[10:04:26]   whole -> frontend-ui/impeccable
+[10:04:26]   files synced for impeccable
+[10:04:27] OK   nuwa-skill : no remote changes (8ff461d)
+[10:04:28] OK   huashu-design : no remote changes (55ff7cc)
+[10:04:29] OK   superpowers : no remote changes (6fd4507)
+[10:04:30] OK   claude-skills-library : no remote changes (97fa23f)
+[10:04:31] OK   web-design-skill : no remote changes (82d09a0)
+[10:04:32] OK   khazix-skills : no remote changes (9c315d7)
+[10:04:33] OK   sanyuan-skills : no remote changes (08b6572)
+[10:04:34] SYNC ecc : edebcc8 -> 8ad4151
+[10:04:37]   filtered skills -> dev-workflow/ecc\skills
+[10:04:37]   filtered agents -> dev-workflow/ecc\agents
+[10:04:37]   filtered commands -> dev-workflow/ecc\commands
+[10:04:37]   filtered rules -> dev-workflow/ecc\rules
+[10:04:37]   filtered examples -> dev-workflow/ecc\examples
+[10:04:37]   files synced for ecc
+[10:04:37] BLOCKED: git add failed (sandbox .git DENY ACE).
+[10:04:37] ACTION: Run these commands outside sandbox:
+[10:04:37]   cd D:\workSpace\hoye-skills-main\skill-collection
+[10:04:37]   git add -A
+[10:04:37]   git commit -m "sync: update skills from upstream 2026-06-10"
+[10:04:37]   git push
+[10:04:37] === Skills sync finished ===

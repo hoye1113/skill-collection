@@ -1,0 +1,46 @@
+[11:11:27] === Skills sync started ===
+[11:11:27] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[11:11:27] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[11:11:28] OK   agent-readiness : no remote changes (713df26)
+[11:11:30] OK   impeccable : no remote changes (1863a44)
+[11:11:31] OK   nuwa-skill : no remote changes (8ff461d)
+[11:11:32] OK   huashu-design : no remote changes (55ff7cc)
+[11:11:34] OK   superpowers : no remote changes (6fd4507)
+[11:11:35] SYNC claude-skills-library : 97fa23f -> 9fe27b5
+[11:11:35]   cloning claude-skills-library into cache...
+[11:11:40]   cloned claude-skills-library (shallow)
+[11:11:40]   mapped skills/cinematic-slides -> frontend-ui/cinematic-slides
+[11:11:40]   mapped skills/claudability-analyzer -> agent/claudability-analyzer
+[11:11:40]   mapped skills/deep-interview -> learning/deep-interview
+[11:11:40]   mapped skills/html-to-pdf -> dev-workflow/html-to-pdf
+[11:11:40]   mapped skills/html-to-pptx -> dev-workflow/html-to-pptx
+[11:11:40]   mapped skills/image-generation -> creative/image-generation
+[11:11:40]   mapped skills/kinetic-video-creator -> creative/kinetic-video-creator
+[11:11:40]   mapped skills/learn -> learning/learn
+[11:11:40]   mapped skills/music-generator -> creative/music-generator
+[11:11:40]   mapped skills/presentation-architect -> writing/presentation-architect
+[11:11:40]   mapped skills/reality-check -> code-quality/reality-check
+[11:11:40]   mapped skills/tutorial-creator -> creative/tutorial-creator
+[11:11:40]   files synced for claude-skills-library
+[11:11:42] SYNC web-design-skill : 82d09a0 -> fbd6453
+[11:11:44]   mapped skills/gpt-image-2 -> creative/gpt-image-2
+[11:11:44]   mapped skills/kb-retriever -> learning/kb-retriever
+[11:11:44]   mapped skills/web-design-engineer -> frontend-ui/web-design-engineer
+[11:11:44]   mapped skills/web-video-presentation -> creative/web-video-presentation
+[11:11:44]   files synced for web-design-skill
+[11:11:45] OK   khazix-skills : no remote changes (9c315d7)
+[11:11:46] OK   sanyuan-skills : no remote changes (08b6572)
+[11:11:48] SYNC ecc : 8ad4151 -> c888d2b
+[11:11:50]   filtered skills -> dev-workflow/ecc\skills
+[11:11:50]   filtered agents -> dev-workflow/ecc\agents
+[11:11:50]   filtered commands -> dev-workflow/ecc\commands
+[11:11:50]   filtered rules -> dev-workflow/ecc\rules
+[11:11:50]   filtered examples -> dev-workflow/ecc\examples
+[11:11:50]   files synced for ecc
+[11:11:50] BLOCKED: git add failed (sandbox .git DENY ACE).
+[11:11:50] ACTION: Run these commands outside sandbox:
+[11:11:50]   cd D:\workSpace\hoye-skills-main\skill-collection
+[11:11:50]   git add -A
+[11:11:50]   git commit -m "sync: update skills from upstream 2026-06-11"
+[11:11:50]   git push
+[11:11:50] === Skills sync finished ===

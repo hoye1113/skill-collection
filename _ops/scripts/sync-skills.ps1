@@ -173,10 +173,28 @@ if (-not $anySkillSynced) {
         $_ -notmatch '^[_ACDMR]+\s+_ops/'
     }
     if ($skillChanges) {
-        git add -A 2>&1 | Out-Null
-        $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
-        git commit --no-verify -m "sync: update skills from upstream $dateStr" 2>&1 | Out-Null
-        Log "Committed skill changes. Do NOT push."
+        $addResult = git add -A 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Log "BLOCKED: git add failed (sandbox .git DENY ACE)."
+            Log "ACTION: Run these commands outside sandbox:"
+            Log "  cd $ProjectRoot"
+            Log "  git add -A"
+            $dateStr = Get-Date -Format "yyyy-MM-dd"
+            Log "  git commit -m `"sync: update skills from upstream $dateStr`""
+            Log "  git push"
+        } else {
+            $dateStr = Get-Date -Format "yyyy-MM-dd HH:mm"
+            git commit --no-verify -m "sync: update skills from upstream $dateStr" 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Log "BLOCKED: git commit failed (sandbox .git DENY ACE)."
+                Log "ACTION: Run these commands outside sandbox:"
+                Log "  cd $ProjectRoot"
+                Log "  git commit -m `"sync: update skills from upstream $dateStr`""
+                Log "  git push"
+            } else {
+                Log "Committed skill changes. Do NOT push."
+            }
+        }
     } else {
         Log "Skill sync ran but produced no file changes. Skipping commit."
     }
