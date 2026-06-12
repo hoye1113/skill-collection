@@ -1,1 +1,23 @@
 timestamp	commit	skill	old_score	new_score	status	dimension	note	eval_mode
+2026-06-12T14:35	ad90287	darwin-results	-	-	baseline	-	results.tsv initialized	dry_run
+2026-06-12T14:40	ad90287	ljg-book	-	85.7	baseline	all	优质，全 8 维均衡高分（dim2/dim5/dim7 突出）	full_test
+2026-06-12T14:42	ad90287	ljg-card	-	87.9	baseline	all	优质，路由器+mode 文件架构清晰，dim6 完美（7 模板全可达）	full_test
+2026-06-12T14:44	ad90287	ljg-invest	-	83.7	baseline	all	优质，秩序创造机器框架独特，dim5 极具体（禁词清单+创生公式范式）	full_test
+2026-06-12T14:46	ad90287	ljg-learn	-	78.5	baseline	all	优质，8 维解剖强结构化，dim3 弱（边界覆盖）	full_test
+2026-06-12T14:48	ad90287	ljg-paper	-	87.3	baseline	all	优质，7 拍故事弧+博导审稿见预设强，frontmatter 偏杂（runtime 灰）	full_test
+2026-06-12T14:50	ad90287	ljg-paper-flow	-	66.9	baseline	all	需修，workflow 缺 checkpoint 和 fallback（dim3/dim4 弱）	full_test
+2026-06-12T14:52	ad90287	ljg-paper-river	-	82.3	baseline	all	优质，9 步倒读法清晰，5 层递归兜底诚实	full_test
+2026-06-12T14:54	ad90287	ljg-plain	-	78.5	baseline	all	优质，规定不能写+上限放开的哲学优雅，dim6 弱（无外部资源）	full_test
+2026-06-12T14:56	ad90287	ljg-present	-	79.6	baseline	all	优质，outline 渲染器哲学清晰，dim4 弱（缺 checkpoint）	full_test
+2026-06-12T14:58	ad90287	ljg-push	-	80.7	baseline	all	优质（功能完整）但 runtime_warn=4（4× ~/.claude/skills/ + localhost:31337 + ssh 硬编码）	full_test
+2026-06-12T15:00	ad90287	ljg-qa	-	74.8	baseline	all	需修（边界），三条铁律强但 404/network 失败 fallback 缺，runtime_warn=1（path 引用）	full_test
+2026-06-12T15:02	ad90287	ljg-rank	-	82.2	baseline	all	优质，九种形状反坍缩闸+硬 to vary 检验是亮点，dim6 弱（无外部资源）	full_test
+2026-06-12T15:04	ad90287	ljg-read	-	81.0	baseline	all	优质，三层翻译（信达雅）+ 三路碰撞 + L0-L3 评估完整，dim6 弱（无样例库）	full_test
+2026-06-12T15:06	ad90287	ljg-relationship	-	85.0	baseline	all	优质，结构+精神分析 dual-track 整合专业，dim6 弱（无 references）	full_test
+2026-06-12T15:08	ad90287	ljg-roundtable	-	85.8	baseline	all	优质，张力网络选人+ASCII 思考框架+指令菜单是亮点，dim6 偏弱	full_test
+2026-06-12T15:10	ad90287	ljg-skill-map	-	68.7	baseline	all	需修，runtime_warn=3（~/.claude/skills/ 强绑定+bash 脚本依赖）	full_test
+2026-06-12T15:12	ad90287	ljg-think	-	85.8	baseline	all	优质，6 层下坠抵达宇宙铁律质感动人，dim6 弱（无外部资源）	full_test
+2026-06-12T15:14	ad90287	ljg-travel	-	81.3	baseline	all	优质，6 维度研究提纲+org 文档+双卡管道清晰，dim4 弱（无中间验证）	full_test
+2026-06-12T15:16	ad90287	ljg-word	-	63.2	baseline	all	需修，dim4=3（零 checkpoint）+dim6=3（无外部资源），frontmatter↔body 不一致（md vs org-mode）	full_test
+2026-06-12T15:18	ad90287	ljg-word-flow	-	63.7	baseline	all	需修，workflow 缺 checkpoint 和 fallback（dim3=4/dim4=3）	full_test
+2026-06-12T15:20	ad90287	ljg-writes	-	79.0	baseline	all	优质，5 刀+三道磨+中文重写+org 输出全流程强，dim6 弱（无外部资源）	full_test
