@@ -16,6 +16,7 @@
 | [ljg-card](skills/ljg-card/) | **87.9** | 铸 — 内容转 PNG 视觉卡（7 模具） | Playwright（需 npm install） |
 | [ljg-invest](skills/ljg-invest/) | **83.7** | 投资分析 — 秩序创造机器判定 + 创生公式 | 纯 prompt |
 | [ljg-learn](skills/ljg-learn/) | **78.5** | 概念解剖 — 8 维切开 + 压缩 | 纯 prompt |
+| [ljg-paper](skills/ljg-paper/) | **90.1** | 论文正读 — 7 拍故事弧（主角/困境/旧路/转折/解法/结局/内核）| 纯 prompt |
 | [ljg-paper-river](skills/ljg-paper-river/) | **82.3** | 论文倒读法 — 5 层递归溯源 + 演化线 | 纯 prompt |
 | [ljg-plain](skills/ljg-plain/) | **78.5** | 白话 — 12 岁孩子能 grok | 纯 prompt |
 | [ljg-present](skills/ljg-present/) | **79.6** | 演讲铸造器 — org → slogan-style HTML | 纯 prompt |
@@ -32,7 +33,7 @@
 | Skill | Darwin 分 | 评级 | 原因 |
 |---|---|---|---|
 | ljg-push | 80.7 | 优质但 Runtime 🔴 | 4× `~/.claude/skills/` + localhost:31337 + ssh 硬编码 — 作者专属 CI 工具 |
-| ljg-paper | 87.3 | 优质但 Runtime 🔴 | 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 |
+| ljg-paper | 87.3 → **90.1** | 已合入（Phase 2 r1）| 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 → 删 + 内联反翻译腔自检表 |
 | ljg-qa | 74.8 | 需修 + Runtime 🔴 | 缺 404/network fallback，Workflows/Extract.md 路径耦合 |
 | ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + bash 脚本依赖 |
 | ljg-word-flow | 63.7 | 需修 | workflow 缺 checkpoint 和 fallback |
