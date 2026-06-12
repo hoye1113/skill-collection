@@ -1,0 +1,32 @@
+[06:01:12] === Skills sync started ===
+[06:01:12] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[06:01:12] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[06:01:13] SYNC agent-readiness : 713df26 -> 4baf9e4
+[06:01:13]   cloning agent-readiness into cache...
+[06:01:14]   cloned agent-readiness (shallow)
+[06:01:14]   whole -> code-quality/agent-readiness
+[06:01:14]   files synced for agent-readiness
+[06:01:15] SYNC impeccable : 1863a44 -> 92d6141
+[06:01:17]   whole -> frontend-ui/impeccable
+[06:01:17]   files synced for impeccable
+[06:01:18] OK   nuwa-skill : no remote changes (8ff461d)
+[06:01:18] OK   huashu-design : no remote changes (55ff7cc)
+[06:01:19] OK   superpowers : no remote changes (6fd4507)
+[06:01:20] OK   claude-skills-library : no remote changes (9fe27b5)
+[06:01:21] OK   web-design-skill : no remote changes (fbd6453)
+[06:01:22] OK   khazix-skills : no remote changes (9c315d7)
+[06:01:23] OK   sanyuan-skills : no remote changes (08b6572)
+[06:01:24] SYNC ecc : c888d2b -> 5b173d2
+[06:01:25]   filtered skills -> dev-workflow/ecc\skills
+[06:01:25]   filtered agents -> dev-workflow/ecc\agents
+[06:01:25]   filtered commands -> dev-workflow/ecc\commands
+[06:01:25]   filtered rules -> dev-workflow/ecc\rules
+[06:01:26]   filtered examples -> dev-workflow/ecc\examples
+[06:01:26]   files synced for ecc
+[06:01:26] BLOCKED: git add failed (sandbox .git DENY ACE).
+[06:01:26] ACTION: Run these commands outside sandbox:
+[06:01:26]   cd D:\workSpace\hoye-skills-main\skill-collection
+[06:01:26]   git add -A
+[06:01:26]   git commit -m "sync: update skills from upstream 2026-06-12"
+[06:01:26]   git push
+[06:01:26] === Skills sync finished ===
