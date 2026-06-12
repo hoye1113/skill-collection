@@ -28,6 +28,7 @@
 | [ljg-think](skills/ljg-think/) | **85.8** | 追本之箭 — 纵向深钻到不可再分 | 纯 prompt |
 | [ljg-travel](skills/ljg-travel/) | **81.3** | 旅行研究 — 6 维度研究 + org 文档 + 双卡 | Research + ljg-card |
 | [ljg-writes](skills/ljg-writes/) | **79.0** | 写作引擎 — 5 刀 + 三道磨 + 中文重写 | 纯 prompt |
+| [ljg-word](skills/ljg-word/) | **74.7** | 英文单词深度拆解 — 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）| 纯 prompt |
 
 **未收录**（共 6 个 — B/C/D 档，待修或 Runtime 强绑定）
 
@@ -36,10 +37,10 @@
 | ljg-push | 80.7 | 优质但 Runtime 🔴 | 4× `~/.claude/skills/` + localhost:31337 + ssh 硬编码 — 作者专属 CI 工具 |
 | ljg-paper | 87.3 → **90.1** | 已合入（Phase 2 r1）| 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 → 删 + 内联反翻译腔自检表 |
 | ljg-qa | 74.8 → **75.3** | 已合入（Phase 2 r2）| 删 voice notification 段（localhost:31337 curl 块），Runtime gate fail→pass；404 fallback 留待 R3+ |
+| ljg-word | 63.2 → **74.7** | 已合入（Phase 2 r3）| 补 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）；dim4 self-check 仍待 R4+ |
 | ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + bash 脚本依赖 |
 | ljg-word-flow | 63.7 | 需修 | workflow 缺 checkpoint 和 fallback |
 | ljg-paper-flow | 66.9 | 需修 | workflow 缺 checkpoint 和 fallback |
-| ljg-word | 63.2 | 需修 | dim4=3（零 checkpoint）+ frontmatter↔body 格式不一致 |
 
 ## 生态特性
 

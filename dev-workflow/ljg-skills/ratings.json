@@ -6,9 +6,27 @@
   "source_repo": "https://github.com/lijigang/ljg-skills.git",
   "source_commit": "HEAD (v1.17.28+)",
   "total_skills_evaluated": 20,
-  "total_skills_accepted": 16,
+  "total_skills_accepted": 17,
   "runtime_gate_policy": "strict (Darwin default)",
   "skills": [
+    {
+      "name": "ljg-word",
+      "tier": "A",
+      "score": 74.7,
+      "runtime": "pass",
+      "verdict": "优质 (Phase 2 r3 升级)",
+      "category": "writing",
+      "optimization_history": [
+        {
+          "round": 3,
+          "old_score": 63.2,
+          "new_score": 74.7,
+          "change": "+11.5",
+          "dimension": "dim3 边界条件",
+          "note": "插 7 类边界条件段（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）"
+        }
+      ]
+    },
     {
       "name": "ljg-qa",
       "tier": "A",
@@ -194,15 +212,6 @@
       "verdict": "需修",
       "category": "learning",
       "note": "workflow 缺 checkpoint 和 fallback"
-    },
-    {
-      "name": "ljg-word",
-      "tier": "C",
-      "score": 63.2,
-      "runtime": "pass",
-      "verdict": "需修",
-      "category": "writing",
-      "note": "dim4=3（零 checkpoint）+ frontmatter↔body 格式不一致"
     }
   ],
   "phase2_started_at": "2026-06-12"
