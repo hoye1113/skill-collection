@@ -20,6 +20,7 @@
 | [ljg-paper-river](skills/ljg-paper-river/) | **82.3** | 论文倒读法 — 5 层递归溯源 + 演化线 | 纯 prompt |
 | [ljg-plain](skills/ljg-plain/) | **78.5** | 白话 — 12 岁孩子能 grok | 纯 prompt |
 | [ljg-present](skills/ljg-present/) | **79.6** | 演讲铸造器 — org → slogan-style HTML | 纯 prompt |
+| [ljg-qa](skills/ljg-qa/) | **75.3** | 问答抽取 — 三条铁律（Q 切要害 / A 形式化 / Q 链方向）| 纯 prompt |
 | [ljg-rank](skills/ljg-rank/) | **82.2** | 降秩 — 找出领域不可再分生成器 | 纯 prompt |
 | [ljg-read](skills/ljg-read/) | **81.0** | 伴读 — 三层翻译 + 三路碰撞 + L0-L3 评估 | 纯 prompt |
 | [ljg-relationship](skills/ljg-relationship/) | **85.0** | 关系分析 — 五层结构 + 精神分析 dual-track | 纯 prompt |
@@ -34,7 +35,7 @@
 |---|---|---|---|
 | ljg-push | 80.7 | 优质但 Runtime 🔴 | 4× `~/.claude/skills/` + localhost:31337 + ssh 硬编码 — 作者专属 CI 工具 |
 | ljg-paper | 87.3 → **90.1** | 已合入（Phase 2 r1）| 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 → 删 + 内联反翻译腔自检表 |
-| ljg-qa | 74.8 | 需修 + Runtime 🔴 | 缺 404/network fallback，Workflows/Extract.md 路径耦合 |
+| ljg-qa | 74.8 → **75.3** | 已合入（Phase 2 r2）| 删 voice notification 段（localhost:31337 curl 块），Runtime gate fail→pass；404 fallback 留待 R3+ |
 | ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + bash 脚本依赖 |
 | ljg-word-flow | 63.7 | 需修 | workflow 缺 checkpoint 和 fallback |
 | ljg-paper-flow | 66.9 | 需修 | workflow 缺 checkpoint 和 fallback |

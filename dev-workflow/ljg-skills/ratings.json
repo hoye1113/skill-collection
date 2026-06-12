@@ -6,9 +6,27 @@
   "source_repo": "https://github.com/lijigang/ljg-skills.git",
   "source_commit": "HEAD (v1.17.28+)",
   "total_skills_evaluated": 20,
-  "total_skills_accepted": 15,
+  "total_skills_accepted": 16,
   "runtime_gate_policy": "strict (Darwin default)",
   "skills": [
+    {
+      "name": "ljg-qa",
+      "tier": "A",
+      "score": 75.3,
+      "runtime": "pass",
+      "verdict": "优质 (Phase 2 r2 升级)",
+      "category": "writing",
+      "optimization_history": [
+        {
+          "round": 2,
+          "old_score": 74.8,
+          "new_score": 75.3,
+          "change": "+0.5",
+          "dimension": "runtime + dim6",
+          "note": "删 voice notification 段（localhost:31337），Runtime gate 翻转；404 fallback 未补"
+        }
+      ]
+    },
     {
       "name": "ljg-paper",
       "tier": "A",
@@ -148,16 +166,6 @@
       "category": "skill-management",
       "runtime_red_lights": 4,
       "note": "4× ~/.claude/skills/ + localhost:31337 + ssh 硬编码 github"
-    },
-    {
-      "name": "ljg-qa",
-      "tier": "C",
-      "score": 74.8,
-      "runtime": "warn",
-      "verdict": "需修",
-      "category": "learning",
-      "runtime_red_lights": 1,
-      "note": "缺 404/network fallback"
     },
     {
       "name": "ljg-skill-map",
