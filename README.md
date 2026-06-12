@@ -37,6 +37,7 @@ all-skills/
 | | [html-to-pptx](dev-workflow/html-to-pptx/) | HTML 转 PowerPoint（文本/截图双模式 + 自动分割） |
 | | [swarm-coding](dev-workflow/swarm-coding/) | 多智能体编码协调（git worktree 隔离 / 设计优先 Web 应用） |
 | | [batch-download](dev-workflow/batch-download/) | 批量下载与数据采集编排（四阶段工作流） |
+| | [ljg-skills](dev-workflow/ljg-skills/) | 李继刚个人技能集合（14 个：内容创作 / 投资 / 关系 / 旅行 / 研究 / 写作，Darwin 评分 78-88） |
 | **frontend-ui** | [frontend-interface-design](frontend-ui/frontend-interface-design/) | 生产级前端界面构建与审查 |
 | | [react-best-practices](frontend-ui/react-best-practices/) | Vercel 出品的 React/Next.js 性能优化规则集 |
 | | [semi-ui-skills](frontend-ui/semi-ui-skills/) | Semi Design 企业级组件库使用指南 |
@@ -125,6 +126,7 @@ all-skills/
 | sanyuan-skills | 三元技能集 |
 | garden-skills | Garden 技能集 |
 | khazix-skills | 卡兹克技能集 |
+| **ljg-skills** | **李继刚个人技能集合（Darwin 评分 A 档 14 个）** |
 | superpowers | 开发方法论框架 |
 | nuwa-skill | 女娲造人 Skill |
 | impeccable | 产品级前端设计 Skill |
