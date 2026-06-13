@@ -191,15 +191,18 @@
         { "source": "skills/ljg-card",         "target": "dev-workflow/ljg-skills/skills/ljg-card" },
         { "source": "skills/ljg-invest",       "target": "dev-workflow/ljg-skills/skills/ljg-invest" },
         { "source": "skills/ljg-learn",        "target": "dev-workflow/ljg-skills/skills/ljg-learn" },
+        { "source": "skills/ljg-paper",        "target": "dev-workflow/ljg-skills/skills/ljg-paper" },
         { "source": "skills/ljg-paper-river",  "target": "dev-workflow/ljg-skills/skills/ljg-paper-river" },
         { "source": "skills/ljg-plain",        "target": "dev-workflow/ljg-skills/skills/ljg-plain" },
         { "source": "skills/ljg-present",      "target": "dev-workflow/ljg-skills/skills/ljg-present" },
+        { "source": "skills/ljg-qa",           "target": "dev-workflow/ljg-skills/skills/ljg-qa" },
         { "source": "skills/ljg-rank",         "target": "dev-workflow/ljg-skills/skills/ljg-rank" },
         { "source": "skills/ljg-read",         "target": "dev-workflow/ljg-skills/skills/ljg-read" },
         { "source": "skills/ljg-relationship", "target": "dev-workflow/ljg-skills/skills/ljg-relationship" },
         { "source": "skills/ljg-roundtable",   "target": "dev-workflow/ljg-skills/skills/ljg-roundtable" },
         { "source": "skills/ljg-think",        "target": "dev-workflow/ljg-skills/skills/ljg-think" },
         { "source": "skills/ljg-travel",       "target": "dev-workflow/ljg-skills/skills/ljg-travel" },
+        { "source": "skills/ljg-word",         "target": "dev-workflow/ljg-skills/skills/ljg-word" },
         { "source": "skills/ljg-writes",       "target": "dev-workflow/ljg-skills/skills/ljg-writes" }
       ]
     }
