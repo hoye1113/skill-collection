@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Darwin Phase 3 总览 · ljg-skills 优化战役</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #FAFAF5; font-family: 'Noto Sans SC', 'Inter', sans-serif; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+  .card { width: 1080px; min-height: 1200px; background: #FAFAF5; color: #1A1A1A; display: flex; flex-direction: column; }
+
+  /* Brand bar */
+  .brand-bar { background: #1A1A1A; padding: 32px 56px; display: flex; justify-content: space-between; align-items: center; }
+  .brand-name { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: 0.02em; }
+  .brand-name .dot { color: #E8590C; }
+  .brand-tag { font-size: 15px; color: #888; font-weight: 500; }
+
+  /* Hero */
+  .hero { padding: 48px 56px; background: linear-gradient(180deg, #FAFAF5 0%, #F5F0E8 100%); text-align: center; border-bottom: 1px solid #E8E0D4; }
+  .hero-tag { display: inline-block; background: #1A1A1A; color: #fff; padding: 6px 18px; border-radius: 100px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 20px; }
+  .hero h1 { font-size: 56px; font-weight: 900; line-height: 1.15; color: #1A1A1A; margin-bottom: 16px; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: #E8590C; }
+  .hero p { font-size: 18px; color: #666; font-weight: 500; line-height: 1.5; }
+
+  /* KPI grid */
+  .kpis { padding: 40px 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; background: #fff; }
+  .kpi { background: #F0EBE3; border-radius: 16px; padding: 24px; text-align: center; }
+  .kpi.hot { background: #FFF0E6; border: 2px solid rgba(232,89,12,0.2); }
+  .kpi-num { font-size: 48px; font-weight: 900; color: #1A1A1A; line-height: 1; font-family: 'Inter'; letter-spacing: -0.04em; margin-bottom: 8px; }
+  .kpi.hot .kpi-num { color: #E8590C; }
+  .kpi-label { font-size: 14px; color: #888; font-weight: 700; letter-spacing: 0.08em; }
+  .kpi-sub { font-size: 13px; color: #aaa; margin-top: 4px; font-weight: 500; }
+
+  /* 3 Rounds */
+  .rounds { padding: 48px 56px; background: #FAFAF5; }
+  .section-title { font-size: 28px; font-weight: 900; color: #1A1A1A; margin-bottom: 24px; letter-spacing: -0.01em; }
+  .section-sub { font-size: 15px; color: #999; font-weight: 500; margin-bottom: 32px; letter-spacing: 0.05em; }
+  .round { background: #fff; border: 1px solid #E8E0D4; border-radius: 16px; padding: 28px; margin-bottom: 16px; display: grid; grid-template-columns: 80px 1fr 200px; gap: 24px; align-items: center; }
+  .round-num { background: #1A1A1A; color: #fff; font-size: 36px; font-weight: 900; border-radius: 12px; padding: 20px 0; text-align: center; font-family: 'Inter'; }
+  .round-num.gold { background: linear-gradient(135deg, #E8590C 0%, #FF8A4C 100%); }
+  .round-body { }
+  .round-skill { font-size: 22px; font-weight: 800; color: #1A1A1A; margin-bottom: 6px; }
+  .round-change { font-size: 14px; color: #666; font-weight: 500; line-height: 1.5; }
+  .round-delta { text-align: right; }
+  .round-score { font-size: 32px; font-weight: 900; color: #1A1A1A; line-height: 1; font-family: 'Inter'; }
+  .round-score-old { font-size: 16px; color: #BBB; text-decoration: line-through; font-weight: 500; font-family: 'Inter'; }
+  .round-badge { display: inline-block; background: #E8590C; color: #fff; padding: 4px 12px; border-radius: 8px; font-size: 14px; font-weight: 800; margin-top: 6px; font-family: 'Inter'; }
+  .round-badge.small { background: rgba(43,138,62,0.1); color: #2B8A3E; }
+
+  /* Bar chart */
+  .chart-section { padding: 48px 56px; background: #fff; }
+  .bar-row { display: grid; grid-template-columns: 140px 1fr 80px; gap: 16px; align-items: center; margin-bottom: 12px; }
+  .bar-name { font-size: 15px; font-weight: 700; color: #1A1A1A; text-align: right; }
+  .bar-track { height: 32px; background: #F0EBE3; border-radius: 8px; position: relative; overflow: hidden; }
+  .bar-fill { position: absolute; left: 0; top: 0; height: 100%; background: linear-gradient(90deg, #1A1A1A 0%, #555 100%); border-radius: 8px; }
+  .bar-fill.gold { background: linear-gradient(90deg, #E8590C 0%, #FF8A4C 100%); }
+  .bar-val { font-size: 14px; font-weight: 800; color: #1A1A1A; font-family: 'Inter'; }
+  .bar-delta { font-size: 12px; font-weight: 700; color: #E8590C; margin-left: 4px; }
+
+  /* Footer */
+  .footer { margin-top: auto; background: #1A1A1A; padding: 32px 56px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-brand { font-size: 22px; font-weight: 800; color: #fff; }
+  .footer-brand .dot { color: #E8590C; }
+  .footer-slogan { font-size: 14px; color: #777; margin-top: 4px; }
+  .footer-url { font-size: 14px; color: #aaa; font-family: monospace; font-weight: 600; }
+  .footer-by { font-size: 13px; color: #666; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="brand-bar">
+    <div class="brand-name">Darwin<span class="dot">.</span>skill</div>
+    <div class="brand-tag">Phase 3 · 总览报告</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-tag">LJG-SKILLS 优化战役</div>
+    <h1>三轮棘轮，<span class="accent">100% keep</span></h1>
+    <p>2026-06-12 · 17 个 A 档 skill · 累计 +14.8 分 · 4 Runtime 红灯全翻转</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-num">3</div>
+      <div class="kpi-label">优化轮次</div>
+      <div class="kpi-sub">R1 / R2 / R3</div>
+    </div>
+    <div class="kpi hot">
+      <div class="kpi-num">+14.8</div>
+      <div class="kpi-label">累计升分</div>
+      <div class="kpi-sub">从 75.1 → 80.1 均值</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-num">100%</div>
+      <div class="kpi-label">Keep 率</div>
+      <div class="kpi-sub">0 回滚</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-num">3/3</div>
+      <div class="kpi-label">Runtime 翻转</div>
+      <div class="kpi-sub">🔴→🟢 全过</div>
+    </div>
+  </div>
+
+  <div class="rounds">
+    <div class="section-title">三轮战绩</div>
+    <div class="section-sub">PHASE 2 OPTIMIZATION ROUNDS</div>
+
+    <div class="round">
+      <div class="round-num">R1</div>
+      <div class="round-body">
+        <div class="round-skill">ljg-paper · 论文正读讲故事</div>
+        <div class="round-change">删 `~/.claude/PAI/...` 外部路径 + 内联 7 条反翻译腔自检信号词（被动句/是…的/长定语后置/进行+名词/在X上/动名词化/抽象集合名词）</div>
+      </div>
+      <div class="round-delta">
+        <div class="round-score-old">87.3</div>
+        <div class="round-score">90.1</div>
+        <div class="round-badge">+2.8</div>
+      </div>
+    </div>
+
+    <div class="round">
+      <div class="round-num">R2</div>
+      <div class="round-body">
+        <div class="round-skill">ljg-qa · 问答抽取</div>
+        <div class="round-change">删 voice notification 段（localhost:31337 curl 块）+ 同步修子文件 Workflows/Extract.md 同样污染</div>
+      </div>
+      <div class="round-delta">
+        <div class="round-score-old">74.8</div>
+        <div class="round-score">75.3</div>
+        <div class="round-badge small">+0.5</div>
+      </div>
+    </div>
+
+    <div class="round">
+      <div class="round-num gold">R3</div>
+      <div class="round-body">
+        <div class="round-skill">ljg-word · 英文单词深度拆解 · 单轮最大升分</div>
+        <div class="round-change">插 7 类边界条件段（多义词→WebSearch 查 Top 2-3 sense 逐一展开 / 复合词整体不拆字面 / 俚语诚实无词源 / 专有名词区分意图 / 虚词无独立语义 / 超长词拆词根 / 非英文自动转 ljg-plain）</div>
+      </div>
+      <div class="round-delta">
+        <div class="round-score-old">63.2</div>
+        <div class="round-score">74.7</div>
+        <div class="round-badge">+11.5</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <div class="section-title">分数变化</div>
+    <div class="section-sub">DARWIN 8-DIM WEIGHTED TOTAL</div>
+
+    <div class="bar-row">
+      <div class="bar-name">ljg-paper</div>
+      <div class="bar-track"><div class="bar-fill gold" style="width: 90.1%;"></div></div>
+      <div class="bar-val">90.1<span class="bar-delta">+2.8</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-name">ljg-qa</div>
+      <div class="bar-track"><div class="bar-fill gold" style="width: 75.3%;"></div></div>
+      <div class="bar-val">75.3<span class="bar-delta">+0.5</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-name">ljg-word</div>
+      <div class="bar-track"><div class="bar-fill gold" style="width: 74.7%;"></div></div>
+      <div class="bar-val">74.7<span class="bar-delta">+11.5</span></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-name">均值</div>
+      <div class="bar-track"><div class="bar-fill" style="width: 80.0%;"></div></div>
+      <div class="bar-val">80.0<span class="bar-delta">+4.9</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="footer-brand">Darwin<span class="dot">.</span>skill</div>
+      <div class="footer-slogan">像训练模型一样进化你的 Skills</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="footer-url">github.com/alchaincyf/darwin-skill</div>
+      <div class="footer-by">by 花叔 · 2026.06.12</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
