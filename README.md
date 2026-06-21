@@ -102,6 +102,7 @@ all-skills/
 | | [skill-review](skill-management/skill-review/) | Skill 质量审查与审计 |
 | | [nuwa-skill](skill-management/nuwa-skill/) | 女娲造人：深度调研→思维框架提炼→生成人物 Skill |
 | | [darwin-skill](skill-management/darwin-skill/) | 达尔文.skill：评估→改进→实测→保留或回滚，自主循环优化 |
+| | [luban](skill-management/luban/) | 鲁班打磨：五道工序全生命周期 Skill 打磨与发布就绪（验料→访行→过尺→慢刨→回炉） |
 | **agent** | [openclaw-agent-forge](agent/openclaw-agent-forge/) | OpenClaw/FlowyClaw Agent 工作空间生成与优化 |
 | | [agent-browser](agent/agent-browser/) | AI Agent 浏览器自动化 CLI（导航/表单/截图/抓取） |
 | | [claudability-analyzer](agent/claudability-analyzer/) | 分析各职业 Claude Code 自动化机会（6 维度 + PDF 报告） |
@@ -135,3 +136,4 @@ all-skills/
 | claude-skills-library | Claude Skills Library |
 | kimi-desktop | Kimi Desktop Daimon Skills |
 | qclaw | QClaw Skills |
+| **luban-skill** | **鲁班 Skill 打磨系统（五道工序全生命周期）** |

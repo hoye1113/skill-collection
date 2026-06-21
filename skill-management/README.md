@@ -13,6 +13,7 @@ Skill 生命周期管理类 Skills —— 覆盖创建、发现、审查、进�
 | [skill-review](skill-review/) | Skill 质量审查与审计：结构、描述、工作流、token 效率、反模式检测 | sanyuan-skills |
 | [nuwa-skill](nuwa-skill/) | 女娲造人：输入人名/主题→深度调研→思维框架提炼→生成可运行的人物 Skill | nuwa-skill |
 | [darwin-skill](darwin-skill/) | 达尔文.skill：评估→改进→测试→保留或回滚，自主优化 Skill 质量（Karpathy autoresearch 启发） | [alchaincyf/darwin-skill](https://github.com/alchaincyf/darwin-skill) |
+| [luban](luban/) | 鲁班打磨：五道工序（验料→访行→过尺→慢刨→回炉）全生命周期 Skill 打磨与发布就绪 | [LearnPrompt/luban-skill](https://github.com/LearnPrompt/luban-skill) |
 
 ## 使用场景
 

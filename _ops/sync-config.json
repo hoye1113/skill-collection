@@ -183,6 +183,14 @@
       "target": "dev-workflow/ecc"
     },
     {
+      "name": "luban-skill",
+      "remoteUrl": "https://github.com/LearnPrompt/luban-skill.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skills/luban", "target": "skill-management/luban" }
+      ]
+    },
+    {
       "name": "ljg-skills",
       "remoteUrl": "https://github.com/lijigang/ljg-skills.git",
       "strategy": "mapped",
