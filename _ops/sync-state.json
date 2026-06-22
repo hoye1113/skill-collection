@@ -1,13 +1,14 @@
 {
-  "nuwa-skill": "8ff461d4a1d562993ae27eb3802378351c87817f",
-  "huashu-design": "55ff7cc03e0817a39a7987a6331b7eef17faf40c",
-  "superpowers": "6fd4507659784c351abbd2bc264c7162cfd386dc",
-  "khazix-skills": "9c315d7a71776dae5139b3f717a53e89b7b835c1",
   "sanyuan-skills": "08b6572ef108f22d4e8a3ecf9182a4bbef097744",
-  "claude-skills-library": "9fe27b5e5d27560d33809918b4e7f7a5b89e8b5f",
   "web-design-skill": "fbd6453c984e2a150c9553efe3075e1f62338df8",
   "agent-readiness": "4baf9e491831d1e2b6c30436c157d174fde4f339",
-  "impeccable": "92d6141cdf61f9943dfc8e2e46870e54e46d8641",
-  "ecc": "5b173d2e6c11b976a0f13b2f59125e08956c1d47",
-  "ljg-skills": "7ff7cd6266c85f8fcae25b7406be14b263083eb3"
+  "impeccable": "609bbfbd5b8d4ac629267c13f06489eca8689cca",
+  "nuwa-skill": "f4c9bc3f8df2cc036f9bed47ac2fecf56c366555",
+  "huashu-design": "ec9ec0fff8a66a932c4049b200ea4c2b09f8d25b",
+  "superpowers": "896224c4b1879920ab573417e68fd51d2ccc9072",
+  "claude-skills-library": "cb81db38d3c0742976877be361ec0009fb11de3a",
+  "khazix-skills": "ff554365af3a57af5858749a57d7cc3230beec89",
+  "ecc": "71d22d0a77b7e0684f4e51cba03749b788993cdb",
+  "luban-skill": "89b1f0dd338345d036232e24046eabad5a64205c",
+  "ljg-skills": "2bcce7c72d14f83f60fe4bdf6460a24bab7f40ee"
 }

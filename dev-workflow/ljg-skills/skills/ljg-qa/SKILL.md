@@ -37,6 +37,23 @@ user_invocable: true
 
 Q 怎么提、A 怎么收口的具体模式见 `References/QuestionDesign.md`。
 
+## Voice Notification
+
+执行 workflow 时：
+
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running Extract in ljg-qa"}' \
+  > /dev/null 2>&1 &
+```
+
+输出文本：
+
+```
+Running **Extract** in **ljg-qa**...
+```
+
 ## 输出
 
 - 格式：org-mode（`*bold*`，禁 markdown 语法）

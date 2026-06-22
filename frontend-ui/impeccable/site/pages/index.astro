@@ -78,9 +78,9 @@ import '../styles/testimonials.css';
         <div class="hero-rebuild-logos" aria-label="AI coding harnesses Impeccable works with">
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Codex CLI"><img src="assets/openai-logo.png" alt="Codex CLI" width="20" height="20" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Claude Code"><img src="assets/claude-logo.png" alt="Claude Code" width="22" height="22" loading="lazy"></span>
+          <span class="hero-rebuild-logo has-tooltip" data-tooltip="GitHub Copilot"><img src="assets/github-copilot-logo.svg" alt="GitHub Copilot" width="20" height="20" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Cursor"><img src="assets/cursor-logo.png" alt="Cursor" width="22" height="22" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Gemini CLI"><img src="assets/gemini-logo.png" alt="Gemini CLI" width="20" height="20" loading="lazy"></span>
-          <span class="hero-rebuild-logo has-tooltip" data-tooltip="GitHub Copilot"><img src="assets/github-copilot-logo.svg" alt="GitHub Copilot" width="20" height="20" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Antigravity"><img src="assets/antigravity-logo.png" alt="Antigravity" width="20" height="20" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="OpenCode"><img src="assets/opencode-logo.png" alt="OpenCode" width="20" height="20" loading="lazy"></span>
           <span class="hero-rebuild-logo has-tooltip" data-tooltip="Pi"><img src="assets/pi-logo.svg" alt="Pi" width="20" height="20" loading="lazy"></span>
@@ -521,7 +521,7 @@ import '../styles/testimonials.css';
           <article class="ks-bento-tile ks-bento-tile--span-6" id="why-ci">
             <span class="ks-bento-num" data-color="patina">06</span>
             <h3 class="why-panel-title">Block slop before it ships.</h3>
-            <p class="why-panel-body">A detector you can wire into PR checks. 41 deterministic rules, no LLM, exit codes the build can read.</p>
+            <p class="why-panel-body">A detector you can wire into PR checks. 44 deterministic rules, no LLM, exit codes the build can read.</p>
               <div class="why-visual why-visual--ci">
                 <div class="why-ci-window">
                   <div class="why-ci-header">
@@ -622,8 +622,8 @@ import '../styles/testimonials.css';
           <span class="downloads-rebuild-cmd-label">Install</span>
           <div class="downloads-rebuild-cmd">
             <span class="downloads-rebuild-prompt" aria-hidden="true">$</span>
-            <code>npx impeccable skills install</code>
-            <button class="downloads-rebuild-copy" type="button" aria-label="Copy install command" data-copy="npx impeccable skills install">
+            <code>npx impeccable install</code>
+            <button class="downloads-rebuild-copy" type="button" aria-label="Copy install command" data-copy="npx impeccable install">
               <svg class="downloads-rebuild-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                 <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
@@ -658,8 +658,8 @@ import '../styles/testimonials.css';
           <span class="downloads-rebuild-cmd-label downloads-rebuild-cmd-label--update">Update</span>
           <div class="downloads-rebuild-cmd downloads-rebuild-cmd--update">
             <span class="downloads-rebuild-prompt" aria-hidden="true">$</span>
-            <code>npx impeccable skills update</code>
-            <button class="downloads-rebuild-copy" type="button" aria-label="Copy update command" data-copy="npx impeccable skills update">
+            <code>npx impeccable update</code>
+            <button class="downloads-rebuild-copy" type="button" aria-label="Copy update command" data-copy="npx impeccable update">
               <svg class="downloads-rebuild-copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                 <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
@@ -672,7 +672,7 @@ import '../styles/testimonials.css';
           </div>
         </div>
 
-        <p class="downloads-rebuild-note">Works with Cursor, Claude Code, GitHub Copilot, Gemini CLI, Codex CLI, and every other major AI coding harness. <code>install</code> sets up the build for your harness. Then run <code>/impeccable init</code> inside your AI tool so the skill can save your project context. <code>update</code> pulls the latest version. Run <code>npx impeccable skills check</code> to see if you're behind. Installed the Claude Code plugin? Update it from the <code>/plugin</code> menu instead.</p>
+        <p class="downloads-rebuild-note">Works with Cursor, Claude Code, GitHub Copilot, Gemini CLI, Codex CLI, and every other major AI coding harness. <code>install</code> sets up the build for your harness. Then run <code>/impeccable init</code> inside your AI tool so the skill can save your design context. <code>update</code> pulls the latest version. Run <code>npx impeccable check</code> to see if you're behind. Installed the Claude Code plugin? Update it from the <code>/plugin</code> menu instead.</p>
 
         <details class="downloads-rebuild-alts">
           <summary class="downloads-rebuild-alts-summary">
@@ -713,7 +713,7 @@ import '../styles/testimonials.css';
                 <span>Copy</span>
               </button>
             </div>
-            <span class="downloads-rebuild-alt-note">The general-purpose skills installer. For now it installs one shared build for all harnesses rather than the build compiled for yours. Prefer <code>npx impeccable skills install</code> above for the correct setup.</span>
+            <span class="downloads-rebuild-alt-note">The general-purpose skills installer. For now it installs one shared build for all harnesses rather than the build compiled for yours. Prefer <code>npx impeccable install</code> above for the correct setup.</span>
           </div>
         </details>
 
@@ -729,7 +729,7 @@ import '../styles/testimonials.css';
         </li>
         <li>
           <strong>CLI for CI</strong>
-          <span><code>npx impeccable detect src/</code> in a PR check. 41 deterministic rules. JSON output, exit codes for build gates.</span>
+          <span><code>npx impeccable detect src/</code> in a PR check. 44 deterministic rules. JSON output, exit codes for build gates.</span>
           <a href="https://www.npmjs.com/package/impeccable" target="_blank" rel="noopener">View on npm →</a>
         </li>
         <li>

@@ -154,6 +154,67 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('keeps the Steer pill from clipping its label or the global bar exit control', () => {
+    assert.match(
+      SOURCE,
+      /const PAGE_CHAT_COLLAPSED_W = '104px';/,
+      'collapsed Steer pill should reserve enough room for icon, "Steer", and voice button',
+    );
+    assert.match(
+      SOURCE,
+      /function pageChatExpandedWidth\(\)[\s\S]{0,520}?window\.innerWidth - 16 - nonChatWidth[\s\S]{0,220}?Math\.max\(pageChatCollapsedWidthPx\(\), Math\.min\(PAGE_CHAT_EXPANDED_MAX_W, available\)\)/,
+      'expanded Steer width should reserve viewport room for the rest of the global bar',
+    );
+    assert.match(
+      SOURCE,
+      /syncGlobalBarExpandedLabels\(false\);[\s\S]{0,80}?pageChatEl\.style\.width = pageChatExpandedWidth\(\);/,
+      'opening Steer should collapse inactive mode labels before measuring input width',
+    );
+    assert.match(
+      SOURCE,
+      /maxWidth: 'calc\(100vw - 16px\)'[\s\S]{0,80}?boxSizing: 'border-box'/,
+      'global bar should be constrained to the viewport instead of clipping the exit control offscreen',
+    );
+    assert.match(
+      SOURCE,
+      /globalBarEl = el\('div', \{[\s\S]{0,360}?width: 'max-content'/,
+      'fixed-position global bar must use max-content sizing before maxWidth clamps it, or narrow panes clip the exit button',
+    );
+    assert.match(
+      SOURCE,
+      /const inner = el\('div', \{[\s\S]{0,220}?flex: '0 0 auto'/,
+      'global bar inner controls must not flex-shrink and crop hover labels',
+    );
+    assert.match(
+      SOURCE,
+      /function makeIconBtn[\s\S]{0,360}?flex: '0 0 auto'[\s\S]{0,80}?minWidth: '30px'/,
+      'global bar icon buttons must keep stable hitboxes when Steer expands',
+    );
+    assert.match(
+      SOURCE,
+      /applyGlobalBarLabelState\(expandInactive, pageChatExpanded\)/,
+      'expanded Steer should force labels closed without shrinking the icons',
+    );
+  });
+
+  it('does not autofocus the steering chat while a page editable is focused', () => {
+    assert.match(
+      SOURCE,
+      /function isPageEditableElement\(el\) \{[\s\S]{0,160}?own\(el\)[\s\S]{0,160}?\^\(INPUT\|TEXTAREA\|SELECT\)\$[\s\S]{0,80}?el\.isContentEditable/,
+      'page-owned inputs, textareas, selects, and contenteditables must be recognized before steer focus recovery runs',
+    );
+    assert.match(
+      SOURCE,
+      /function isPageEditableActive\(\) \{[\s\S]{0,120}?activeElementDeep\(\)[\s\S]{0,120}?isPageEditableElement\(active\) && !isInlineEditActive\(active\)/,
+      'auto-focus recovery must check the deep active element instead of only host text selection',
+    );
+    assert.match(
+      SOURCE,
+      /function shouldSteerAutoFocus\(\) \{[\s\S]{0,160}?&& !isPageEditableActive\(\)/,
+      'steer chat auto-focus must back off while the page owns an editable caret',
+    );
+  });
+
   it('pins edit badge button metrics instead of inheriting host button chrome', () => {
     const start = SOURCE.indexOf('const calloutStyle = (color, borderColor) => ({');
     const end = SOURCE.indexOf('    });', start);
@@ -216,6 +277,44 @@ describe('live-browser.js regression guards', () => {
       SOURCE,
       /previousVisibleVariant[\s\S]{0,900}?savedVisibleVariant[\s\S]{0,500}?showVariantInDOM\(sessionId, visibleVariant\);/,
       'source reinjection should preserve the in-memory or saved visible variant instead of always showing variant 1',
+    );
+  });
+
+  it('suppresses scroll anchoring via a stylesheet rule, not inline html/body style', () => {
+    // The scroll lock disables the browser's scroll-anchoring on the scroll
+    // root so it can't fight our manual scroll correction. Doing that by
+    // mutating `document.documentElement.style` / `document.body.style`
+    // inline makes React 19 report a hydration mismatch on the next
+    // Fast-Refresh re-render: <html>/<body> are server-rendered by frameworks
+    // like Next.js App Router, so a client-only inline `style` the server HTML
+    // never emitted trips "a tree hydrated but some attributes ... didn't
+    // match." That surfaced as a console.error and failed the
+    // nextjs-app-router live-e2e fixture's expectConsoleClean probe. The fix
+    // injects a <style> rule with the same computed effect instead.
+    assert.doesNotMatch(
+      SOURCE,
+      /document\.documentElement\.style\.overflowAnchor\s*=/,
+      'event=live_browser.scroll_anchor_hydration actor=browser operation=start_scroll_lock risk=react19_hydration_mismatch_on_next_app_router expected=stylesheet_rule actual=inline_style_on_html',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /document\.body\.style\.overflowAnchor\s*=/,
+      'scroll lock must not mutate <body> inline overflowAnchor — it desyncs server/client hydration on SSR frameworks',
+    );
+    assert.match(
+      SOURCE,
+      /const SCROLL_ANCHOR_LOCK_ID = 'impeccable-scroll-anchor-lock';/,
+      'the anchor-suppression style needs a stable id constant so it can be created and removed by id',
+    );
+    assert.match(
+      SOURCE,
+      /document\.getElementById\(SCROLL_ANCHOR_LOCK_ID\);[\s\S]{0,400}?createElement\('style'\)[\s\S]{0,400}?overflow-anchor:none[\s\S]{0,400}?\(document\.head \|\| document\.documentElement\)\.appendChild/,
+      'the scroll lock must suppress scroll anchoring with an injected <style> rule keyed by SCROLL_ANCHOR_LOCK_ID',
+    );
+    assert.match(
+      SOURCE,
+      /scrollLockAbort\.signal\.addEventListener\('abort', \(\) => \{\s*document\.getElementById\(SCROLL_ANCHOR_LOCK_ID\)\?\.remove\(\);/,
+      'stopping the scroll lock must remove the injected anchor-suppression <style> so it never outlives the session',
     );
   });
 
@@ -345,6 +444,22 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('lets page editables keep Enter and arrow keydown events', () => {
+    const start = SOURCE.indexOf('function handleKeyDown(e)');
+    const pendingApplyStart = SOURCE.indexOf('if (pendingApplyInFlight)', start);
+    const guardSource = SOURCE.slice(start, pendingApplyStart);
+    assert.match(
+      guardSource,
+      /isPageEditableElement\(deepActive\) && !isInlineEditActive\(deepActive\)[\s\S]{0,40}?return;/,
+      'page-owned editables must short-circuit global key handling before variant navigation or accept handling',
+    );
+    assert.match(
+      guardSource,
+      /e\.target\.isContentEditable && isInlineEditActive\(e\.target\)/,
+      'impeccable inline edit rows must keep their existing Escape-cancel path',
+    );
+  });
+
   it('configure input Escape tears down annotation overlay before returning to picking', () => {
     // The configure prompt auto-focuses. While focused, the global keydown
     // handler bails on own() inputs, so this local Escape path must hide the
@@ -444,15 +559,37 @@ describe('live-browser.js regression guards', () => {
       /function syncPageInteractionCursor\(\)[\s\S]{0,420}?cursorForInsertAxis/,
       'insert picking cursor follows row/column axis',
     );
-    assert.match(
+    // The pick / insert cursor must be driven by an injected <style>, never by a
+    // class or inline style on <html>. <html>/<body> are server-rendered by
+    // frameworks like Next.js App Router, so a client-only attribute the server
+    // HTML never emitted trips React 19's "a tree hydrated but some attributes
+    // ... didn't match" on the next Fast-Refresh re-render — surfacing as a
+    // console.error that fails the nextjs-app-router live-e2e expectConsoleClean
+    // probe. Same fix shape as the scroll-anchor lock above.
+    assert.doesNotMatch(
       SOURCE,
-      /function ensurePickCursorStyle\(\)[\s\S]{0,420}?cursor: crosshair !important/,
-      'pick mode injects a crosshair cursor that wins over page pointer styles',
+      /document\.documentElement\.classList\.(?:add|remove|toggle)\(/,
+      'event=live_browser.pick_cursor_hydration actor=browser operation=sync_page_interaction_cursor risk=react19_hydration_mismatch_on_next_app_router expected=stylesheet_rule actual=class_on_html',
     );
     assert.match(
       SOURCE,
-      /document\.documentElement\.classList\.add\(PICK_CURSOR_CLASS\)/,
-      'pick mode toggles a document-level class for the crosshair cursor',
+      /const PICK_CURSOR_STYLE_ID = PREFIX \+ '-pick-cursor-style';/,
+      'the pick-cursor style needs a stable id constant so it can be created and removed by id',
+    );
+    assert.match(
+      SOURCE,
+      /function setPageInteractionCursor\(cursor\)[\s\S]{0,700}?cursor: ' \+ cursor \+ ' !important/,
+      'pick / insert cursor is applied through the injected <style> textContent, keyed by PICK_CURSOR_STYLE_ID',
+    );
+    assert.match(
+      SOURCE,
+      /cursor = 'crosshair'/,
+      'pick mode uses a crosshair cursor that wins over page pointer styles',
+    );
+    assert.match(
+      SOURCE,
+      /document\.getElementById\(PICK_CURSOR_STYLE_ID\)\?\.remove\(\)/,
+      'exiting live mode removes the injected pick-cursor <style> so it never outlives the session',
     );
     assert.match(SOURCE, /function hitSiblingInsertGap\(/, 'insert mode detects gaps between siblings');
     assert.match(SOURCE, /function resolveInsertHover\(/, 'insert hover resolves axis-aware boundaries');

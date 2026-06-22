@@ -1,0 +1,31 @@
+[10:25:10] === Skills sync started ===
+[10:25:10] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[10:25:10] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[10:25:11] OK   agent-readiness : no remote changes (4baf9e4)
+[10:25:13] OK   impeccable : no remote changes (92d6141)
+[10:25:14] OK   nuwa-skill : no remote changes (8ff461d)
+[10:25:15] OK   huashu-design : no remote changes (55ff7cc)
+[10:25:16] OK   superpowers : no remote changes (6fd4507)
+[10:25:17] OK   claude-skills-library : no remote changes (9fe27b5)
+[10:25:18] OK   web-design-skill : no remote changes (fbd6453)
+[10:25:19] OK   khazix-skills : no remote changes (9c315d7)
+[10:25:20] OK   sanyuan-skills : no remote changes (08b6572)
+[10:25:22] OK   ecc : no remote changes (5b173d2)
+[10:25:23] SYNC ljg-skills : 6b07ef2 -> 7ff7cd6
+[10:25:26]   mapped skills/ljg-book -> dev-workflow/ljg-skills/skills/ljg-book
+[10:25:26]   mapped skills/ljg-card -> dev-workflow/ljg-skills/skills/ljg-card
+[10:25:26]   mapped skills/ljg-invest -> dev-workflow/ljg-skills/skills/ljg-invest
+[10:25:26]   mapped skills/ljg-learn -> dev-workflow/ljg-skills/skills/ljg-learn
+[10:25:26]   mapped skills/ljg-paper-river -> dev-workflow/ljg-skills/skills/ljg-paper-river
+[10:25:26]   mapped skills/ljg-plain -> dev-workflow/ljg-skills/skills/ljg-plain
+[10:25:26]   mapped skills/ljg-present -> dev-workflow/ljg-skills/skills/ljg-present
+[10:25:26]   mapped skills/ljg-rank -> dev-workflow/ljg-skills/skills/ljg-rank
+[10:25:26]   mapped skills/ljg-read -> dev-workflow/ljg-skills/skills/ljg-read
+[10:25:27]   mapped skills/ljg-relationship -> dev-workflow/ljg-skills/skills/ljg-relationship
+[10:25:27]   mapped skills/ljg-roundtable -> dev-workflow/ljg-skills/skills/ljg-roundtable
+[10:25:27]   mapped skills/ljg-think -> dev-workflow/ljg-skills/skills/ljg-think
+[10:25:27]   mapped skills/ljg-travel -> dev-workflow/ljg-skills/skills/ljg-travel
+[10:25:27]   mapped skills/ljg-writes -> dev-workflow/ljg-skills/skills/ljg-writes
+[10:25:27]   files synced for ljg-skills
+[10:25:28] Committed skill changes. Do NOT push.
+[10:25:28] === Skills sync finished ===

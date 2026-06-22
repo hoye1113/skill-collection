@@ -2,6 +2,17 @@
 
 把一份信息抽成 Q-A 链。
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running Extract in ljg-qa"}' \
+  > /dev/null 2>&1 &
+```
+
+输出文本：`Running **Extract** in **ljg-qa**...`
+
 ## Step 1: 获取内容
 
 按输入类型走：
