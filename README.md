@@ -15,6 +15,7 @@ all-skills/
 ├── learning/           # 知识学习 — 阅读、知识库构建、自适应学习
 ├── business/           # 商业运营 — 投研金融、SaaS 定价、留存、转化
 ├── productivity/       # 效率工具 — 文档处理、邮件收发、数据导出
+├── product/            # 产品管理 — 发现、策略、OKR、roadmap、PM 简历（来自 phuryn/pm-skills, MIT）
 ├── skill-management/   # Skill 管理 — 创建、发现、进化
 ├── agent/              # Agent 相关 — 工作空间生成与优化
 └── maps/               # 任务地图 — 按目标组合 skill（见下方）
@@ -78,6 +79,9 @@ all-skills/
 | | [reddit-insights](research/reddit-insights/) | Reddit 语义搜索：用户痛点挖掘、利基市场发现、产品验证 |
 | | [jtbd-analyzer](research/jtbd-analyzer/) | Jobs-To-Be-Done 分析：功能/情感/社会三维动机框架 |
 | | [seo-audit](research/seo-audit/) | 全面 SEO 审计（技术 / 页面 / 内容 / 权威性） |
+| | [user-personas](research/user-personas/) | 用户画像提炼（来自 phuryn/pm-skills，3 personas + JTBD + pains/gains） |
+| | [market-sizing](research/market-sizing/) | 市场体量估算 TAM/SAM/SOM（自顶向下 + 自底向上） |
+| | [summarize-interview](research/summarize-interview/) | 客户访谈纪要 → JTBD + 满意度信号 + action items |
 | **learning** | [book-study](learning/book-study/) | 系统化阅读教练（精读/测试/复习） |
 | | [kb-retriever](learning/kb-retriever/) | 本地知识库检索与问答 |
 | | [sigma](learning/sigma/) | Bloom 2-Sigma 精通学习 AI 家教 |
@@ -95,6 +99,18 @@ all-skills/
 | | [docx](productivity/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
 | | [pdf](productivity/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
 | | [imap-smtp-email](productivity/imap-smtp-email/) | IMAP/SMTP 个人邮箱：6 平台支持、中文别名映射、反幻觉设计 |
+| **product** | [opportunity-solution-tree](product/opportunity-solution-tree/) | Teresa Torres OST 框架：outcome→opportunities→solutions→experiments |
+| | [identify-assumptions-new](product/identify-assumptions-new/) | 新产品 8 类风险假设识别（Value/Usability/Viability/Feasibility/GTM/Strategy/Team...） |
+| | [identify-assumptions-existing](product/identify-assumptions-existing/) | 已有产品 4 类风险假设识别 |
+| | [prioritize-assumptions](product/prioritize-assumptions/) | Impact × Risk 矩阵 + 实验建议排序 |
+| | [product-strategy](product/product-strategy/) | 9 段 Product Strategy Canvas（vision→defensibility） |
+| | [value-proposition](product/value-proposition/) | 6 部分 JTBD 价值主张画布（Who/Why/What before/How/What after/Alternatives） |
+| | [strategy-red-team](product/strategy-red-team/) | 对抗性假设压力测试：自反偏差机制 + 元认知章节（Darwin 86.9） |
+| | [pre-mortem](product/pre-mortem/) | 预失败分析：Tigers / Paper Tigers / Elephants 分类 |
+| | [brainstorm-okrs](product/brainstorm-okrs/) | 团队级 OKR 头脑风暴（与 strategy 对齐） |
+| | [outcome-roadmap](product/outcome-roadmap/) | 把 feature 列表转为 outcome-focused 路线图 |
+| | [metrics-dashboard](product/metrics-dashboard/) | North Star Metric + 输入指标 + 告警阈值设计 |
+| | [review-resume](product/review-resume/) | PM 简历评审（10 条最佳实践 + XYZ+S 公式 + weak/strong 对照） |
 | **skill-management** | [find-skills](skill-management/find-skills/) | 发现和安装 Agent Skills |
 | | [github-skills-main](skill-management/github-skills-main/) | GitHub 仓库转 Skill / Skill 管理与进化 |
 | | [skill-creator](skill-management/skill-creator/) | Skill 创建指南（6 步流程） |
@@ -137,3 +153,4 @@ all-skills/
 | kimi-desktop | Kimi Desktop Daimon Skills |
 | qclaw | QClaw Skills |
 | **luban-skill** | **鲁班 Skill 打磨系统（五道工序全生命周期）** |
+| **phuryn/pm-skills** | **PM 方法论合集（9 plugins / 68 skills，Darwin 精选 15 个，MIT 协议）** |

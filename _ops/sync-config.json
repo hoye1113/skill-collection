@@ -213,6 +213,28 @@
         { "source": "skills/ljg-word",         "target": "dev-workflow/ljg-skills/skills/ljg-word" },
         { "source": "skills/ljg-writes",       "target": "dev-workflow/ljg-skills/skills/ljg-writes" }
       ]
+    },
+    {
+      "name": "pm-skills",
+      "remoteUrl": "https://github.com/phuryn/pm-skills.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "pm-product-discovery/skills/opportunity-solution-tree",  "target": "product/opportunity-solution-tree" },
+        { "source": "pm-product-discovery/skills/identify-assumptions-new",    "target": "product/identify-assumptions-new" },
+        { "source": "pm-product-discovery/skills/identify-assumptions-existing","target": "product/identify-assumptions-existing" },
+        { "source": "pm-product-discovery/skills/prioritize-assumptions",      "target": "product/prioritize-assumptions" },
+        { "source": "pm-product-discovery/skills/metrics-dashboard",           "target": "product/metrics-dashboard" },
+        { "source": "pm-product-discovery/skills/summarize-interview",         "target": "research/summarize-interview" },
+        { "source": "pm-product-strategy/skills/product-strategy",             "target": "product/product-strategy" },
+        { "source": "pm-product-strategy/skills/value-proposition",            "target": "product/value-proposition" },
+        { "source": "pm-execution/skills/strategy-red-team",                   "target": "product/strategy-red-team" },
+        { "source": "pm-execution/skills/pre-mortem",                          "target": "product/pre-mortem" },
+        { "source": "pm-execution/skills/brainstorm-okrs",                     "target": "product/brainstorm-okrs" },
+        { "source": "pm-execution/skills/outcome-roadmap",                     "target": "product/outcome-roadmap" },
+        { "source": "pm-market-research/skills/user-personas",                 "target": "research/user-personas" },
+        { "source": "pm-market-research/skills/market-sizing",                 "target": "research/market-sizing" },
+        { "source": "pm-toolkit/skills/review-resume",                         "target": "product/review-resume" }
+      ]
     }
   ],
   "excludePatterns": [
