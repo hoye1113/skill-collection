@@ -15,6 +15,7 @@
 | [news-aggregator-skill](news-aggregator-skill/) | 28 信源综合新闻聚合（深度分析 + 关键词过滤） | openclaw-agent-store |
 | [aihot](aihot/) | AI HOT 中文 AI 资讯日报查询 | khazix-skills |
 | [presentation-architect](presentation-architect/) | 创意→逐页演示脚本，9 元素框架 | claude-skills-library |
+| [beautiful-article](beautiful-article/) | 任意素材 → 单文件 HTML 精美文章（10 文章类型 × 11 主题 profile，3 硬 checkpoint）| garden-skills |
 
 ## 使用场景
 
@@ -22,3 +23,4 @@
 - 创作跨平台广告文案并优化
 - 写公众号风格长文或综合新闻稿
 - 将创意转化为可演示的逐页脚本
+- 把 URL/PDF/DOCX/截图编辑成可分享的单文件网页文章

@@ -74,3 +74,30 @@
 [16:26:57] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
 [16:26:57] No skill updates this run. Skipping commit.
 [16:26:57] === Skills sync finished ===
+[16:28:02] === Skills sync started ===
+[16:28:02] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[16:28:02] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[16:28:05] OK   agent-readiness : no remote changes (4baf9e4)
+[16:28:07] OK   impeccable : no remote changes (5844c40)
+[16:28:08] OK   nuwa-skill : no remote changes (550a8e1)
+[16:28:09] OK   huashu-design : no remote changes (ec9ec0f)
+[16:28:10] OK   superpowers : no remote changes (f268f7c)
+[16:28:11] OK   claude-skills-library : no remote changes (cb81db3)
+[16:28:12] SYNC garden-skills : first run (fbd6453)
+[16:28:13] WARN garden-skills : pull failed, attempting rebase --abort
+[16:28:13]   re-cloning garden-skills...
+[16:28:18]   re-cloned garden-skills (shallow)
+[16:28:18]   mapped skills/beautiful-article -> writing/beautiful-article
+[16:28:18]   mapped skills/gpt-image-2 -> creative/gpt-image-2
+[16:28:18]   mapped skills/kb-retriever -> learning/kb-retriever
+[16:28:18]   mapped skills/web-design-engineer -> frontend-ui/web-design-engineer
+[16:28:18]   mapped skills/web-video-presentation -> creative/web-video-presentation
+[16:28:18]   files synced for garden-skills
+[16:28:19] OK   khazix-skills : no remote changes (ff55436)
+[16:28:20] OK   sanyuan-skills : no remote changes (08b6572)
+[16:28:21] OK   ecc : no remote changes (81af407)
+[16:28:23] OK   luban-skill : no remote changes (89b1f0d)
+[16:28:25] OK   ljg-skills : no remote changes (e131ff4)
+[16:28:27] OK   pm-skills : no remote changes (a0cd730)
+[16:28:27] Committed skill changes. Do NOT push.
+[16:28:27] === Skills sync finished ===

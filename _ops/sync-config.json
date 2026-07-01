@@ -8,6 +8,13 @@
       "target": "code-quality/agent-readiness"
     },
     {
+      "name": "darwin-skill",
+      "remoteUrl": "https://github.com/alchaincyf/darwin-skill.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "skill-management/darwin-skill"
+    },
+    {
       "name": "impeccable",
       "remoteUrl": "https://github.com/pbakaus/impeccable.git",
       "strategy": "whole",
