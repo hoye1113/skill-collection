@@ -16,6 +16,7 @@
 | [aihot](aihot/) | AI HOT 中文 AI 资讯日报查询 | khazix-skills |
 | [presentation-architect](presentation-architect/) | 创意→逐页演示脚本，9 元素框架 | claude-skills-library |
 | [beautiful-article](beautiful-article/) | 任意素材 → 单文件 HTML 精美文章（10 文章类型 × 11 主题 profile，3 硬 checkpoint）| garden-skills |
+| [concept-fable](concept-fable/) | 围绕 {concept} 写一则寓言完整解释它（≤1000 字、2-3 角色、不说破）+ 概念解析 + 2 个具体可答检验题 | hoye-custom |
 
 ## 使用场景
 
@@ -24,3 +25,4 @@
 - 写公众号风格长文或综合新闻稿
 - 将创意转化为可演示的逐页脚本
 - 把 URL/PDF/DOCX/截图编辑成可分享的单文件网页文章
+- **用寓言把抽象概念讲得让读者自己撞上**（沉没成本 / 幸存者偏差 / 拓扑学等）
