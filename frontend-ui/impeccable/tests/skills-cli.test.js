@@ -99,8 +99,7 @@ function createFakeUniversalBundle(root, providers = ['.claude', '.agents', '.cu
   if (providers.includes('.agents')) {
     mkdirSync(join(bundleRoot, '.codex'), { recursive: true });
     writeFileSync(join(bundleRoot, '.codex', 'hooks.json'), JSON.stringify({
-      description: 'fresh codex hook',
-      hooks: { PostToolUse: [{ matcher: 'apply_patch', hooks: [{ type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.agents/skills/impeccable/scripts/hook.mjs"' }] }] },
+      hooks: { PostToolUse: [{ matcher: 'apply_patch', hooks: [{ type: 'command', command: 'node ".agents/skills/impeccable/scripts/hook.mjs"' }] }] },
     }, null, 2));
   }
   return bundleRoot;
@@ -133,6 +132,84 @@ if (WANT_CLI_REMOTE_E2E) {
   } catch {}
 }
 const describeRemote = (WANT_CLI_REMOTE_E2E && bundleReachable) ? describe : describe.skip;
+
+describe('copyProviderSkills: symlink handling', () => {
+  test('preserves an external shared-skills symlink and writes through it (#295)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-295-ext-'));
+    const root = join(tmp, 'home');
+    const shared = join(tmp, 'shared');
+    mkdirSync(root, { recursive: true });
+    mkdirSync(join(shared, 'other-skill'), { recursive: true });
+    writeFileSync(join(shared, 'other-skill', 'SKILL.md'), '---\nname: other-skill\n---\n');
+    mkdirSync(join(root, '.claude'), { recursive: true });
+    symlinkSync(shared, join(root, '.claude', 'skills'), 'dir');
+
+    const bundle = createFakeUniversalBundle(tmp, ['.claude']);
+    copyProviderSkills(bundle, root, ['.claude']);
+
+    const skillsPath = join(root, '.claude', 'skills');
+    expect(lstatSync(skillsPath).isSymbolicLink()).toBe(true);
+    expect(realpathSync(skillsPath)).toBe(realpathSync(shared));
+    expect(existsSync(join(skillsPath, 'other-skill', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(shared, 'impeccable', 'SKILL.md'))).toBe(true);
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test('still converts an in-project cross-provider link to a real dir', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-295-inproj-'));
+    mkdirSync(join(tmp, '.agents', 'skills'), { recursive: true });
+    mkdirSync(join(tmp, '.claude'), { recursive: true });
+    symlinkSync('../.agents/skills', join(tmp, '.claude', 'skills'), 'dir');
+
+    const bundle = createFakeUniversalBundle(tmp, ['.claude']);
+    copyProviderSkills(bundle, tmp, ['.claude']);
+
+    const skillsPath = join(tmp, '.claude', 'skills');
+    expect(lstatSync(skillsPath).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(skillsPath, 'impeccable', 'SKILL.md'))).toBe(true);
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test('preserves external symlinks when two providers share one external dir (#295, multi-tool)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-295-multi-'));
+    const root = join(tmp, 'home');
+    const shared = join(tmp, 'shared');
+    mkdirSync(root, { recursive: true });
+    mkdirSync(join(shared, 'other-skill'), { recursive: true });
+    writeFileSync(join(shared, 'other-skill', 'SKILL.md'), '---\nname: other-skill\n---\n');
+    for (const provider of ['.claude', '.agents']) {
+      mkdirSync(join(root, provider), { recursive: true });
+      symlinkSync(shared, join(root, provider, 'skills'), 'dir');
+    }
+
+    const bundle = createFakeUniversalBundle(tmp, ['.claude', '.agents']);
+    copyProviderSkills(bundle, root, ['.claude', '.agents']);
+
+    for (const provider of ['.claude', '.agents']) {
+      const skillsPath = join(root, provider, 'skills');
+      expect(lstatSync(skillsPath).isSymbolicLink()).toBe(true);
+      expect(realpathSync(skillsPath)).toBe(realpathSync(shared));
+    }
+    expect(existsSync(join(shared, 'other-skill', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(shared, 'impeccable', 'SKILL.md'))).toBe(true);
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test('replaces a dangling in-project cross-provider link with a real dir', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-295-dangling-'));
+    // Link to another provider's in-project skills dir that does NOT exist yet.
+    mkdirSync(join(tmp, '.claude'), { recursive: true });
+    symlinkSync('../.agents/skills', join(tmp, '.claude', 'skills'), 'dir');
+
+    const bundle = createFakeUniversalBundle(tmp, ['.claude']);
+    copyProviderSkills(bundle, tmp, ['.claude']);
+
+    const skillsPath = join(tmp, '.claude', 'skills');
+    expect(lstatSync(skillsPath).isSymbolicLink()).toBe(false);
+    expect(existsSync(join(skillsPath, 'impeccable', 'SKILL.md'))).toBe(true);
+    rmSync(tmp, { recursive: true, force: true });
+  });
+});
 
 describe('skills install: already-installed detection', () => {
   test('detects impeccable sentinel and bails', () => {

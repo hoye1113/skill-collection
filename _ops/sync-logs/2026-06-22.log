@@ -1,0 +1,79 @@
+[15:17:33] === Skills sync started ===
+[15:17:33] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[15:17:33] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[15:17:34] OK   agent-readiness : no remote changes (4baf9e4)
+[15:17:35] SYNC impeccable : 92d6141 -> 609bbfb
+[15:17:38]   whole -> frontend-ui/impeccable
+[15:17:38]   files synced for impeccable
+[15:17:39] SYNC nuwa-skill : 8ff461d -> f4c9bc3
+[15:17:39]   cloning nuwa-skill into cache...
+[15:17:49]   cloned nuwa-skill (shallow)
+[15:17:49]   whole -> skill-management/nuwa-skill
+[15:17:49]   files synced for nuwa-skill
+[15:17:50] SYNC huashu-design : 55ff7cc -> ec9ec0f
+[15:17:50]   cloning huashu-design into cache...
+[15:17:59]   cloned huashu-design (shallow)
+[15:18:00]   whole -> frontend-ui/huashu-design
+[15:18:00]   files synced for huashu-design
+[15:18:00] SYNC superpowers : 6fd4507 -> 896224c
+[15:18:00]   cloning superpowers into cache...
+[15:18:03]   cloned superpowers (shallow)
+[15:18:03]   filtered skills -> dev-workflow/superpowers\skills
+[15:18:03]   files synced for superpowers
+[15:18:04] SYNC claude-skills-library : 9fe27b5 -> cb81db3
+[15:18:06]   mapped skills/cinematic-slides -> frontend-ui/cinematic-slides
+[15:18:06]   mapped skills/claudability-analyzer -> agent/claudability-analyzer
+[15:18:06]   mapped skills/deep-interview -> learning/deep-interview
+[15:18:06]   mapped skills/html-to-pdf -> dev-workflow/html-to-pdf
+[15:18:06]   mapped skills/html-to-pptx -> dev-workflow/html-to-pptx
+[15:18:06]   mapped skills/image-generation -> creative/image-generation
+[15:18:06]   mapped skills/kinetic-video-creator -> creative/kinetic-video-creator
+[15:18:06]   mapped skills/learn -> learning/learn
+[15:18:06]   mapped skills/music-generator -> creative/music-generator
+[15:18:06]   mapped skills/presentation-architect -> writing/presentation-architect
+[15:18:06]   mapped skills/reality-check -> code-quality/reality-check
+[15:18:06]   mapped skills/tutorial-creator -> creative/tutorial-creator
+[15:18:06]   files synced for claude-skills-library
+[15:18:07] OK   web-design-skill : no remote changes (fbd6453)
+[15:18:08] SYNC khazix-skills : 9c315d7 -> ff55436
+[15:18:08]   cloning khazix-skills into cache...
+[15:18:09]   cloned khazix-skills (shallow)
+[15:18:09]   mapped aihot -> writing/aihot
+[15:18:09]   mapped hv-analysis -> research/hv-analysis
+[15:18:09]   mapped khazix-writer -> writing/khazix-writer
+[15:18:09]   mapped neat-freak -> code-quality/neat-freak
+[15:18:09]   files synced for khazix-skills
+[15:18:10] OK   sanyuan-skills : no remote changes (08b6572)
+[15:18:11] SYNC ecc : 5b173d2 -> 71d22d0
+[15:18:16]   filtered skills -> dev-workflow/ecc\skills
+[15:18:16]   filtered agents -> dev-workflow/ecc\agents
+[15:18:16]   filtered commands -> dev-workflow/ecc\commands
+[15:18:16]   filtered rules -> dev-workflow/ecc\rules
+[15:18:16]   filtered examples -> dev-workflow/ecc\examples
+[15:18:16]   files synced for ecc
+[15:18:17] SYNC luban-skill : first run (89b1f0d)
+[15:18:17]   cloning luban-skill into cache...
+[15:18:18]   cloned luban-skill (shallow)
+[15:18:19]   mapped skills/luban -> skill-management/luban
+[15:18:19]   files synced for luban-skill
+[15:18:19] SYNC ljg-skills : 7ff7cd6 -> 2bcce7c
+[15:18:21]   mapped skills/ljg-book -> dev-workflow/ljg-skills/skills/ljg-book
+[15:18:21]   mapped skills/ljg-card -> dev-workflow/ljg-skills/skills/ljg-card
+[15:18:21]   mapped skills/ljg-invest -> dev-workflow/ljg-skills/skills/ljg-invest
+[15:18:21]   mapped skills/ljg-learn -> dev-workflow/ljg-skills/skills/ljg-learn
+[15:18:21]   mapped skills/ljg-paper -> dev-workflow/ljg-skills/skills/ljg-paper
+[15:18:21]   mapped skills/ljg-paper-river -> dev-workflow/ljg-skills/skills/ljg-paper-river
+[15:18:21]   mapped skills/ljg-plain -> dev-workflow/ljg-skills/skills/ljg-plain
+[15:18:21]   mapped skills/ljg-present -> dev-workflow/ljg-skills/skills/ljg-present
+[15:18:21]   mapped skills/ljg-qa -> dev-workflow/ljg-skills/skills/ljg-qa
+[15:18:21]   mapped skills/ljg-rank -> dev-workflow/ljg-skills/skills/ljg-rank
+[15:18:21]   mapped skills/ljg-read -> dev-workflow/ljg-skills/skills/ljg-read
+[15:18:21]   mapped skills/ljg-relationship -> dev-workflow/ljg-skills/skills/ljg-relationship
+[15:18:21]   mapped skills/ljg-roundtable -> dev-workflow/ljg-skills/skills/ljg-roundtable
+[15:18:21]   mapped skills/ljg-think -> dev-workflow/ljg-skills/skills/ljg-think
+[15:18:21]   mapped skills/ljg-travel -> dev-workflow/ljg-skills/skills/ljg-travel
+[15:18:21]   mapped skills/ljg-word -> dev-workflow/ljg-skills/skills/ljg-word
+[15:18:22]   mapped skills/ljg-writes -> dev-workflow/ljg-skills/skills/ljg-writes
+[15:18:22]   files synced for ljg-skills
+[15:18:26] Committed skill changes. Do NOT push.
+[15:18:26] === Skills sync finished ===
