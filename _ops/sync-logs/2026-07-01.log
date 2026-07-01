@@ -1,0 +1,76 @@
+[16:03:00] === Skills sync started ===
+[16:03:00] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[16:03:00] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[16:03:03] OK   agent-readiness : no remote changes (4baf9e4)
+[16:03:07] SYNC impeccable : 609bbfb -> 5844c40
+[16:03:12]   whole -> frontend-ui/impeccable
+[16:03:12]   files synced for impeccable
+[16:03:16] SYNC nuwa-skill : f4c9bc3 -> 550a8e1
+[16:03:18]   whole -> skill-management/nuwa-skill
+[16:03:18]   files synced for nuwa-skill
+[16:03:20] OK   huashu-design : no remote changes (ec9ec0f)
+[16:03:22] SYNC superpowers : 896224c -> f268f7c
+[16:03:24]   filtered skills -> dev-workflow/superpowers\skills
+[16:03:24]   files synced for superpowers
+[16:03:25] OK   claude-skills-library : no remote changes (cb81db3)
+[16:03:26] OK   web-design-skill : no remote changes (fbd6453)
+[16:03:28] OK   khazix-skills : no remote changes (ff55436)
+[16:03:29] OK   sanyuan-skills : no remote changes (08b6572)
+[16:03:30] SYNC ecc : 71d22d0 -> 81af407
+[16:03:32]   filtered skills -> dev-workflow/ecc\skills
+[16:03:32]   filtered agents -> dev-workflow/ecc\agents
+[16:03:32]   filtered commands -> dev-workflow/ecc\commands
+[16:03:32]   filtered rules -> dev-workflow/ecc\rules
+[16:03:32]   filtered examples -> dev-workflow/ecc\examples
+[16:03:32]   files synced for ecc
+[16:03:34] OK   luban-skill : no remote changes (89b1f0d)
+[16:03:35] SYNC ljg-skills : 2bcce7c -> e131ff4
+[16:03:37]   mapped skills/ljg-book -> dev-workflow/ljg-skills/skills/ljg-book
+[16:03:37]   mapped skills/ljg-card -> dev-workflow/ljg-skills/skills/ljg-card
+[16:03:37]   mapped skills/ljg-invest -> dev-workflow/ljg-skills/skills/ljg-invest
+[16:03:37]   mapped skills/ljg-learn -> dev-workflow/ljg-skills/skills/ljg-learn
+[16:03:37]   mapped skills/ljg-paper -> dev-workflow/ljg-skills/skills/ljg-paper
+[16:03:37]   mapped skills/ljg-paper-river -> dev-workflow/ljg-skills/skills/ljg-paper-river
+[16:03:37]   mapped skills/ljg-plain -> dev-workflow/ljg-skills/skills/ljg-plain
+[16:03:37]   mapped skills/ljg-present -> dev-workflow/ljg-skills/skills/ljg-present
+[16:03:37]   mapped skills/ljg-qa -> dev-workflow/ljg-skills/skills/ljg-qa
+[16:03:37]   mapped skills/ljg-rank -> dev-workflow/ljg-skills/skills/ljg-rank
+[16:03:38]   mapped skills/ljg-read -> dev-workflow/ljg-skills/skills/ljg-read
+[16:03:38]   mapped skills/ljg-relationship -> dev-workflow/ljg-skills/skills/ljg-relationship
+[16:03:38]   mapped skills/ljg-roundtable -> dev-workflow/ljg-skills/skills/ljg-roundtable
+[16:03:38]   mapped skills/ljg-think -> dev-workflow/ljg-skills/skills/ljg-think
+[16:03:38]   mapped skills/ljg-travel -> dev-workflow/ljg-skills/skills/ljg-travel
+[16:03:38]   mapped skills/ljg-word -> dev-workflow/ljg-skills/skills/ljg-word
+[16:03:38]   mapped skills/ljg-writes -> dev-workflow/ljg-skills/skills/ljg-writes
+[16:03:38]   files synced for ljg-skills
+[16:03:39] OK   pm-skills : no remote changes (a0cd730)
+[16:03:40] Committed skill changes. Do NOT push.
+[16:03:40] === Skills sync finished ===
+[16:05:32] === Skills sync started ===
+[16:05:32] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[16:05:32] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[16:05:34] OK   agent-readiness : no remote changes (4baf9e4)
+[16:05:37] OK   impeccable : no remote changes (5844c40)
+[16:05:39] OK   nuwa-skill : no remote changes (550a8e1)
+[16:05:42] OK   huashu-design : no remote changes (ec9ec0f)
+[16:05:47] OK   superpowers : no remote changes (f268f7c)
+[16:05:50] OK   claude-skills-library : no remote changes (cb81db3)
+[16:05:52] OK   web-design-skill : no remote changes (fbd6453)
+[16:05:55] OK   khazix-skills : no remote changes (ff55436)
+[16:05:59] OK   sanyuan-skills : no remote changes (08b6572)
+[16:06:01] OK   ecc : no remote changes (81af407)
+[16:06:02] OK   luban-skill : no remote changes (89b1f0d)
+[16:06:05] OK   ljg-skills : no remote changes (e131ff4)
+[16:06:07] OK   pm-skills : no remote changes (a0cd730)
+[16:06:07] No skill updates this run. Skipping commit.
+[16:06:07] === Skills sync finished ===
+[16:26:45] === Skills sync started ===
+[16:26:45] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[16:26:45] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[16:26:45] No skill updates this run. Skipping commit.
+[16:26:45] === Skills sync finished ===
+[16:26:57] === Skills sync started ===
+[16:26:57] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[16:26:57] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[16:26:57] No skill updates this run. Skipping commit.
+[16:26:57] === Skills sync finished ===

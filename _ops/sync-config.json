@@ -92,27 +92,16 @@
         }
       ]
     },
-    {
-      "name": "web-design-skill",
-      "remoteUrl": "https://github.com/ConardLi/web-design-skill.git",
+{
+      "name": "garden-skills",
+      "remoteUrl": "https://github.com/ConardLi/garden-skills.git",
       "strategy": "mapped",
       "mappings": [
-        {
-          "source": "skills/gpt-image-2",
-          "target": "creative/gpt-image-2"
-        },
-        {
-          "source": "skills/kb-retriever",
-          "target": "learning/kb-retriever"
-        },
-        {
-          "source": "skills/web-design-engineer",
-          "target": "frontend-ui/web-design-engineer"
-        },
-        {
-          "source": "skills/web-video-presentation",
-          "target": "creative/web-video-presentation"
-        }
+        { "source": "skills/beautiful-article",     "target": "writing/beautiful-article" },
+        { "source": "skills/gpt-image-2",           "target": "creative/gpt-image-2" },
+        { "source": "skills/kb-retriever",          "target": "learning/kb-retriever" },
+        { "source": "skills/web-design-engineer",   "target": "frontend-ui/web-design-engineer" },
+        { "source": "skills/web-video-presentation","target": "creative/web-video-presentation" }
       ]
     },
     {
@@ -199,6 +188,8 @@
         { "source": "skills/ljg-card",         "target": "dev-workflow/ljg-skills/skills/ljg-card" },
         { "source": "skills/ljg-invest",       "target": "dev-workflow/ljg-skills/skills/ljg-invest" },
         { "source": "skills/ljg-learn",        "target": "dev-workflow/ljg-skills/skills/ljg-learn" },
+        { "source": "skills/ljg-library",      "target": "dev-workflow/ljg-skills/skills/ljg-library" },
+        { "source": "skills/ljg-map",          "target": "dev-workflow/ljg-skills/skills/ljg-map" },
         { "source": "skills/ljg-paper",        "target": "dev-workflow/ljg-skills/skills/ljg-paper" },
         { "source": "skills/ljg-paper-river",  "target": "dev-workflow/ljg-skills/skills/ljg-paper-river" },
         { "source": "skills/ljg-plain",        "target": "dev-workflow/ljg-skills/skills/ljg-plain" },

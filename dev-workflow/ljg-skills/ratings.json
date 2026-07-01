@@ -186,6 +186,28 @@
       "note": "4× ~/.claude/skills/ + localhost:31337 + ssh 硬编码 github"
     },
     {
+      "name": "ljg-library",
+      "tier": "B",
+      "score": 85.4,
+      "runtime": "fail",
+      "verdict": "优质但 Runtime 强绑定",
+      "category": "creative",
+      "runtime_red_lights": 4,
+      "evaluated_at": "2026-07-01",
+      "note": "硬依赖 ~/.claude/skills/weread/ + ~/.claude/skills/ljg-card/ + feynman-eli5 skill + marswave API；图解用 AI 生图（吉田诚治风格）"
+    },
+    {
+      "name": "ljg-map",
+      "tier": "B",
+      "score": 83.2,
+      "runtime": "fail",
+      "verdict": "优质但 Runtime 强绑定",
+      "category": "research",
+      "runtime_red_lights": 4,
+      "evaluated_at": "2026-07-01",
+      "note": "硬依赖 ~/.claude/skills/ljg-card/ + Research/web-access skill + marswave API；图用 AI 生图（动森 / cyber 风格）"
+    },
+    {
       "name": "ljg-skill-map",
       "tier": "C",
       "score": 68.7,

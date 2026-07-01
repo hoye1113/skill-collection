@@ -97,6 +97,30 @@ ljg-push → 拆出"通用模式检测+双分支推送约定"作为通用 skill�
            runtime-specific 部分（voice notification / ssh 推送）移除
 ```
 
+### Phase 3 增量评估（2026-07-01）
+
+上游新增 2 个 skill，重新评估：
+
+**ljg-library**（v3.2.0）— 取景框借书卡
+- 结构分：dim1=9 / dim2=9 / dim3=9 / dim4=9 / dim5=10 / dim6=7 → **53/60**
+- 实测分：dim7=8 / dim8=8 → 估 **16-18/20**
+- 总分：**85.4**（优质）
+- Runtime：🔴 4 红灯（weread/ljg-card/feynman-eli5/marswave）
+- 评级：**B 档（优质但 Runtime 强绑定）**
+- 升级路径：内联 weread API + 嵌入 feynman-eli5 方法论段
+
+**ljg-map**（v2.0.0）— 生态地形图卡
+- 结构分：dim1=9 / dim2=9 / dim3=9 / dim4=9 / dim5=10 / dim6=7 → **53/60**
+- 实测分：dim7=8 / dim8=8 → 估 **15-17/20**
+- 总分：**83.2**（优质）
+- Runtime：🔴 4 红灯（ljg-card/Research/marswave + web-access）
+- 评级：**B 档（优质但 Runtime 强绑定）**
+- 升级路径：内联 Research 扇出 + 提供 Research skill 接口文档
+
+**Phase 3 决策**：两个 skill 同属 ljg 视觉铸卡家族（与 ljg-card 同源 house style），
+质量分均 83+，但均 **4 红灯** 远超 ljg-push（4 红灯 B 档先例）。
+当前决定：**B 档留档观察**，不进入 A 档生产推荐。Phase 4 走 Runtime 解耦升级。
+
 ### C 档：修后再合入（5 个）
 
 | Skill | 必修项 | 估分 |

@@ -1,6 +1,5 @@
 {
     "sanyuan-skills":  "08b6572ef108f22d4e8a3ecf9182a4bbef097744",
-    "web-design-skill":  "fbd6453c984e2a150c9553efe3075e1f62338df8",
     "agent-readiness":  "4baf9e491831d1e2b6c30436c157d174fde4f339",
     "huashu-design":  "ec9ec0fff8a66a932c4049b200ea4c2b09f8d25b",
     "claude-skills-library":  "cb81db38d3c0742976877be361ec0009fb11de3a",
@@ -11,5 +10,6 @@
     "nuwa-skill":  "550a8e19d2ef007e0b20d463e0d1733059ce1c6c",
     "superpowers":  "f268f7c953744036f0fa7e9d4b73535c04e57cb8",
     "ecc":  "81af40761939056ab3dc54732fd4f562a27309d0",
-    "ljg-skills":  "e131ff4795e3af73e3fe3a81c81d61aed75b7682"
+    "ljg-skills":  "e131ff4795e3af73e3fe3a81c81d61aed75b7682",
+    "garden-skills":  "fbd6453c984e2a150c9553efe3075e1f62338df8"
 }

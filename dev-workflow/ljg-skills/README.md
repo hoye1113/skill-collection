@@ -30,15 +30,17 @@
 | [ljg-writes](skills/ljg-writes/) | **79.0** | 写作引擎 — 5 刀 + 三道磨 + 中文重写 | 纯 prompt |
 | [ljg-word](skills/ljg-word/) | **74.7** | 英文单词深度拆解 — 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）| 纯 prompt |
 
-**未收录**（共 6 个 — B/C/D 档，待修或 Runtime 强绑定）
+**未收录**（共 8 个 — B/C/D 档，待修或 Runtime 强绑定）
 
 | Skill | Darwin 分 | 评级 | 原因 |
 |---|---|---|---|
 | ljg-push | 80.7 | 优质但 Runtime 🔴 | 4× `~/.claude/skills/` + localhost:31337 + ssh 硬编码 — 作者专属 CI 工具 |
+| ljg-library | **85.4** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 weread / ljg-card / feynman-eli5 skill + marswave API；图解 AI 生图（吉田诚治风格）；Phase 3 r1 待修 |
+| ljg-map | **83.2** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 ljg-card + Research/web-access + marswave API；图 AI 生图（动森/cyber）；Phase 3 r2 待修 |
 | ljg-paper | 87.3 → **90.1** | 已合入（Phase 2 r1）| 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 → 删 + 内联反翻译腔自检表 |
 | ljg-qa | 74.8 → **75.3** | 已合入（Phase 2 r2）| 删 voice notification 段（localhost:31337 curl 块），Runtime gate fail→pass；404 fallback 留待 R3+ |
 | ljg-word | 63.2 → **74.7** | 已合入（Phase 2 r3）| 补 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）；dim4 self-check 仍待 R4+ |
-| ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + bash 脚本依赖 |
+| ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + `scripts/scan.sh` shell 依赖 |
 | ljg-word-flow | 63.7 | 需修 | workflow 缺 checkpoint 和 fallback |
 | ljg-paper-flow | 66.9 | 需修 | workflow 缺 checkpoint 和 fallback |
 
@@ -93,7 +95,35 @@ cd ~/.claude/skills/ljg-card && npm install && npx playwright install chromium
 }
 ```
 
-跑 sync 脚本即可拉取上游更新（仅 A 档 14 个，B/C/D 档被映射过滤）。
+跑 sync 脚本即可拉取上游更新（当前 17 个 mappings，含 14 A 档 + 3 B 档）。
+
+### 上次同步
+
+- **日期**：2026-07-01
+- **上游 commit**：`e131ff4`（v1.17.43）
+- **本地 commit**：`2bcce7c` → `e131ff4`（13 commits ahead）
+- **新增**：`ljg-library`（B 档 85.4）、`ljg-map`（B 档 83.2）
+- **更新**：`ljg-card`（v1.17.37）、`ljg-book` 简介（README f(x) 框架）
+
+### Phase 3 评估（ljg-library / ljg-map）
+
+两个新 skill 同属 ljg 视觉铸卡家族（与 ljg-card 同源 house style + 嵌入 AI 生图），
+质量分均 83+，但均 **Runtime fail**（4 红灯 × 2 = 8 个硬依赖）：
+
+| 依赖 | ljg-library | ljg-map | 现状 |
+|---|---|---|---|
+| `~/.claude/skills/ljg-card/assets/capture.js` | ✓ | ✓ | 已在 A 档，安装 ljg-card 后满足 |
+| `~/.claude/skills/weread/search.md` | ✓ | — | **未入库**（非 ljg skill）|
+| `feynman-eli5` skill | ✓ | — | **未入库**（ljg 生态私有 skill）|
+| `Research` / `web-access` skill | — | ✓ | **未入库**（ljg 生态私有 skill）|
+| `marswave` API | ✓ | ✓ | 第三方付费 API，需用户自配 key |
+
+**Phase 3 升级路径**：
+- r1 — 把 weread 调用内联为 API 模板（参考 ljg-paper 修 PAI 路径的策略）
+- r2 — 把 feynman-eli5 调用内联为费曼讲解方法论段
+- r3 — ljg-map 同 r1+r2，移除 Research 硬依赖
+
+短期建议：**不向生产推荐**，作为 ljg 生态视觉铸卡的演进参考存档。
 
 ## 设计哲学摘录（来自各 skill）
 
