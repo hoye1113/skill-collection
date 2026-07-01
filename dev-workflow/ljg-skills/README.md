@@ -8,7 +8,7 @@
 
 ## 收录情况
 
-**14 个 skills**（A 档 — 优质 + 无 Runtime 红灯）
+**15 个 skills**（A 档 — 优质 + 无 Runtime 红灯）
 
 | Skill | Darwin 分 | 用途 | 依赖 |
 |---|---|---|---|
@@ -16,11 +16,9 @@
 | [ljg-card](skills/ljg-card/) | **87.9** | 铸 — 内容转 PNG 视觉卡（7 模具） | Playwright（需 npm install） |
 | [ljg-invest](skills/ljg-invest/) | **83.7** | 投资分析 — 秩序创造机器判定 + 创生公式 | 纯 prompt |
 | [ljg-learn](skills/ljg-learn/) | **78.5** | 概念解剖 — 8 维切开 + 压缩 | 纯 prompt |
-| [ljg-paper](skills/ljg-paper/) | **90.1** | 论文正读 — 7 拍故事弧（主角/困境/旧路/转折/解法/结局/内核）| 纯 prompt |
 | [ljg-paper-river](skills/ljg-paper-river/) | **82.3** | 论文倒读法 — 5 层递归溯源 + 演化线 | 纯 prompt |
 | [ljg-plain](skills/ljg-plain/) | **78.5** | 白话 — 12 岁孩子能 grok | 纯 prompt |
 | [ljg-present](skills/ljg-present/) | **79.6** | 演讲铸造器 — org → slogan-style HTML | 纯 prompt |
-| [ljg-qa](skills/ljg-qa/) | **75.3** | 问答抽取 — 三条铁律（Q 切要害 / A 形式化 / Q 链方向）| 纯 prompt |
 | [ljg-rank](skills/ljg-rank/) | **82.2** | 降秩 — 找出领域不可再分生成器 | 纯 prompt |
 | [ljg-read](skills/ljg-read/) | **81.0** | 伴读 — 三层翻译 + 三路碰撞 + L0-L3 评估 | 纯 prompt |
 | [ljg-relationship](skills/ljg-relationship/) | **85.0** | 关系分析 — 五层结构 + 精神分析 dual-track | 纯 prompt |
@@ -28,18 +26,17 @@
 | [ljg-think](skills/ljg-think/) | **85.8** | 追本之箭 — 纵向深钻到不可再分 | 纯 prompt |
 | [ljg-travel](skills/ljg-travel/) | **81.3** | 旅行研究 — 6 维度研究 + org 文档 + 双卡 | Research + ljg-card |
 | [ljg-writes](skills/ljg-writes/) | **79.0** | 写作引擎 — 5 刀 + 三道磨 + 中文重写 | 纯 prompt |
-| [ljg-word](skills/ljg-word/) | **74.7** | 英文单词深度拆解 — 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）| 纯 prompt |
+| [ljg-word](skills/ljg-word/) | **74.7** | 英文单词深度拆解 — 7 类边界条件 | 纯 prompt |
 
-**未收录**（共 8 个 — B/C/D 档，待修或 Runtime 强绑定）
+**未收录**（共 8 个 — B/C 档，Runtime 红灯或待修）
 
 | Skill | Darwin 分 | 评级 | 原因 |
 |---|---|---|---|
 | ljg-push | 80.7 | 优质但 Runtime 🔴 | 4× `~/.claude/skills/` + localhost:31337 + ssh 硬编码 — 作者专属 CI 工具 |
-| ljg-library | **85.4** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 weread / ljg-card / feynman-eli5 skill + marswave API；图解 AI 生图（吉田诚治风格）；Phase 3 r1 待修 |
-| ljg-map | **83.2** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 ljg-card + Research/web-access + marswave API；图 AI 生图（动森/cyber）；Phase 3 r2 待修 |
-| ljg-paper | 87.3 → **90.1** | 已合入（Phase 2 r1）| 引用 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径 → 删 + 内联反翻译腔自检表 |
-| ljg-qa | 74.8 → **75.3** | 已合入（Phase 2 r2）| 删 voice notification 段（localhost:31337 curl 块），Runtime gate fail→pass；404 fallback 留待 R3+ |
-| ljg-word | 63.2 → **74.7** | 已合入（Phase 2 r3）| 补 7 类边界条件（多义词/复合词/俚语/专有名词/虚词/超长词/非英文）；dim4 self-check 仍待 R4+ |
+| ljg-library | **85.4** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 weread / ljg-card / feynman-eli5 skill + marswave API |
+| ljg-map | **83.2** | 优质但 Runtime 🔴（4 红灯）| 硬依赖 ljg-card + Research/web-access + marswave API |
+| ljg-paper | 87.3 | 需修 + Runtime 🔴 | `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径未删 |
+| ljg-qa | 74.8 | 需修 + Runtime 🔴 | localhost:31337 voice notification 段未删 |
 | ljg-skill-map | 68.7 | 需修 + Runtime 🔴 | 强 `~/.claude/skills/` 绑定 + `scripts/scan.sh` shell 依赖 |
 | ljg-word-flow | 63.7 | 需修 | workflow 缺 checkpoint 和 fallback |
 | ljg-paper-flow | 66.9 | 需修 | workflow 缺 checkpoint 和 fallback |
@@ -69,8 +66,8 @@
 # 复制单个 skill 到 ~/.claude/skills/
 cp -r skills/ljg-book ~/.claude/skills/
 
-# 或复制全部 14 个
-cp -r skills/ljg-* ~/.claude/skills/
+# 或复制全部 15 个 A 档
+cp -r skills/ljg-book skills/ljg-card skills/ljg-invest skills/ljg-learn skills/ljg-paper-river skills/ljg-plain skills/ljg-present skills/ljg-rank skills/ljg-read skills/ljg-relationship skills/ljg-roundtable skills/ljg-think skills/ljg-travel skills/ljg-writes skills/ljg-word ~/.claude/skills/
 ```
 
 注意：**ljg-card 需额外装依赖**：
@@ -95,7 +92,7 @@ cd ~/.claude/skills/ljg-card && npm install && npx playwright install chromium
 }
 ```
 
-跑 sync 脚本即可拉取上游更新（当前 17 个 mappings，含 14 A 档 + 3 B 档）。
+跑 sync 脚本即可拉取上游更新（当前 17 个 mappings，含 15 A 档 + 2 B 档 + 2 C 档待修）。
 
 ### 上次同步
 

@@ -78,11 +78,11 @@
 
 ## 合入建议（最终）
 
-### A 档：直接合入（13 个，🟢 优质 + 无 runtime 红灯）
+### A 档：直接合入（15 个，🟢 优质 + 无 runtime 红灯）
 
 ```
-learning/   → ljg-book, ljg-learn, ljg-paper, ljg-paper-river, ljg-read
-writing/    → ljg-plain, ljg-writes
+learning/   → ljg-book, ljg-learn, ljg-paper-river, ljg-read
+writing/    → ljg-plain, ljg-writes, ljg-word
 research/   → ljg-rank, ljg-think
 creative/   → ljg-card, ljg-present
 business/   → ljg-invest
@@ -121,15 +121,15 @@ ljg-push → 拆出"通用模式检测+双分支推送约定"作为通用 skill�
 质量分均 83+，但均 **4 红灯** 远超 ljg-push（4 红灯 B 档先例）。
 当前决定：**B 档留档观察**，不进入 A 档生产推荐。Phase 4 走 Runtime 解耦升级。
 
-### C 档：修后再合入（5 个）
+### C 档：修后再合入（4 个）
 
 | Skill | 必修项 | 估分 |
 |---|---|---|
+| ljg-paper | 删 `~/.claude/PAI/USER/AI_WRITING_PATTERNS.md` 外部路径引用 | 估 85+ |
+| ljg-qa | 删 localhost:31337 voice notification 段 + 加 URL 404 fallback | 估 78+ |
+| ljg-skill-map | runtime 解耦（多路径扫描 + JS 替代 bash） | 估 75+ |
 | ljg-paper-flow | 加 dim4 checkpoint + subagent 失败兜底 | 估 75+ |
 | ljg-word-flow | 加 dim4 checkpoint + 文件冲突处理 | 估 70+ |
-| ljg-qa | 加 URL 404/network 失败 fallback | 估 78+ |
-| ljg-skill-map | runtime 解耦（多路径扫描 + JS 替代 bash） | 估 75+ |
-| ljg-word | 补 checkpoint + 统一 frontmatter/body 格式 | 估 70+ |
 
 ### D 档：不建议合入（1 个）
 
