@@ -7,7 +7,8 @@ description: >
   and all other writing genres. Routes to genre-specific sub-skills for execution.
   Do NOT use for: industry reports, market analysis, policy briefs, consulting
   deliverables, white papers, technical reports (use report-writing); academic
-  papers, surveys, empirical research, literature reviews (use paper-writing).
+  papers, surveys, empirical research, literature reviews (use paper-writing);
+  explaining an abstract concept via short fable/story (use concept-fable).
 ---
 
 # General Writing

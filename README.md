@@ -68,6 +68,8 @@ all-skills/
 | | [news-aggregator-skill](writing/news-aggregator-skill/) | 28 信源综合新闻聚合（深度分析 + 关键词过滤） |
 | | [aihot](writing/aihot/) | AI HOT 中文 AI 资讯日报查询 |
 | | [presentation-architect](writing/presentation-architect/) | 创意→逐页演示脚本（9 元素框架） |
+| | [beautiful-article](writing/beautiful-article/) | 任意素材 → 单文件 HTML 精美文章（10 文章类型 × 11 主题 profile，3 硬 checkpoint） |
+| | [concept-fable](writing/concept-fable/) | 围绕 {concept} 写一则寓言完整解释它（≤1000 字、2-3 角色、不说破）+ 概念解析 + 2 个具体可答检验题 |
 | **research** | [hv-analysis](research/hv-analysis/) | 横纵分析法深度研究：纵向时间线 + 横向竞品对比，产出 PDF 报告 |
 | | [prompts](research/prompts/) | 横纵分析法纯文本提示词模板，可在任意 Deep Research 模型中使用 |
 | | [market-research](research/market-research/) | 市场研究：TAM/SAM/SOM 分层、4 种研究模式、证据质量分级 |
@@ -134,6 +136,7 @@ all-skills/
 | [产品发布](maps/product-launch.md) | 情报→内容→演示→交付 |
 | [投研分析](maps/investment-research.md) | 财报→估值→报告→PDF |
 | [内容营销](maps/content-marketing.md) | 趋势→文案→创意→分发 |
+| [概念解释](maps/concept-explanation.md) | 概念定位→寓言创作→可视化→PDF/视频 |
 
 ## 来源
 
