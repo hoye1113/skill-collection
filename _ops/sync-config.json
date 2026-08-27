@@ -36,6 +36,13 @@
       "target": "frontend-ui/huashu-design"
     },
     {
+      "name": "huashu-excel",
+      "remoteUrl": "https://github.com/alchaincyf/huashu-excel.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "productivity/huashu-excel"
+    },
+    {
       "name": "superpowers",
       "remoteUrl": "https://github.com/obra/superpowers.git",
       "strategy": "filtered",
