@@ -410,6 +410,31 @@
         { "source": "pm-toolkit/skills/grammar-check",                         "target": "writing/grammar-check" },
         { "source": "pm-toolkit/skills/privacy-policy",                        "target": "product/privacy-policy" }
       ]
+    },
+    {
+      "name": "mattpocock-skills",
+      "remoteUrl": "https://github.com/mattpocock/skills.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skills/engineering/tdd",                          "target": "dev-workflow/mattpocock-skills/skills/tdd" },
+        { "source": "skills/engineering/implement",                   "target": "dev-workflow/mattpocock-skills/skills/implement" },
+        { "source": "skills/engineering/to-spec",                     "target": "dev-workflow/mattpocock-skills/skills/to-spec" },
+        { "source": "skills/engineering/to-tickets",                  "target": "dev-workflow/mattpocock-skills/skills/to-tickets" },
+        { "source": "skills/engineering/diagnosing-bugs",             "target": "dev-workflow/mattpocock-skills/skills/diagnosing-bugs" },
+        { "source": "skills/engineering/codebase-design",             "target": "dev-workflow/mattpocock-skills/skills/codebase-design" },
+        { "source": "skills/engineering/domain-modeling",             "target": "dev-workflow/mattpocock-skills/skills/domain-modeling" },
+        { "source": "skills/engineering/wayfinder",                   "target": "dev-workflow/mattpocock-skills/skills/wayfinder" },
+        { "source": "skills/engineering/research",                    "target": "dev-workflow/mattpocock-skills/skills/research" },
+        { "source": "skills/engineering/prototype",                   "target": "dev-workflow/mattpocock-skills/skills/prototype" },
+        { "source": "skills/engineering/grill-with-docs",             "target": "dev-workflow/mattpocock-skills/skills/grill-with-docs" },
+        { "source": "skills/engineering/resolving-merge-conflicts",   "target": "dev-workflow/mattpocock-skills/skills/resolving-merge-conflicts" },
+        { "source": "skills/engineering/improve-codebase-architecture", "target": "dev-workflow/mattpocock-skills/skills/improve-codebase-architecture" },
+        { "source": "skills/productivity/grilling",                   "target": "dev-workflow/mattpocock-skills/skills/grilling" },
+        { "source": "skills/productivity/wait-what",                  "target": "dev-workflow/mattpocock-skills/skills/wait-what" },
+        { "source": "skills/productivity/handoff",                    "target": "dev-workflow/mattpocock-skills/skills/handoff" },
+        { "source": "skills/productivity/writing-for-agents",         "target": "dev-workflow/mattpocock-skills/skills/writing-for-agents" },
+        { "source": "skills/misc/git-guardrails-claude-code",         "target": "dev-workflow/mattpocock-skills/skills/git-guardrails-claude-code" }
+      ]
     }
   ],
   "excludePatterns": [
