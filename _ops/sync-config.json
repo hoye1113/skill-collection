@@ -96,6 +96,98 @@
         {
           "source": "skills/tutorial-creator",
           "target": "creative/tutorial-creator"
+        },
+        {
+          "source": "skills/aviz-skills-installer",
+          "target": "agent/aviz-skills-installer"
+        },
+        {
+          "source": "skills/calendar",
+          "target": "productivity/calendar"
+        },
+        {
+          "source": "skills/creative-seeds",
+          "target": "creative/creative-seeds"
+        },
+        {
+          "source": "skills/embed-subtitles",
+          "target": "creative/embed-subtitles"
+        },
+        {
+          "source": "skills/find-my-project",
+          "target": "dev-workflow/find-my-project"
+        },
+        {
+          "source": "skills/get-contact",
+          "target": "productivity/get-contact"
+        },
+        {
+          "source": "skills/gh-pages-deploy",
+          "target": "dev-workflow/gh-pages-deploy"
+        },
+        {
+          "source": "skills/gmail",
+          "target": "productivity/gmail"
+        },
+        {
+          "source": "skills/nano-banana-poster",
+          "target": "creative/nano-banana-poster"
+        },
+        {
+          "source": "skills/quick-voice",
+          "target": "creative/quick-voice"
+        },
+        {
+          "source": "skills/search-history",
+          "target": "dev-workflow/search-history"
+        },
+        {
+          "source": "skills/speech-generator",
+          "target": "creative/speech-generator"
+        },
+        {
+          "source": "skills/teach-by-doing",
+          "target": "learning/teach-by-doing"
+        },
+        {
+          "source": "skills/ten-by-ten",
+          "target": "writing/ten-by-ten"
+        },
+        {
+          "source": "skills/transcribe",
+          "target": "dev-workflow/transcribe"
+        },
+        {
+          "source": "skills/translate-video",
+          "target": "creative/translate-video"
+        },
+        {
+          "source": "skills/tutorial-narration-writer",
+          "target": "writing/tutorial-narration-writer"
+        },
+        {
+          "source": "skills/whatsapp",
+          "target": "productivity/whatsapp"
+        },
+        {
+          "source": "skills/wordpress-publisher",
+          "target": "dev-workflow/wordpress-publisher"
+        },
+        {
+          "source": "skills/x-bookmarks-fetcher",
+          "target": "research/x-bookmarks-fetcher"
+        },
+        {
+          "source": "skills/youtube-downloader",
+          "target": "dev-workflow/youtube-downloader"
+        },
+        {
+          "source": "skills/youtube-uploader",
+          "target": "creative/youtube-uploader"
+        },
+        {
+          "source": "skills/zoom-meeting",
+          "target": "productivity/zoom-meeting"
         }
       ]
     },
@@ -131,6 +223,14 @@
         {
           "source": "neat-freak",
           "target": "code-quality/neat-freak"
+        },
+        {
+          "source": "leader",
+          "target": "skill-management/leader"
+        },
+        {
+          "source": "storage-analyzer",
+          "target": "dev-workflow/storage-analyzer"
         }
       ]
     },
@@ -191,23 +291,26 @@
       "remoteUrl": "https://github.com/lijigang/ljg-skills.git",
       "strategy": "mapped",
       "mappings": [
+        { "source": "skills/ljg-blind",        "target": "dev-workflow/ljg-skills/skills/ljg-blind" },
         { "source": "skills/ljg-book",         "target": "dev-workflow/ljg-skills/skills/ljg-book" },
         { "source": "skills/ljg-card",         "target": "dev-workflow/ljg-skills/skills/ljg-card" },
+        { "source": "skills/ljg-classic",      "target": "dev-workflow/ljg-skills/skills/ljg-classic" },
+        { "source": "skills/ljg-constraint",   "target": "dev-workflow/ljg-skills/skills/ljg-constraint" },
         { "source": "skills/ljg-invest",       "target": "dev-workflow/ljg-skills/skills/ljg-invest" },
+        { "source": "skills/ljg-is",           "target": "dev-workflow/ljg-skills/skills/ljg-is" },
         { "source": "skills/ljg-learn",        "target": "dev-workflow/ljg-skills/skills/ljg-learn" },
-        { "source": "skills/ljg-library",      "target": "dev-workflow/ljg-skills/skills/ljg-library" },
-        { "source": "skills/ljg-map",          "target": "dev-workflow/ljg-skills/skills/ljg-map" },
         { "source": "skills/ljg-paper",        "target": "dev-workflow/ljg-skills/skills/ljg-paper" },
-        { "source": "skills/ljg-paper-river",  "target": "dev-workflow/ljg-skills/skills/ljg-paper-river" },
         { "source": "skills/ljg-plain",        "target": "dev-workflow/ljg-skills/skills/ljg-plain" },
         { "source": "skills/ljg-present",      "target": "dev-workflow/ljg-skills/skills/ljg-present" },
+        { "source": "skills/ljg-push",         "target": "dev-workflow/ljg-skills/skills/ljg-push" },
         { "source": "skills/ljg-qa",           "target": "dev-workflow/ljg-skills/skills/ljg-qa" },
         { "source": "skills/ljg-rank",         "target": "dev-workflow/ljg-skills/skills/ljg-rank" },
         { "source": "skills/ljg-read",         "target": "dev-workflow/ljg-skills/skills/ljg-read" },
         { "source": "skills/ljg-relationship", "target": "dev-workflow/ljg-skills/skills/ljg-relationship" },
         { "source": "skills/ljg-roundtable",   "target": "dev-workflow/ljg-skills/skills/ljg-roundtable" },
+        { "source": "skills/ljg-structure",    "target": "dev-workflow/ljg-skills/skills/ljg-structure" },
+        { "source": "skills/ljg-teach",        "target": "dev-workflow/ljg-skills/skills/ljg-teach" },
         { "source": "skills/ljg-think",        "target": "dev-workflow/ljg-skills/skills/ljg-think" },
-        { "source": "skills/ljg-travel",       "target": "dev-workflow/ljg-skills/skills/ljg-travel" },
         { "source": "skills/ljg-word",         "target": "dev-workflow/ljg-skills/skills/ljg-word" },
         { "source": "skills/ljg-writes",       "target": "dev-workflow/ljg-skills/skills/ljg-writes" }
       ]
@@ -245,7 +348,60 @@
         { "source": "pm-execution/skills/outcome-roadmap",                     "target": "product/outcome-roadmap" },
         { "source": "pm-market-research/skills/user-personas",                 "target": "research/user-personas" },
         { "source": "pm-market-research/skills/market-sizing",                 "target": "research/market-sizing" },
-        { "source": "pm-toolkit/skills/review-resume",                         "target": "product/review-resume" }
+        { "source": "pm-toolkit/skills/review-resume",                         "target": "product/review-resume" },
+        { "source": "pm-ai-shipping/skills/intended-vs-implemented",           "target": "product/intended-vs-implemented" },
+        { "source": "pm-ai-shipping/skills/shipping-artifacts",                "target": "product/shipping-artifacts" },
+        { "source": "pm-data-analytics/skills/ab-test-analysis",               "target": "research/ab-test-analysis" },
+        { "source": "pm-data-analytics/skills/cohort-analysis",                "target": "research/cohort-analysis" },
+        { "source": "pm-data-analytics/skills/sql-queries",                    "target": "research/sql-queries" },
+        { "source": "pm-execution/skills/create-prd",                          "target": "product/create-prd" },
+        { "source": "pm-execution/skills/dummy-dataset",                       "target": "product/dummy-dataset" },
+        { "source": "pm-execution/skills/job-stories",                         "target": "product/job-stories" },
+        { "source": "pm-execution/skills/prioritization-frameworks",           "target": "product/prioritization-frameworks" },
+        { "source": "pm-execution/skills/release-notes",                       "target": "product/release-notes" },
+        { "source": "pm-execution/skills/retro",                               "target": "product/retro" },
+        { "source": "pm-execution/skills/sprint-plan",                         "target": "product/sprint-plan" },
+        { "source": "pm-execution/skills/stakeholder-map",                     "target": "product/stakeholder-map" },
+        { "source": "pm-execution/skills/summarize-meeting",                   "target": "product/summarize-meeting" },
+        { "source": "pm-execution/skills/test-scenarios",                      "target": "product/test-scenarios" },
+        { "source": "pm-execution/skills/user-stories",                        "target": "product/user-stories" },
+        { "source": "pm-execution/skills/wwas",                                "target": "product/wwas" },
+        { "source": "pm-go-to-market/skills/beachhead-segment",                "target": "business/beachhead-segment" },
+        { "source": "pm-go-to-market/skills/competitive-battlecard",           "target": "business/competitive-battlecard" },
+        { "source": "pm-go-to-market/skills/growth-loops",                     "target": "business/growth-loops" },
+        { "source": "pm-go-to-market/skills/gtm-motions",                      "target": "business/gtm-motions" },
+        { "source": "pm-go-to-market/skills/gtm-strategy",                     "target": "business/gtm-strategy" },
+        { "source": "pm-go-to-market/skills/ideal-customer-profile",           "target": "business/ideal-customer-profile" },
+        { "source": "pm-market-research/skills/competitor-analysis",           "target": "research/competitor-analysis" },
+        { "source": "pm-market-research/skills/customer-journey-map",          "target": "research/customer-journey-map" },
+        { "source": "pm-market-research/skills/market-segments",               "target": "research/market-segments" },
+        { "source": "pm-market-research/skills/sentiment-analysis",            "target": "research/sentiment-analysis" },
+        { "source": "pm-market-research/skills/user-segmentation",             "target": "research/user-segmentation" },
+        { "source": "pm-marketing-growth/skills/marketing-ideas",              "target": "business/marketing-ideas" },
+        { "source": "pm-marketing-growth/skills/north-star-metric",            "target": "business/north-star-metric" },
+        { "source": "pm-marketing-growth/skills/positioning-ideas",            "target": "business/positioning-ideas" },
+        { "source": "pm-marketing-growth/skills/product-name",                 "target": "business/product-name" },
+        { "source": "pm-marketing-growth/skills/value-prop-statements",        "target": "business/value-prop-statements" },
+        { "source": "pm-product-discovery/skills/analyze-feature-requests",    "target": "product/analyze-feature-requests" },
+        { "source": "pm-product-discovery/skills/brainstorm-experiments-existing", "target": "product/brainstorm-experiments-existing" },
+        { "source": "pm-product-discovery/skills/brainstorm-experiments-new",  "target": "product/brainstorm-experiments-new" },
+        { "source": "pm-product-discovery/skills/brainstorm-ideas-existing",   "target": "product/brainstorm-ideas-existing" },
+        { "source": "pm-product-discovery/skills/brainstorm-ideas-new",        "target": "product/brainstorm-ideas-new" },
+        { "source": "pm-product-discovery/skills/interview-script",            "target": "research/interview-script" },
+        { "source": "pm-product-discovery/skills/prioritize-features",         "target": "product/prioritize-features" },
+        { "source": "pm-product-strategy/skills/ansoff-matrix",                "target": "product/ansoff-matrix" },
+        { "source": "pm-product-strategy/skills/business-model",               "target": "product/business-model" },
+        { "source": "pm-product-strategy/skills/lean-canvas",                  "target": "product/lean-canvas" },
+        { "source": "pm-product-strategy/skills/monetization-strategy",        "target": "product/monetization-strategy" },
+        { "source": "pm-product-strategy/skills/pestle-analysis",              "target": "product/pestle-analysis" },
+        { "source": "pm-product-strategy/skills/porters-five-forces",          "target": "product/porters-five-forces" },
+        { "source": "pm-product-strategy/skills/pricing-strategy",             "target": "product/pricing-strategy" },
+        { "source": "pm-product-strategy/skills/product-vision",               "target": "product/product-vision" },
+        { "source": "pm-product-strategy/skills/startup-canvas",               "target": "product/startup-canvas" },
+        { "source": "pm-product-strategy/skills/swot-analysis",                "target": "product/swot-analysis" },
+        { "source": "pm-toolkit/skills/draft-nda",                             "target": "product/draft-nda" },
+        { "source": "pm-toolkit/skills/grammar-check",                         "target": "writing/grammar-check" },
+        { "source": "pm-toolkit/skills/privacy-policy",                        "target": "product/privacy-policy" }
       ]
     }
   ],

@@ -1,0 +1,109 @@
+[10:42:01] === Skills sync started ===
+[10:42:01] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[10:42:01] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[10:42:03] OK   agent-readiness : no remote changes (4baf9e4)
+[10:42:05] SYNC darwin-skill : 7c7b790 -> 5539516
+[10:42:09]   whole -> skill-management/darwin-skill
+[10:42:09]   files synced for darwin-skill
+[10:42:11] SYNC impeccable : a82f02d -> 63b04e2
+[10:44:22]   whole -> frontend-ui/impeccable
+[10:44:22]   files synced for impeccable
+[10:44:24] SYNC nuwa-skill : 550a8e1 -> fe03746
+[10:44:27]   whole -> skill-management/nuwa-skill
+[10:44:27]   files synced for nuwa-skill
+[10:44:29] SYNC huashu-design : ec9ec0f -> a790f70
+[10:44:33]   whole -> frontend-ui/huashu-design
+[10:44:33]   files synced for huashu-design
+[10:44:36] SYNC superpowers : f268f7c -> b36e082
+[10:44:45]   filtered skills -> dev-workflow/superpowers\skills
+[10:44:45]   files synced for superpowers
+[10:44:47] SYNC claude-skills-library : cb81db3 -> 90bbc16
+[10:44:50]   mapped skills/cinematic-slides -> frontend-ui/cinematic-slides
+[10:44:51]   mapped skills/claudability-analyzer -> agent/claudability-analyzer
+[10:44:51]   mapped skills/deep-interview -> learning/deep-interview
+[10:44:51]   mapped skills/html-to-pdf -> dev-workflow/html-to-pdf
+[10:44:51]   mapped skills/html-to-pptx -> dev-workflow/html-to-pptx
+[10:44:51]   mapped skills/image-generation -> creative/image-generation
+[10:44:51]   mapped skills/kinetic-video-creator -> creative/kinetic-video-creator
+[10:44:51]   mapped skills/learn -> learning/learn
+[10:44:51]   mapped skills/music-generator -> creative/music-generator
+[10:44:51]   mapped skills/presentation-architect -> writing/presentation-architect
+[10:44:51]   mapped skills/reality-check -> code-quality/reality-check
+[10:44:51]   mapped skills/tutorial-creator -> creative/tutorial-creator
+[10:44:51]   files synced for claude-skills-library
+[10:44:53] SYNC garden-skills : fbd6453 -> aaf9a82
+[10:44:56]   mapped skills/beautiful-article -> writing/beautiful-article
+[10:44:56]   mapped skills/gpt-image-2 -> creative/gpt-image-2
+[10:44:57]   mapped skills/kb-retriever -> learning/kb-retriever
+[10:44:57]   mapped skills/web-design-engineer -> frontend-ui/web-design-engineer
+[10:44:57]   mapped skills/web-video-presentation -> creative/web-video-presentation
+[10:44:57]   files synced for garden-skills
+[10:44:59] SYNC khazix-skills : ff55436 -> 7a5c493
+[10:45:02]   mapped aihot -> writing/aihot
+[10:45:02]   mapped hv-analysis -> research/hv-analysis
+[10:45:02]   mapped khazix-writer -> writing/khazix-writer
+[10:45:03]   mapped neat-freak -> code-quality/neat-freak
+[10:45:03]   files synced for khazix-skills
+[10:45:05] OK   sanyuan-skills : no remote changes (08b6572)
+[10:45:07] SYNC ecc : 81af407 -> d8409a4
+[10:45:15]   filtered skills -> dev-workflow/ecc\skills
+[10:45:15]   filtered agents -> dev-workflow/ecc\agents
+[10:45:15]   filtered commands -> dev-workflow/ecc\commands
+[10:45:15]   filtered rules -> dev-workflow/ecc\rules
+[10:45:15]   filtered examples -> dev-workflow/ecc\examples
+[10:45:15]   files synced for ecc
+[10:45:17] SYNC luban-skill : 89b1f0d -> cea2da3
+[10:45:20]   mapped skills/luban -> skill-management/luban
+[10:45:20]   files synced for luban-skill
+[10:45:22] SYNC ljg-skills : e131ff4 -> 44f4105
+[10:45:27]   mapped skills/ljg-book -> dev-workflow/ljg-skills/skills/ljg-book
+[10:45:27]   mapped skills/ljg-card -> dev-workflow/ljg-skills/skills/ljg-card
+[10:45:27]   mapped skills/ljg-invest -> dev-workflow/ljg-skills/skills/ljg-invest
+[10:45:27]   mapped skills/ljg-learn -> dev-workflow/ljg-skills/skills/ljg-learn
+[10:45:27]   SKIP skills/ljg-library: not found
+[10:45:27]   SKIP skills/ljg-map: not found
+[10:45:27]   mapped skills/ljg-paper -> dev-workflow/ljg-skills/skills/ljg-paper
+[10:45:27]   SKIP skills/ljg-paper-river: not found
+[10:45:27]   mapped skills/ljg-plain -> dev-workflow/ljg-skills/skills/ljg-plain
+[10:45:27]   mapped skills/ljg-present -> dev-workflow/ljg-skills/skills/ljg-present
+[10:45:27]   mapped skills/ljg-qa -> dev-workflow/ljg-skills/skills/ljg-qa
+[10:45:27]   mapped skills/ljg-rank -> dev-workflow/ljg-skills/skills/ljg-rank
+[10:45:27]   mapped skills/ljg-read -> dev-workflow/ljg-skills/skills/ljg-read
+[10:45:27]   mapped skills/ljg-relationship -> dev-workflow/ljg-skills/skills/ljg-relationship
+[10:45:27]   mapped skills/ljg-roundtable -> dev-workflow/ljg-skills/skills/ljg-roundtable
+[10:45:27]   mapped skills/ljg-think -> dev-workflow/ljg-skills/skills/ljg-think
+[10:45:27]   SKIP skills/ljg-travel: not found
+[10:45:27]   mapped skills/ljg-word -> dev-workflow/ljg-skills/skills/ljg-word
+[10:45:27]   mapped skills/ljg-writes -> dev-workflow/ljg-skills/skills/ljg-writes
+[10:45:27]   files synced for ljg-skills
+[10:45:29] SYNC travel-memory-sticker-card : first run (25ac975)
+[10:45:29]   cloning travel-memory-sticker-card into cache...
+[10:45:32]   cloned travel-memory-sticker-card (shallow)
+[10:45:32]   whole -> creative/travel-memory-sticker-card
+[10:45:32]   files synced for travel-memory-sticker-card
+[10:45:34] SYNC travel-memory-card-duo : first run (7b081e5)
+[10:45:34]   cloning travel-memory-card-duo into cache...
+[10:45:36]   cloned travel-memory-card-duo (shallow)
+[10:45:37]   whole -> creative/travel-memory-card-duo
+[10:45:37]   files synced for travel-memory-card-duo
+[10:45:39] SYNC pm-skills : a0cd730 -> 18468a9
+[10:45:39]   cloning pm-skills into cache...
+[10:45:45]   cloned pm-skills (shallow)
+[10:45:46]   mapped pm-product-discovery/skills/opportunity-solution-tree -> product/opportunity-solution-tree
+[10:45:46]   mapped pm-product-discovery/skills/identify-assumptions-new -> product/identify-assumptions-new
+[10:45:46]   mapped pm-product-discovery/skills/identify-assumptions-existing -> product/identify-assumptions-existing
+[10:45:46]   mapped pm-product-discovery/skills/prioritize-assumptions -> product/prioritize-assumptions
+[10:45:46]   mapped pm-product-discovery/skills/metrics-dashboard -> product/metrics-dashboard
+[10:45:46]   mapped pm-product-discovery/skills/summarize-interview -> research/summarize-interview
+[10:45:46]   mapped pm-product-strategy/skills/product-strategy -> product/product-strategy
+[10:45:46]   mapped pm-product-strategy/skills/value-proposition -> product/value-proposition
+[10:45:46]   mapped pm-execution/skills/strategy-red-team -> product/strategy-red-team
+[10:45:46]   mapped pm-execution/skills/pre-mortem -> product/pre-mortem
+[10:45:46]   mapped pm-execution/skills/brainstorm-okrs -> product/brainstorm-okrs
+[10:45:46]   mapped pm-execution/skills/outcome-roadmap -> product/outcome-roadmap
+[10:45:46]   mapped pm-market-research/skills/user-personas -> research/user-personas
+[10:45:46]   mapped pm-market-research/skills/market-sizing -> research/market-sizing
+[10:45:46]   mapped pm-toolkit/skills/review-resume -> product/review-resume
+[10:45:46]   files synced for pm-skills
+[10:46:21] Committed skill changes. Do NOT push.
+[10:46:21] === Skills sync finished ===
