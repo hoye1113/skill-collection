@@ -107,3 +107,159 @@
 [10:45:46]   files synced for pm-skills
 [10:46:21] Committed skill changes. Do NOT push.
 [10:46:21] === Skills sync finished ===
+[11:23:50] === Skills sync started ===
+[11:23:50] ProjectRoot: D:\workSpace\hoye-skills-main\skill-collection
+[11:23:50] ConfigFile: D:\workSpace\hoye-skills-main\skill-collection\_ops\sync-config.json
+[11:23:51] OK   agent-readiness : no remote changes (4baf9e4)
+[11:23:53] OK   darwin-skill : no remote changes (5539516)
+[11:23:54] OK   impeccable : no remote changes (63b04e2)
+[11:23:55] OK   nuwa-skill : no remote changes (fe03746)
+[11:23:56] OK   huashu-design : no remote changes (a790f70)
+[11:23:58] OK   superpowers : no remote changes (b36e082)
+[11:23:59] SYNC claude-skills-library : first run (90bbc16)
+[11:24:01]   mapped skills/cinematic-slides -> frontend-ui/cinematic-slides
+[11:24:01]   mapped skills/claudability-analyzer -> agent/claudability-analyzer
+[11:24:01]   mapped skills/deep-interview -> learning/deep-interview
+[11:24:01]   mapped skills/html-to-pdf -> dev-workflow/html-to-pdf
+[11:24:01]   mapped skills/html-to-pptx -> dev-workflow/html-to-pptx
+[11:24:01]   mapped skills/image-generation -> creative/image-generation
+[11:24:01]   mapped skills/kinetic-video-creator -> creative/kinetic-video-creator
+[11:24:01]   mapped skills/learn -> learning/learn
+[11:24:01]   mapped skills/music-generator -> creative/music-generator
+[11:24:01]   mapped skills/presentation-architect -> writing/presentation-architect
+[11:24:01]   mapped skills/reality-check -> code-quality/reality-check
+[11:24:01]   mapped skills/tutorial-creator -> creative/tutorial-creator
+[11:24:01]   mapped skills/aviz-skills-installer -> agent/aviz-skills-installer
+[11:24:01]   mapped skills/calendar -> productivity/calendar
+[11:24:01]   mapped skills/creative-seeds -> creative/creative-seeds
+[11:24:01]   mapped skills/embed-subtitles -> creative/embed-subtitles
+[11:24:01]   mapped skills/find-my-project -> dev-workflow/find-my-project
+[11:24:01]   mapped skills/get-contact -> productivity/get-contact
+[11:24:01]   mapped skills/gh-pages-deploy -> dev-workflow/gh-pages-deploy
+[11:24:01]   mapped skills/gmail -> productivity/gmail
+[11:24:01]   mapped skills/nano-banana-poster -> creative/nano-banana-poster
+[11:24:01]   mapped skills/quick-voice -> creative/quick-voice
+[11:24:01]   mapped skills/search-history -> dev-workflow/search-history
+[11:24:01]   mapped skills/speech-generator -> creative/speech-generator
+[11:24:01]   mapped skills/teach-by-doing -> learning/teach-by-doing
+[11:24:01]   mapped skills/ten-by-ten -> writing/ten-by-ten
+[11:24:02]   mapped skills/transcribe -> dev-workflow/transcribe
+[11:24:02]   mapped skills/translate-video -> creative/translate-video
+[11:24:02]   mapped skills/tutorial-narration-writer -> writing/tutorial-narration-writer
+[11:24:02]   mapped skills/whatsapp -> productivity/whatsapp
+[11:24:02]   mapped skills/wordpress-publisher -> dev-workflow/wordpress-publisher
+[11:24:02]   mapped skills/x-bookmarks-fetcher -> research/x-bookmarks-fetcher
+[11:24:02]   mapped skills/youtube-downloader -> dev-workflow/youtube-downloader
+[11:24:02]   mapped skills/youtube-uploader -> creative/youtube-uploader
+[11:24:02]   mapped skills/zoom-meeting -> productivity/zoom-meeting
+[11:24:02]   files synced for claude-skills-library
+[11:24:03] OK   garden-skills : no remote changes (aaf9a82)
+[11:24:04] SYNC khazix-skills : first run (7a5c493)
+[11:24:06]   mapped aihot -> writing/aihot
+[11:24:06]   mapped hv-analysis -> research/hv-analysis
+[11:24:06]   mapped khazix-writer -> writing/khazix-writer
+[11:24:06]   mapped neat-freak -> code-quality/neat-freak
+[11:24:06]   mapped leader -> skill-management/leader
+[11:24:06]   mapped storage-analyzer -> dev-workflow/storage-analyzer
+[11:24:06]   files synced for khazix-skills
+[11:24:07] OK   sanyuan-skills : no remote changes (08b6572)
+[11:24:08] OK   ecc : no remote changes (d8409a4)
+[11:24:09] OK   luban-skill : no remote changes (cea2da3)
+[11:24:11] SYNC ljg-skills : first run (44f4105)
+[11:24:12]   mapped skills/ljg-blind -> dev-workflow/ljg-skills/skills/ljg-blind
+[11:24:12]   mapped skills/ljg-book -> dev-workflow/ljg-skills/skills/ljg-book
+[11:24:12]   mapped skills/ljg-card -> dev-workflow/ljg-skills/skills/ljg-card
+[11:24:12]   mapped skills/ljg-classic -> dev-workflow/ljg-skills/skills/ljg-classic
+[11:24:12]   mapped skills/ljg-constraint -> dev-workflow/ljg-skills/skills/ljg-constraint
+[11:24:12]   mapped skills/ljg-invest -> dev-workflow/ljg-skills/skills/ljg-invest
+[11:24:12]   mapped skills/ljg-is -> dev-workflow/ljg-skills/skills/ljg-is
+[11:24:12]   mapped skills/ljg-learn -> dev-workflow/ljg-skills/skills/ljg-learn
+[11:24:12]   mapped skills/ljg-paper -> dev-workflow/ljg-skills/skills/ljg-paper
+[11:24:12]   mapped skills/ljg-plain -> dev-workflow/ljg-skills/skills/ljg-plain
+[11:24:13]   mapped skills/ljg-present -> dev-workflow/ljg-skills/skills/ljg-present
+[11:24:13]   mapped skills/ljg-push -> dev-workflow/ljg-skills/skills/ljg-push
+[11:24:13]   mapped skills/ljg-qa -> dev-workflow/ljg-skills/skills/ljg-qa
+[11:24:13]   mapped skills/ljg-rank -> dev-workflow/ljg-skills/skills/ljg-rank
+[11:24:13]   mapped skills/ljg-read -> dev-workflow/ljg-skills/skills/ljg-read
+[11:24:13]   mapped skills/ljg-relationship -> dev-workflow/ljg-skills/skills/ljg-relationship
+[11:24:13]   mapped skills/ljg-roundtable -> dev-workflow/ljg-skills/skills/ljg-roundtable
+[11:24:13]   mapped skills/ljg-structure -> dev-workflow/ljg-skills/skills/ljg-structure
+[11:24:13]   mapped skills/ljg-teach -> dev-workflow/ljg-skills/skills/ljg-teach
+[11:24:13]   mapped skills/ljg-think -> dev-workflow/ljg-skills/skills/ljg-think
+[11:24:13]   mapped skills/ljg-word -> dev-workflow/ljg-skills/skills/ljg-word
+[11:24:13]   mapped skills/ljg-writes -> dev-workflow/ljg-skills/skills/ljg-writes
+[11:24:13]   files synced for ljg-skills
+[11:24:14] OK   travel-memory-sticker-card : no remote changes (25ac975)
+[11:24:16] OK   travel-memory-card-duo : no remote changes (7b081e5)
+[11:24:17] SYNC pm-skills : first run (18468a9)
+[11:24:19]   mapped pm-product-discovery/skills/opportunity-solution-tree -> product/opportunity-solution-tree
+[11:24:19]   mapped pm-product-discovery/skills/identify-assumptions-new -> product/identify-assumptions-new
+[11:24:19]   mapped pm-product-discovery/skills/identify-assumptions-existing -> product/identify-assumptions-existing
+[11:24:19]   mapped pm-product-discovery/skills/prioritize-assumptions -> product/prioritize-assumptions
+[11:24:19]   mapped pm-product-discovery/skills/metrics-dashboard -> product/metrics-dashboard
+[11:24:19]   mapped pm-product-discovery/skills/summarize-interview -> research/summarize-interview
+[11:24:19]   mapped pm-product-strategy/skills/product-strategy -> product/product-strategy
+[11:24:19]   mapped pm-product-strategy/skills/value-proposition -> product/value-proposition
+[11:24:19]   mapped pm-execution/skills/strategy-red-team -> product/strategy-red-team
+[11:24:19]   mapped pm-execution/skills/pre-mortem -> product/pre-mortem
+[11:24:19]   mapped pm-execution/skills/brainstorm-okrs -> product/brainstorm-okrs
+[11:24:19]   mapped pm-execution/skills/outcome-roadmap -> product/outcome-roadmap
+[11:24:19]   mapped pm-market-research/skills/user-personas -> research/user-personas
+[11:24:19]   mapped pm-market-research/skills/market-sizing -> research/market-sizing
+[11:24:19]   mapped pm-toolkit/skills/review-resume -> product/review-resume
+[11:24:19]   mapped pm-ai-shipping/skills/intended-vs-implemented -> product/intended-vs-implemented
+[11:24:19]   mapped pm-ai-shipping/skills/shipping-artifacts -> product/shipping-artifacts
+[11:24:19]   mapped pm-data-analytics/skills/ab-test-analysis -> research/ab-test-analysis
+[11:24:19]   mapped pm-data-analytics/skills/cohort-analysis -> research/cohort-analysis
+[11:24:19]   mapped pm-data-analytics/skills/sql-queries -> research/sql-queries
+[11:24:19]   mapped pm-execution/skills/create-prd -> product/create-prd
+[11:24:19]   mapped pm-execution/skills/dummy-dataset -> product/dummy-dataset
+[11:24:19]   mapped pm-execution/skills/job-stories -> product/job-stories
+[11:24:19]   mapped pm-execution/skills/prioritization-frameworks -> product/prioritization-frameworks
+[11:24:19]   mapped pm-execution/skills/release-notes -> product/release-notes
+[11:24:19]   mapped pm-execution/skills/retro -> product/retro
+[11:24:20]   mapped pm-execution/skills/sprint-plan -> product/sprint-plan
+[11:24:20]   mapped pm-execution/skills/stakeholder-map -> product/stakeholder-map
+[11:24:20]   mapped pm-execution/skills/summarize-meeting -> product/summarize-meeting
+[11:24:20]   mapped pm-execution/skills/test-scenarios -> product/test-scenarios
+[11:24:20]   mapped pm-execution/skills/user-stories -> product/user-stories
+[11:24:20]   mapped pm-execution/skills/wwas -> product/wwas
+[11:24:20]   mapped pm-go-to-market/skills/beachhead-segment -> business/beachhead-segment
+[11:24:20]   mapped pm-go-to-market/skills/competitive-battlecard -> business/competitive-battlecard
+[11:24:20]   mapped pm-go-to-market/skills/growth-loops -> business/growth-loops
+[11:24:20]   mapped pm-go-to-market/skills/gtm-motions -> business/gtm-motions
+[11:24:20]   mapped pm-go-to-market/skills/gtm-strategy -> business/gtm-strategy
+[11:24:20]   mapped pm-go-to-market/skills/ideal-customer-profile -> business/ideal-customer-profile
+[11:24:20]   mapped pm-market-research/skills/competitor-analysis -> research/competitor-analysis
+[11:24:20]   mapped pm-market-research/skills/customer-journey-map -> research/customer-journey-map
+[11:24:20]   mapped pm-market-research/skills/market-segments -> research/market-segments
+[11:24:20]   mapped pm-market-research/skills/sentiment-analysis -> research/sentiment-analysis
+[11:24:20]   mapped pm-market-research/skills/user-segmentation -> research/user-segmentation
+[11:24:20]   mapped pm-marketing-growth/skills/marketing-ideas -> business/marketing-ideas
+[11:24:20]   mapped pm-marketing-growth/skills/north-star-metric -> business/north-star-metric
+[11:24:20]   mapped pm-marketing-growth/skills/positioning-ideas -> business/positioning-ideas
+[11:24:20]   mapped pm-marketing-growth/skills/product-name -> business/product-name
+[11:24:20]   mapped pm-marketing-growth/skills/value-prop-statements -> business/value-prop-statements
+[11:24:20]   mapped pm-product-discovery/skills/analyze-feature-requests -> product/analyze-feature-requests
+[11:24:20]   mapped pm-product-discovery/skills/brainstorm-experiments-existing -> product/brainstorm-experiments-existing
+[11:24:20]   mapped pm-product-discovery/skills/brainstorm-experiments-new -> product/brainstorm-experiments-new
+[11:24:21]   mapped pm-product-discovery/skills/brainstorm-ideas-existing -> product/brainstorm-ideas-existing
+[11:24:21]   mapped pm-product-discovery/skills/brainstorm-ideas-new -> product/brainstorm-ideas-new
+[11:24:21]   mapped pm-product-discovery/skills/interview-script -> research/interview-script
+[11:24:21]   mapped pm-product-discovery/skills/prioritize-features -> product/prioritize-features
+[11:24:21]   mapped pm-product-strategy/skills/ansoff-matrix -> product/ansoff-matrix
+[11:24:21]   mapped pm-product-strategy/skills/business-model -> product/business-model
+[11:24:21]   mapped pm-product-strategy/skills/lean-canvas -> product/lean-canvas
+[11:24:21]   mapped pm-product-strategy/skills/monetization-strategy -> product/monetization-strategy
+[11:24:21]   mapped pm-product-strategy/skills/pestle-analysis -> product/pestle-analysis
+[11:24:21]   mapped pm-product-strategy/skills/porters-five-forces -> product/porters-five-forces
+[11:24:21]   mapped pm-product-strategy/skills/pricing-strategy -> product/pricing-strategy
+[11:24:21]   mapped pm-product-strategy/skills/product-vision -> product/product-vision
+[11:24:21]   mapped pm-product-strategy/skills/startup-canvas -> product/startup-canvas
+[11:24:21]   mapped pm-product-strategy/skills/swot-analysis -> product/swot-analysis
+[11:24:21]   mapped pm-toolkit/skills/draft-nda -> product/draft-nda
+[11:24:21]   mapped pm-toolkit/skills/grammar-check -> writing/grammar-check
+[11:24:21]   mapped pm-toolkit/skills/privacy-policy -> product/privacy-policy
+[11:24:21]   files synced for pm-skills
+[11:24:23] Committed skill changes. Do NOT push.
+[11:24:23] === Skills sync finished ===
