@@ -6,9 +6,9 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 
 import {
   buildSearchQueries,
@@ -251,6 +251,44 @@ describe('wrapCli integration', () => {
     assert.ok(modified.includes('impeccable-variants-end test123'));
     // Original should NOT be hidden (stays visible until variants arrive)
     assert.ok(!modified.includes('data-impeccable-variant="original" style="display: none"'));
+  });
+
+
+  it('--defer-source-write leaves source untouched and returns the wrapper block', () => {
+    const html = `<!DOCTYPE html>
+<html>
+<body>
+  <div class="hero-section">
+    <h1>Hello World</h1>
+    <p>Welcome to our site.</p>
+  </div>
+</body>
+</html>`;
+    const file = join(tmp, 'index.html');
+    writeFileSync(file, html);
+
+    const result = JSON.parse(execSync(
+      `node skill/scripts/live-wrap.mjs --id defer1 --count 3 --classes "hero-section" --defer-source-write --file "${file}"`,
+      { cwd: process.cwd(), encoding: 'utf-8' }
+    ));
+
+    // Source is NOT written by the preflight (no reload storm).
+    assert.equal(readFileSync(file, 'utf-8'), html);
+
+    // Deferred contract fields present for the agent's atomic edit.
+    assert.equal(result.sourceWritten, false);
+    assert.ok(typeof result.wrapperBlock === 'string' && result.wrapperBlock.length > 0);
+    assert.ok(result.wrapperBlock.includes('data-impeccable-variants="defer1"'));
+    assert.ok(result.wrapperBlock.includes('Variants: insert below this line'));
+    assert.ok(result.wrapperBlock.includes('impeccable-variants-end defer1'));
+    assert.equal(typeof result.replaceStartLine, 'number');
+    assert.equal(typeof result.replaceEndLine, 'number');
+
+    // The replace range points at the picked <div class="hero-section"> block
+    // (1-indexed lines 4..7 of the source above).
+    const lines = html.split('\n');
+    assert.ok(lines[result.replaceStartLine - 1].includes('class="hero-section"'));
+    assert.ok(lines[result.replaceEndLine - 1].includes('</div>'));
   });
 
   it('wraps a JSX element and uses JSX comment syntax', () => {
@@ -778,6 +816,34 @@ export default function App() {
 
     const modified = readFileSync(join(tmp, 'Cards.tsx'), 'utf-8');
     assert.ok(modified.includes('data-impeccable-variants="dyn1"'), 'wrapped (first-match fallback)');
+  });
+
+  it('refuses multiple dynamic source branches when rendered text cannot identify one', () => {
+    const astro = `---
+const results = [{ title: 'Result 01' }, { title: 'Result 02' }];
+---
+<main>
+  <article class="result-card"><h2>{results[0].title}</h2></article>
+  <article class="result-card"><h2>{results[1].title}</h2></article>
+</main>`;
+    const file = join(tmp, 'Results.astro');
+    writeFileSync(file, astro);
+
+    let errPayload;
+    try {
+      execSync(
+        `node skill/scripts/live-wrap.mjs --id dyn2 --count 3 --classes "result-card" --tag "article" --text "Result 02 rendered body" --file "${file}"`,
+        { cwd: process.cwd(), encoding: 'utf-8', stdio: 'pipe' },
+      );
+      assert.fail('Should have refused an unsafe first-match fallback');
+    } catch (err) {
+      errPayload = JSON.parse(err.stderr.toString().trim());
+    }
+
+    assert.equal(errPayload.error, 'element_ambiguous');
+    assert.equal(errPayload.reason, 'rendered_text_not_in_source');
+    assert.equal(errPayload.candidates.length, 2);
+    assert.doesNotMatch(readFileSync(file, 'utf-8'), /impeccable-variants-start/);
   });
 
   it('errors with element_ambiguous when --text matches multiple identical branches', () => {

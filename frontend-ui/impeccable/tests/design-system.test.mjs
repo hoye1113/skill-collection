@@ -13,8 +13,10 @@ import {
   checkSourceDesignSystem,
   collectStaticDesignSystemFindings,
   isAllowedColorRaw,
+  isAllowedShadowColorRaw,
   isAllowedFont,
   isAllowedRadiusRaw,
+  isAllowedFontSizeRaw,
   loadDesignSystemForCwd,
   normalizeDesignSystem,
 } from '../cli/engine/design-system.mjs';
@@ -31,8 +33,9 @@ function sampleDesignSystem() {
   return normalizeDesignSystem({
     frontmatter: {
       typography: {
-        display: { fontFamily: 'Avenir Next, Georgia, serif' },
-        body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif' },
+        display: { fontFamily: 'Avenir Next, Georgia, serif', fontSize: 'clamp(2.5rem, 6vw, 4rem)' },
+        body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: '16px' },
+        label: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: '0.875rem' },
       },
       colors: {
         ink: '#241f1a',
@@ -96,6 +99,157 @@ describe('normalizeDesignSystem()', () => {
     assert.equal(isAllowedRadiusRaw('100px', designSystem), true);
     assert.equal(isAllowedRadiusRaw('9999px', designSystem), true);
     assert.equal(isAllowedRadiusRaw('18px', designSystem), false);
+
+    assert.equal(isAllowedFontSizeRaw('16px', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('1rem', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('0.875rem', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('14px', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('12.5px', designSystem), false);
+    assert.equal(isAllowedFontSizeRaw('1.2em', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('var(--text-body)', designSystem), true);
+
+    // Fluid values are judged on their endpoints. This fixture documents 14px,
+    // 16px, and the display role's 40px/64px endpoints, so a 2rem (32px) max is
+    // off the ramp even though the 1rem min is on it.
+    assert.equal(isAllowedFontSizeRaw('clamp(1rem, 2vw, 2rem)', designSystem), false);
+    assert.equal(isAllowedFontSizeRaw('clamp(2.5rem, 6vw, 4rem)', designSystem), true);
+  });
+
+  it('reads a typography.scale map as literal ramp steps', () => {
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          scale: {
+            micro: '0.5625rem', // 9px
+            body: '1rem', // 16px
+            title: '1.5rem', // 24px
+          },
+          body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: '1rem' },
+        },
+      },
+    });
+
+    assert.equal(designSystem.hasFontSizes, true);
+    assert.equal(isAllowedFontSizeRaw('9px', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('0.5625rem', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('24px', designSystem), true);
+    // Off every step by more than the 0.5px tolerance.
+    assert.equal(isAllowedFontSizeRaw('0.82rem', designSystem), false);
+    assert.equal(isAllowedFontSizeRaw('20px', designSystem), false);
+  });
+
+  it('accepts both clamp() endpoints as ramp steps', () => {
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          scale: { body: '1rem' },
+          display: { fontFamily: 'Alumni Sans, sans-serif', fontSize: 'clamp(3.4rem, 6.5vw, 5.6rem)' },
+        },
+      },
+    });
+
+    // 3.4rem = 54.4px (min) and 5.6rem = 89.6px (max) are both documented.
+    assert.equal(isAllowedFontSizeRaw('3.4rem', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('5.6rem', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('54.4px', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('89.6px', designSystem), true);
+    // The vw middle term is viewport-relative, never a fixed step.
+    assert.equal(isAllowedFontSizeRaw('6.5px', designSystem), false);
+    // An arbitrary size between the endpoints is still off the ramp.
+    assert.equal(isAllowedFontSizeRaw('4.2rem', designSystem), false);
+  });
+
+  it('validates clamp() endpoints in usage, not just in DESIGN.md', () => {
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          scale: { body: '1rem', title: '1.5rem' }, // 16px, 24px
+        },
+      },
+    });
+
+    // Both endpoints documented.
+    assert.equal(isAllowedFontSizeRaw('clamp(1rem, 2vw, 1.5rem)', designSystem), true);
+    // Neither endpoint is a step: 23.2px and 28.8px.
+    assert.equal(isAllowedFontSizeRaw('clamp(1.45rem, 1.8vw, 1.8rem)', designSystem), false);
+    // One bad endpoint is enough.
+    assert.equal(isAllowedFontSizeRaw('clamp(1rem, 2vw, 1.8rem)', designSystem), false);
+    // The viewport term interpolates and is never judged as a step.
+    assert.equal(isAllowedFontSizeRaw('clamp(1rem, 6.5vw, 1.5rem)', designSystem), true);
+    // Unjudgeable endpoints abstain rather than guess.
+    assert.equal(isAllowedFontSizeRaw('clamp(var(--a), 2vw, 1.5rem)', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('clamp(var(--a), 2vw, var(--b))', designSystem), true);
+    // Malformed or unparseable fluid values abstain.
+    assert.equal(isAllowedFontSizeRaw('clamp(1.45rem, 1.8vw)', designSystem), true);
+    // Non-clamp functional values keep abstaining.
+    assert.equal(isAllowedFontSizeRaw('calc(1rem + 3px)', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('var(--text-body)', designSystem), true);
+  });
+
+  it("accepts DESIGN.md's own fluid roles when used verbatim in source", () => {
+    // The endpoints a fluid role declares are documented sizes, so authoring
+    // that exact clamp must not flag. Regression guard for the asymmetry where
+    // the extractor read clamp endpoints but the checker never validated them.
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          scale: { body: '1rem' },
+          display: { fontFamily: 'Alumni Sans, sans-serif', fontSize: 'clamp(3.4rem, 6.5vw, 5.6rem)' },
+        },
+      },
+    });
+
+    assert.equal(isAllowedFontSizeRaw('clamp(3.4rem, 6.5vw, 5.6rem)', designSystem), true);
+    assert.equal(isAllowedFontSizeRaw('clamp(3.4rem, 6.5vw, 6rem)', designSystem), false);
+  });
+
+  it('strips CSS priority markers from the font-size ignore value', () => {
+    // The ignoreValue is what a `hooks ignore-value` waiver has to match, so a
+    // size must not need two different waivers depending on whether the
+    // declaration carries !important. font-family already behaves this way.
+    const designSystem = normalizeDesignSystem({
+      frontmatter: { typography: { scale: { body: '1rem' } } },
+    });
+    const findings = checkSourceDesignSystem(
+      '.a { font-size: 1.4rem !important; }\n.b { font-size: 1.4rem; }',
+      '/tmp/important.css',
+      { designSystem },
+    );
+    const sizes = findings.filter((f) => f.antipattern === 'design-system-font-size');
+    assert.equal(sizes.length, 2);
+    assert.deepEqual(sizes.map((f) => f.ignoreValue), ['1.4rem', '1.4rem']);
+  });
+
+  it('reports which fluid endpoint is off the ramp', () => {
+    const designSystem = normalizeDesignSystem({
+      frontmatter: { typography: { scale: { body: '1rem' } } },
+    });
+    const findings = checkSourceDesignSystem(
+      '.a { font-size: clamp(1.45rem, 1.8vw, 1.8rem) !important; }',
+      '/tmp/fluid.css',
+      { designSystem },
+    );
+    const sizes = findings.filter((f) => f.antipattern === 'design-system-font-size');
+    assert.equal(sizes.length, 1);
+    assert.match(sizes[0].snippet, /1\.45rem/);
+    assert.match(sizes[0].snippet, /1\.8rem/);
+    assert.equal(sizes[0].ignoreValue, '1.45rem');
+  });
+
+  it('does not let clamp() endpoints alone switch the font-size rule on', () => {
+    // A fully fluid system enumerates no discrete ramp, so inferring one from
+    // clamp endpoints would flag every intermediate size. Keep abstaining.
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          display: { fontFamily: 'Avenir Next, Georgia, serif', fontSize: 'clamp(2.5rem, 6vw, 4rem)' },
+          body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: 'clamp(1rem, 2vw, 1.125rem)' },
+        },
+      },
+    });
+
+    assert.equal(designSystem.hasFontSizes, false);
+    assert.equal(isAllowedFontSizeRaw('12.5px', designSystem), true);
   });
 });
 
@@ -129,6 +283,9 @@ rounded:
         roundedMeta: {
           lg: { canonical: '24px' },
         },
+        shadows: [
+          { name: 'ambient-low', value: '0 4px 24px rgba(0,0,0,0.12)', purpose: 'Diffuse hover glow.' },
+        ],
       },
     }));
 
@@ -143,6 +300,63 @@ rounded:
     assert.equal(isAllowedColorRaw('#d55a42', loaded), true);
     assert.equal(isAllowedRadiusRaw('80px', loaded), true);
     assert.equal(isAllowedRadiusRaw('24px', loaded), true);
+    assert.equal(isAllowedShadowColorRaw('rgba(0, 0, 0, 0.12)', loaded), true);
+    assert.equal(isAllowedShadowColorRaw('rgba(0, 0, 0, 0.5)', loaded), false);
+  });
+
+  it('unescapes YAML-escaped quotes around multi-word font families (issue #428)', () => {
+    // A YAML double-quoted scalar processes backslash escapes, so a stack that
+    // quotes a multi-word family the CSS way arrives as
+    //   fontFamily: "\"IBM Plex Sans\", system-ui, sans-serif"
+    // Before the fix the family reached allowedFonts as '\"ibm plex sans' and
+    // the rule flagged fonts DESIGN.md declares.
+    const cwd = mkTmp();
+    fs.writeFileSync(path.join(cwd, 'DESIGN.md'), `---
+typography:
+  display:
+    fontFamily: "Archivo, system-ui, sans-serif"
+  body:
+    fontFamily: "\\"IBM Plex Sans\\", system-ui, sans-serif"
+  data:
+    fontFamily: '"IBM Plex Mono", ui-monospace, monospace'
+  accent:
+    fontFamily: "S\\u00f6hne, sans-serif"
+  label:
+    fontFamily: "IBM\\ Plex\\ Serif, serif"
+  mono:
+    fontFamily: "Space\\_Grotesk, sans-serif"
+colors:
+  accent: "\\x23b8422e"
+---
+
+# Design System
+`);
+
+    const loaded = loadDesignSystemForCwd(cwd);
+    assert.deepEqual(
+      [...loaded.allowedFonts].sort(),
+      ['archivo', 'ibm plex mono', 'ibm plex sans', 'ibm plex serif', 'space grotesk', 'söhne'],
+    );
+    assert.equal(isAllowedFont('ibm plex sans', loaded), true);
+    assert.equal(isAllowedFont('ibm plex mono', loaded), true);
+    // Escaped space (\ ) and non-breaking space (\_) forms; NBSP collapses to
+    // a plain space in normalizeFontName, so the CSS declaration matches.
+    assert.equal(isAllowedFont('ibm plex serif', loaded), true);
+    assert.equal(isAllowedFont('space grotesk', loaded), true);
+    assert.equal(isAllowedFont('comic sans ms', loaded), false);
+    // \x escapes decode too: "\x23b8422e" is #b8422e.
+    assert.equal(isAllowedColorRaw('#b8422e', loaded), true);
+    assert.equal(isAllowedColorRaw('#ff00aa', loaded), false);
+
+    const findings = checkSourceDesignSystem(`
+body { font-family: "IBM Plex Sans", system-ui, sans-serif; }
+code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+h1 { font-family: Archivo, system-ui, sans-serif; }
+em { font-family: "Söhne", sans-serif; color: #b8422e; }
+small { font-family: "IBM Plex Serif", serif; }
+pre { font-family: "Space Grotesk", sans-serif; }
+`, '/tmp/escaped-fonts.css', { designSystem: loaded });
+    assert.deepEqual(findings, []);
   });
 });
 
@@ -220,8 +434,174 @@ scale.style.cssText = 'font-family:' + MONO + '; font-size: 10px;';
 
     assert.deepEqual(
       findings.map((item) => item.ignoreValue),
-      ['#ff00aa', 'Poppins', '#cc00ff'],
+      ['10px', '#ff00aa', 'Poppins', '#cc00ff'],
     );
+  });
+
+  it('reports literal font sizes outside the DESIGN.md type ramp', () => {
+    const designSystem = sampleDesignSystem();
+    const source = `.off-ramp {
+  font-size: 12.5px;
+}
+const label = { fontSize: "11px" };
+const badge = { className: "text-[10px]" };
+/* font-size: 9px; */
+.on-ramp {
+  font-size: 1rem;
+}
+`;
+    const findings = checkSourceDesignSystem(source, '/tmp/sizes.css', { designSystem });
+    const fontSizeFindings = findings.filter((item) => item.antipattern === 'design-system-font-size');
+
+    assert.equal(fontSizeFindings.length, 3);
+    assert.deepEqual(
+      fontSizeFindings.map((item) => item.ignoreValue),
+      ['12.5px', '11px', '10px'],
+    );
+    assert.deepEqual(
+      fontSizeFindings.map((item) => item.line),
+      [2, 4, 5],
+    );
+  });
+
+  it('abstains on font-size checks when DESIGN.md has no literal ramp steps', () => {
+    const designSystem = normalizeDesignSystem({
+      frontmatter: {
+        typography: {
+          display: { fontFamily: 'Avenir Next, Georgia, serif', fontSize: 'clamp(2.5rem, 6vw, 4rem)' },
+          body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: 'clamp(1rem, 2vw, 1.125rem)' },
+        },
+      },
+    });
+    assert.equal(designSystem.hasFontSizes, false);
+
+    const findings = checkSourceDesignSystem('.bad { font-size: 12.5px; }', '/tmp/clamp-only.css', { designSystem });
+    assert.equal(findings.some((item) => item.antipattern === 'design-system-font-size'), false);
+  });
+});
+
+describe('sidecar shadow tokens (issue #547)', () => {
+  // Mirrors the sidecar `extensions.shadows` schema from document.md Step 4b.
+  function shadowDesignSystem() {
+    return normalizeDesignSystem({
+      frontmatter: {
+        colors: { ink: '#241f1a', paper: '#f7f4ee' },
+      },
+      sidecar: {
+        extensions: {
+          shadows: [
+            {
+              name: 'outset',
+              value: 'inset 0 1px 0 oklch(1 0 0 / 0.07), 0 1px 2px oklch(0 0 0 / 0.28), 0 4px 12px oklch(0 0 0 / 0.22)',
+              purpose: 'Default card shadow.',
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  it('matches documented shadow colors on alpha, not just r/g/b', () => {
+    const designSystem = shadowDesignSystem();
+    assert.equal(isAllowedShadowColorRaw('oklch(0 0 0 / 0.28)', designSystem), true);
+    assert.equal(isAllowedShadowColorRaw('rgba(0, 0, 0, 0.28)', designSystem), true);
+    assert.equal(isAllowedShadowColorRaw('oklch(1 0 0 / 0.07)', designSystem), true);
+    // Same black, undocumented alpha: the r/g/b channels alone must not match.
+    assert.equal(isAllowedShadowColorRaw('oklch(0 0 0 / 55%)', designSystem), false);
+    assert.equal(isAllowedShadowColorRaw('#000', designSystem), false);
+    // Shadow tokens must not switch the general color rule's allowlist on.
+    assert.equal(isAllowedColorRaw('oklch(0 0 0 / 0.28)', designSystem), false);
+  });
+
+  it('allows documented shadow colors in shadow contexts only', () => {
+    const designSystem = shadowDesignSystem();
+    const findings = checkSourceDesignSystem(`
+.a { box-shadow: 0 1px 2px oklch(0 0 0 / 0.28); }
+.b { box-shadow: 0 20px 50px oklch(0 0 0 / 55%); }
+.c { background: #000; }
+.d { background: oklch(0 0 0 / 0.28); }
+.e { text-shadow: 0 1px 2px oklch(0 0 0 / 0.28); }
+.f { box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.07), 0 4px 12px oklch(0 0 0 / 0.22); }
+const card = { boxShadow: "0 1px 2px rgba(0, 0, 0, 0.28)" };
+const layered = { boxShadow: "0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.22)" };
+const bad = { color: "rgba(0, 0, 0, 0.28)" };
+const leak = { boxShadow: "0 1px 2px rgba(0, 0, 0, 0.28)", color: "rgba(0, 0, 0, 0.28)" };
+`, '/tmp/shadows.css', { designSystem });
+    const colors = findings.filter((item) => item.antipattern === 'design-system-color');
+
+    // .a, .e, .f, and both JS boxShadow strings (including the second layer
+    // past the comma) pass; .b (undocumented alpha), .c (forbidden ground),
+    // .d (documented alpha outside a shadow), and both JS color keys still
+    // fire — the `leak` line proves the closing quote stops the shadow
+    // context from reaching a later property. A fix that silences .d has
+    // stopped discriminating between shadow usage and page grounds.
+    assert.deepEqual(
+      colors.map((item) => [item.line, item.ignoreValue]),
+      [
+        [3, 'oklch(0 0 0 / 55%)'],
+        [4, '#000'],
+        [5, 'oklch(0 0 0 / 0.28)'],
+        [10, 'rgba(0, 0, 0, 0.28)'],
+        [11, 'rgba(0, 0, 0, 0.28)'],
+      ],
+    );
+  });
+
+  it('abstains from the color rule entirely when only shadows are documented', () => {
+    // A shadows-only sidecar must not switch hasColors on: with no palette to
+    // measure against, the engine abstains rather than guesses, same as every
+    // other design-system rule.
+    const designSystem = normalizeDesignSystem({
+      sidecar: {
+        extensions: {
+          shadows: [{ name: 'outset', value: '0 1px 2px oklch(0 0 0 / 0.28)' }],
+        },
+      },
+    });
+    assert.equal(designSystem.hasColors, false);
+    const findings = checkSourceDesignSystem(
+      '.c { background: #000; }',
+      '/tmp/shadows-only.css',
+      { designSystem },
+    );
+    assert.equal(findings.some((item) => item.antipattern === 'design-system-color'), false);
+  });
+
+  it('keeps shadow context across template interpolations', () => {
+    const designSystem = shadowDesignSystem();
+    const findings = checkSourceDesignSystem(`
+const card = { boxShadow: \`0 \${offset}px 2px rgba(0, 0, 0, 0.28)\` };
+  box-shadow: 0 1px \${blur}px rgba(0, 0, 0, 0.28);
+const fn = { boxShadow: \`0 \${getShadow('lg')} 2px rgba(0, 0, 0, 0.28)\` };
+const tern = { boxShadow: \`0 1px \${dark ? "4px" : "2px"} rgba(0, 0, 0, 0.28)\` };
+  box-shadow: 0 \${theme('blur')} rgba(0, 0, 0, 0.28);
+const nested = { boxShadow: \`0 \${getOffset({ size: 2 })}px 2px rgba(0, 0, 0, 0.28)\` };
+const nestedQ = { boxShadow: \`0 \${getOffset({ size: 'lg' })}px rgba(0, 0, 0, 0.28)\` };
+const leak = { boxShadow: \`0 \${offset}px rgba(0, 0, 0, 0.28)\`, color: "rgba(0, 0, 0, 0.28)" };
+`, '/tmp/interpolated.js', { designSystem });
+    const colors = findings.filter((item) => item.antipattern === 'design-system-color');
+
+    // The documented shadow color passes after a \${...} interpolation in
+    // the JS template literal and the CSS-in-JS line, including
+    // interpolations carrying quoted function arguments, ternary branches,
+    // and one level of object-literal braces; the color key on the leak line
+    // still fires because it sits past the template's closing backtick.
+    assert.deepEqual(
+      colors.map((item) => [item.line, item.ignoreValue]),
+      [[9, 'rgba(0, 0, 0, 0.28)']],
+    );
+  });
+
+  it('does not allow a later declaration to inherit shadow context from earlier on the line', () => {
+    const designSystem = shadowDesignSystem();
+    const findings = checkSourceDesignSystem(
+      '.x { box-shadow: 0 1px 2px oklch(0 0 0 / 0.28); background: oklch(0 0 0 / 0.28); }',
+      '/tmp/one-line.css',
+      { designSystem },
+    );
+    const colors = findings.filter((item) => item.antipattern === 'design-system-color');
+    assert.equal(colors.length, 1);
+    assert.equal(colors[0].ignoreValue, 'oklch(0 0 0 / 0.28)');
   });
 });
 

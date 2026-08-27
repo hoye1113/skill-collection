@@ -18,6 +18,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { LIVE_UI_COMPONENT_IDS, LIVE_UI_PREFIX } from '../skill/scripts/live/ui-surfaces.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LIVE_BROWSER = path.resolve(
   __dirname,
@@ -74,7 +76,7 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
-  it('uses a Svelte-gated painted-ancestor crop proxy for shader capture', () => {
+  it('uses a framework-component-gated painted-ancestor crop proxy for shader capture', () => {
     assert.match(
       SOURCE,
       /function findShaderProxyCaptureRoot\(el\) \{[\s\S]{0,500}?let node = el\.parentElement;[\s\S]{0,700}?containsElement && paintsShaderProxySurface\(node\)[\s\S]{0,120}?return null;/,
@@ -87,8 +89,8 @@ describe('live-browser.js regression guards', () => {
     );
     assert.match(
       SOURCE,
-      /function shouldUseAncestorCropShaderProxy\(el\) \{[\s\S]{0,260}?window\.__IMPECCABLE_LIVE_ADAPTER__[\s\S]{0,280}?currentPreviewMode === 'svelte-component' \|\| svelteComponentSession[\s\S]{0,260}?dataset\?\.impeccablePreview === 'svelte-component';/,
-      'ancestor crop proxy must be gated to the Svelte adapter / Svelte component previews',
+      /function shouldUseAncestorCropShaderProxy\(el\) \{[\s\S]{0,260}?window\.__IMPECCABLE_LIVE_ADAPTER__[\s\S]{0,280}?isFrameworkComponentPreviewMode\(currentPreviewMode\) \|\| svelteComponentSession[\s\S]{0,260}?isFrameworkComponentPreviewMode\(wrapper\?\.dataset\?\.impeccablePreview\);/,
+      'ancestor crop proxy must be gated to Svelte/Vue component previews',
     );
     assert.match(
       SOURCE,
@@ -141,9 +143,28 @@ describe('live-browser.js regression guards', () => {
   it('restores unsaved inline edit drafts before hideBar tears editing down', () => {
     assert.match(
       SOURCE,
-      /function hideBar\(\) \{[\s\S]{0,620}?if \(state === 'EDITING'\) restoreInlineEditDrafts\(\);[\s\S]{0,80}?disableInlineEdit\(\);/,
+      /function hideBar\(instant\) \{[\s\S]{0,720}?if \(state === 'EDITING'\) restoreInlineEditDrafts\(\);[\s\S]{0,80}?disableInlineEdit\(\);/,
       'hideBar should not leave unsaved contenteditable drafts in the DOM when an external event hides the bar',
     );
+  });
+
+  it('discards variants without hiding the original or animating stale chrome', () => {
+    assert.match(SOURCE, /function showOriginalDuringDiscard\(sessionId\)[\s\S]{0,900}?data-impeccable-variant="original"/);
+    assert.match(SOURCE, /function handleDiscard\(\)[\s\S]{0,420}?cleanup\(\{ restoreOriginal: true, instantChrome: true \}\)/);
+    assert.match(SOURCE, /if \(instant\) barEl\.style\.display = 'none'/);
+    assert.match(
+      SOURCE,
+      /if \(restoreOriginal\) showOriginalDuringDiscard\(cleanupSessionId\);\s*else wrapper\.style\.display = 'none';/,
+      'only non-discard cleanup may blank the wrapper while waiting for HMR',
+    );
+  });
+
+  it('stores live state off the document root and preserves the selected anchor top', () => {
+    assert.match(SOURCE, /window\.__IMPECCABLE_LIVE_STATE__ = next/);
+    assert.doesNotMatch(SOURCE, /document\.documentElement\.dataset\.impeccableLiveState/);
+    assert.match(SOURCE, /pickedAnchorViewportTop: Number\.isFinite\(pickedAnchorViewportTop\)/);
+    assert.match(SOURCE, /scrollLockAnchorTop = typeof initialAnchorTop === 'number' && isFinite\(initialAnchorTop\)/);
+    assert.match(SOURCE, /const anchorDelta = anchorTop - scrollLockAnchorTop/);
   });
 
   it('does not autofocus the steering chat while inline editing', () => {
@@ -254,6 +275,73 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('SSE error reply clears the durable session checkpoint like discarded', () => {
+    // Issue #362: `live-poll.mjs --reply <id> error "..."` is the documented
+    // abort flow in reference/live.md, and an agent error reply is terminal
+    // for the session it names. The 'error' case used to reset only the UI
+    // (hideBar + PICKING) while the localStorage checkpoint written for the
+    // GENERATING phase survived — so every reload resurrected a dead session
+    // the server no longer knew about, until the user hand-cleared the
+    // impeccable-live* keys in the console. The error path must tear down the
+    // named session exactly like 'discarded' does (markSessionHandled +
+    // cleanup, which includes clearSession), and drop a stored-but-not-
+    // current checkpoint that matches the errored id.
+    const errorCase = SOURCE.match(/case 'error':[\s\S]{0,2500}?setLiveState\('PICKING'\);\s*break;/);
+    assert.ok(errorCase, 'expected an SSE case \'error\' handler in live-browser.js');
+    assert.match(
+      errorCase[0],
+      /if \(msg\.id && msg\.id === currentSessionId\) \{[\s\S]{0,160}?markSessionHandled\(\);[\s\S]{0,80}?cleanup\(\);[\s\S]{0,80}?break;/,
+      'an error reply naming the current session must run the same markSessionHandled + cleanup teardown as \'discarded\' so the durable checkpoint is cleared',
+    );
+    assert.match(
+      errorCase[0],
+      /if \(msg\.id && loadSession\(\)\?\.id === msg\.id\) clearSession\(\);/,
+      'an error reply naming a stored-but-not-current session must drop that checkpoint so a reload cannot resurrect it',
+    );
+  });
+
+  it('a late accept failure is recognized after the optimistic teardown (#384)', () => {
+    // Accept is optimistic: POST /events acknowledging the intent schedules
+    // cleanupAcceptedSession(), which nulls pendingAcceptedSession before
+    // live-accept.mjs has actually run. When the accept later fails (missing
+    // markers, preview error, receipt conflict, source_locked), the SSE
+    // 'error' guard keyed on pendingAcceptedSession could no longer match,
+    // so the user got only the generic error toast with no hint that their
+    // variant was never written. An awaitingAcceptResult id must be set on
+    // the optimistic success path, survive cleanupAcceptedSession, be
+    // matched in the 'error' case with an explicit not-saved message, and
+    // be released when the real accept result arrives.
+    assert.match(
+      SOURCE,
+      /awaitingAcceptResult = \{ id: acceptedSessionId \};[\s\S]{0,400}?scheduleAcceptCleanup\(pending\);/,
+      'the optimistic POST-success path must record awaitingAcceptResult before scheduling the teardown',
+    );
+    const errorCase = SOURCE.match(/case 'error':[\s\S]{0,2600}?setLiveState\('PICKING'\);\s*break;/);
+    assert.ok(errorCase, 'expected an SSE case \'error\' handler in live-browser.js');
+    assert.match(
+      errorCase[0],
+      /if \(awaitingAcceptResult\?\.id && msg\.id === awaitingAcceptResult\.id\) \{[\s\S]{0,700}?awaitingAcceptResult = null;[\s\S]{0,700}?may not have been saved[\s\S]{0,300}?break;/,
+      'an error naming the awaited accept must clear the marker and warn that the variant may not have been saved (hedged: a carbonize-phase failure fires this after the source WAS promoted)',
+    );
+    // Accept unlocks at the first variant, so a late generation agent_done
+    // for the same session id can arrive after Accept; only a carbonize
+    // agent_done is provably accept-side and may close the window.
+    const agentDoneCase = SOURCE.match(/case 'agent_done':[\s\S]{0,1200}?break;/);
+    assert.ok(agentDoneCase, 'expected an SSE case \'agent_done\' handler in live-browser.js');
+    assert.match(
+      agentDoneCase[0],
+      /msg\.data\?\.carbonize === true && awaitingAcceptResult\?\.id && msg\.id === awaitingAcceptResult\.id/,
+      'agent_done must only release the awaited accept marker for carbonize completions, or a late generation agent_done reopens the #384 hole',
+    );
+    const cleanupFn = SOURCE.match(/function cleanupAcceptedSession\(\) \{[\s\S]{0,1200}?\n  \}/);
+    assert.ok(cleanupFn, 'expected cleanupAcceptedSession in live-browser.js');
+    assert.doesNotMatch(
+      cleanupFn[0],
+      /awaitingAcceptResult\s*=/,
+      'cleanupAcceptedSession must not clear awaitingAcceptResult - surviving the teardown is the point',
+    );
+  });
+
   it('handleServerLost preserves the current recoverable phase', () => {
     assert.doesNotMatch(
       SOURCE,
@@ -264,6 +352,41 @@ describe('live-browser.js regression guards', () => {
       SOURCE,
       /function handleServerLost\(\)[\s\S]{0,300}?const recoveryState = currentSessionId \? state : 'IDLE';[\s\S]{0,1200}?setLiveState\(recoveryState\);[\s\S]{0,120}?if \(currentSessionId\) saveSession\(\);/,
       'server-lost cleanup should keep the current session phase in local recovery state instead of rewriting it to GENERATING',
+    );
+  });
+
+  it('server-lost toast frames the disconnect as resumable, not ended', () => {
+    assert.doesNotMatch(
+      SOURCE,
+      /Live server disconnected\. Session ended\./,
+      'the "Session ended" copy made agents rationalize bailing to direct edits; the session is resumable',
+    );
+    assert.match(
+      SOURCE,
+      /Live server connection lost\. Your session is saved;[^']*restart live-poll\.mjs to continue\./,
+      'server-lost toast should tell the user the session is saved and how to continue',
+    );
+  });
+
+  it('the agent-phase progress bar advances monotonically', () => {
+    // A behind/resumed checkpoint must not move the visible bar backward.
+    assert.doesNotMatch(
+      SOURCE,
+      /generationPhase = msg\.phase \|\| generationPhase;/,
+      'raw phase assignment lets a behind checkpoint regress the visible bar to an earlier phase',
+    );
+    assert.match(
+      SOURCE,
+      /case 'agent_phase':[\s\S]{0,400}?if \(shouldAdvancePhase\(generationPhase, msg\.phase\)\) generationPhase = msg\.phase;/,
+      'agent_phase should only advance the phase when it moves forward',
+    );
+    // The rank table must order the lifecycle so scaffolding/source_ready sit
+    // below generating and the reviewable phases.
+    assert.match(SOURCE, /function shouldAdvancePhase\(current, next\)/);
+    assert.match(
+      SOURCE,
+      /scaffolding: 2,[\s\S]{0,120}?source_ready: 4,[\s\S]{0,120}?(generation_ready|generating): 5,/,
+      'scaffolding and source_ready must rank below generating',
     );
   });
 
@@ -315,6 +438,65 @@ describe('live-browser.js regression guards', () => {
       SOURCE,
       /scrollLockAbort\.signal\.addEventListener\('abort', \(\) => \{\s*document\.getElementById\(SCROLL_ANCHOR_LOCK_ID\)\?\.remove\(\);/,
       'stopping the scroll lock must remove the injected anchor-suppression <style> so it never outlives the session',
+    );
+  });
+
+  it('drives variant visibility and --p-* params through a stylesheet, not inline SSR element mutation', () => {
+    // Variant divs live in page source, so Next.js App Router server-renders
+    // them. Toggling hidden/style.display/--p-* on those nodes client-side
+    // makes React 19 report a hydration mismatch on the next Fast-Refresh
+    // re-render — the same failure mode as scroll-anchor (#276) and pick-cursor
+    // (#286). Visibility and range/toggle custom properties must go through an
+    // injected <style> rule instead.
+    assert.doesNotMatch(
+      SOURCE,
+      /function setVariantShown\(/,
+      'event=live_browser.variant_visibility_hydration actor=browser operation=show_variant_in_dom risk=react19_hydration_mismatch_on_next_app_router expected=stylesheet_rule actual=hidden_and_inline_display_on_variant_div',
+    );
+    assert.match(
+      SOURCE,
+      /if \(svelteComponentSession\?\.sessionId === currentSessionId\)[\s\S]{0,280}?variantEl\.style\.setProperty\('--p-'/,
+      'client-mounted Svelte component variants drive --p-* inline (no SSR div, no hydration), unlike server-rendered variant divs',
+    );
+    assert.match(
+      SOURCE,
+      /function applyParamValue\([\s\S]{0,1200}?svelteComponentSession\?\.sessionId === currentSessionId[\s\S]{0,400}?return;[\s\S]{0,400}?updateVariantStateStylesheet\(currentSessionId, visibleVariant\)/,
+      'applyParamValue must short-circuit the Svelte inline path before the SSR stylesheet path',
+    );
+    assert.match(
+      SOURCE,
+      /const VARIANT_STATE_STYLE_ID = 'impeccable-variant-state';/,
+      'the variant-state style needs a stable id constant so it can be created and removed by id',
+    );
+    assert.match(
+      SOURCE,
+      /const VARIANT_HIDE_DECL = 'display: none !important;';/,
+      'the hidden-variant rule should be a named constant for readability',
+    );
+    assert.match(
+      SOURCE,
+      /function updateVariantStateStylesheet\(sessionId, num\)[\s\S]{0,500}?createElement\('style'\)[\s\S]{0,500}?VARIANT_HIDE_DECL/,
+      'variant cycling must hide non-visible variants with an injected <style> rule keyed by VARIANT_STATE_STYLE_ID',
+    );
+    assert.match(
+      SOURCE,
+      /function removeVariantStateStylesheet\(\)[\s\S]{0,120}?document\.getElementById\(VARIANT_STATE_STYLE_ID\)\?\.remove\(\)/,
+      'leaving CYCLING or tearing down live mode must remove the injected variant-state <style>',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /function refreshParamsPanel\(\)[\s\S]{0,220}?if \(state !== 'CYCLING'\)[\s\S]{0,220}?removeVariantStateStylesheet\(\)/,
+      'refreshParamsPanel must not strip the variant-state sheet during GENERATING first-reveal',
+    );
+    assert.match(
+      SOURCE,
+      /function refreshParamsPanel\(\)[\s\S]{0,600}?if \(!variantEl \|\| params\.length === 0\)[\s\S]{0,220}?updateVariantStateStylesheet\(currentSessionId, visibleVariant\)/,
+      'paramless variant switches must re-sync the variant-state sheet to clear stale --p-* params',
+    );
+    assert.match(
+      SOURCE,
+      /function isVariantShown\(el\)[\s\S]{0,120}?getComputedStyle\(el\)\.display/,
+      'visible-variant detection must read computed display, not el.hidden or el.style.display',
     );
   });
 
@@ -381,8 +563,32 @@ describe('live-browser.js regression guards', () => {
     );
     assert.match(
       SOURCE,
+      /function buildSteerProcessingDots\(\)[\s\S]{0,500}?justifyContent: 'flex-end'[\s\S]{0,220}?marginLeft: 'auto'/,
+      'steer processing dots should stay aligned to the input trailing edge',
+    );
+    assert.match(
+      SOURCE,
       /function syncAgentPollingUi\(/,
       'global bar brand must reflect agent poll connectivity',
+    );
+    // The indicator goes quiet both when nobody is polling and when the agent
+    // holds leased work. Under one-shot foreground polling the second case is
+    // every normal generation, so a single "run live-poll.mjs to connect" tip
+    // told users to fix a healthy session.
+    assert.match(
+      SOURCE,
+      /function agentHasWorkInFlight\(\)\s*\{\s*return state === 'GENERATING' \|\| state === 'SAVING';/,
+      'agent poll copy must distinguish a busy agent from an absent one',
+    );
+    assert.match(
+      SOURCE,
+      /agentHasWorkInFlight\(\) \? AGENT_BUSY_TIP : AGENT_DISCONNECTED_TIP/,
+      'a busy agent must not be described as disconnected',
+    );
+    assert.match(
+      SOURCE,
+      /tip\.textContent = agentStatusText\(\)/,
+      'tooltip copy must be derived at display time, not read from a cache the 5s status poll last wrote',
     );
     assert.match(
       SOURCE,
@@ -528,6 +734,34 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('toast enter and dismiss timers only touch the current toast element', () => {
+    assert.match(
+      SOURCE,
+      /function showToast\(message, duration\)[\s\S]{0,1200}?const currentToast = el\('div'/,
+      'showToast must capture the created toast in a local so delayed callbacks cannot dereference or remove a stale global toastEl',
+    );
+    assert.match(
+      SOURCE,
+      /requestAnimationFrame\(\(\) => \{[\s\S]{0,80}?if \(toastEl !== currentToast\) return;[\s\S]{0,120}?currentToast\.style\.opacity = '1';/,
+      'toast enter rAF must no-op when dismissToast or a newer toast replaced toastEl before the frame fires',
+    );
+    assert.match(
+      SOURCE,
+      /setTimeout\(\(\) => \{[\s\S]{0,80}?if \(toastEl !== currentToast\) return;[\s\S]{0,120}?currentToast\.style\.opacity = '0';/,
+      'toast auto-dismiss timer must not animate a newer toast created after this timer was scheduled',
+    );
+    assert.match(
+      SOURCE,
+      /setTimeout\(\(\) => \{[\s\S]{0,80}?if \(toastEl !== currentToast\) return;[\s\S]{0,80}?currentToast\.remove\(\);[\s\S]{0,80}?toastEl = null;/,
+      'toast removal timer must only remove and clear the same toast it scheduled',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /requestAnimationFrame\(\(\) => \{\s*toastEl\.style/,
+      'toast enter rAF must not read toastEl.style directly after dismissToast can null it',
+    );
+  });
+
   it('insert mode UI and generate payload guards', () => {
     assert.match(SOURCE, /function toggleInsert\(\)/, 'global bar must expose insert toggle');
     assert.match(SOURCE, /PREFIX \+ '-insert-toggle'/, 'insert toggle needs stable id');
@@ -632,8 +866,8 @@ describe('live-browser.js regression guards', () => {
     );
     assert.match(
       SOURCE,
-      /function setVariantShown\(el, shown\)[\s\S]{0,200}?removeAttribute\('hidden'\)/,
-      'variant cycling must clear the hidden attribute, not only style.display',
+      /function updateVariantStateStylesheet\(sessionId, num\)[\s\S]{0,900}?VARIANT_HIDE_DECL/,
+      'variant cycling must hide non-visible variants via injected stylesheet, not hidden/style.display on SSR divs',
     );
     assert.match(
       SOURCE,
@@ -754,6 +988,70 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('makes every arrived progressive variant immediately actionable', () => {
+    assert.match(
+      SOURCE,
+      /if \(arrivedVariants > 0\) \{[\s\S]{0,180}?setLiveState\('CYCLING'\)/,
+      'the first arrived variant should leave the generating-only state',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /arrivedVariants < expectedVariants\) \{[\s\S]{0,180}?accept\.style\.pointerEvents = 'none'/,
+      'Accept must not wait for variants the user did not choose',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /arrivedVariants < expectedVariants\) \{[\s\S]{0,180}?discard\.style\.pointerEvents = 'none'/,
+      'Discard must cancel remaining work immediately',
+    );
+    assert.match(
+      SOURCE,
+      /const resumedState = arrivedVariants > 0 \? 'CYCLING' : 'GENERATING'/,
+      'reload recovery should preserve a partially delivered review state',
+    );
+    assert.match(
+      SOURCE,
+      /arrivedVariants >= expectedVariants && expectedVariants > 0[\s\S]{0,100}?\? 'variants_ready'[\s\S]{0,60}?: 'variants_progress'/,
+      'checkpoint timing must distinguish partial review from complete delivery by counts',
+    );
+  });
+
+  it('keeps deferred Tune controls visible and refreshes params-only publications', () => {
+    assert.match(
+      SOURCE,
+      /const paramsPending = !hasParams && \(parameterGenerationState === 'pending' \|\| parameterGenerationState === 'loading'\)/,
+      'the cycling bar must expose Tune while parameter generation is outstanding',
+    );
+    assert.match(SOURCE, /tune\.disabled = true/, 'pending Tune must be visibly loading but non-interactive');
+    assert.match(SOURCE, /Tune controls are ready\./, 'parameter arrival needs a clear ready indication');
+    // Source-mode DOM injection is gated to the `done` branch (it races
+    // framework ownership mid-generation), but a params-only publication must
+    // still flip the Tune controls into their loading state on the checkpoint.
+    assert.match(
+      SOURCE,
+      /case 'variant_progress':[\s\S]{0,120}?if \(msg\.publicationKind === 'params'\) parameterGenerationState = 'loading';/,
+      'a params-only publication must mark Tune controls loading even though the variant count is unchanged',
+    );
+    assert.match(
+      SOURCE,
+      /function completeParameterGenerationIfReady\(\) \{[\s\S]{0,240}?arrivedVariants < expectedVariants[\s\S]{0,160}?parameterGenerationState === 'pending'[\s\S]{0,120}?completeParameterPublication\(\);/,
+      'the completed variants publication must resolve pending Tune controls even when no params publication follows',
+    );
+    assert.ok(
+      (SOURCE.match(/completeParameterGenerationIfReady\(\);/g) || []).length >= 4,
+      'every DOM, source, and component-preview completion path must resolve pending Tune controls',
+    );
+    assert.match(SOURCE, /revisionDomain: 'browser'/, 'browser checkpoints must use their own revision domain');
+  });
+
+  it('promotes an early-accepted Svelte preview before releasing the picker', () => {
+    assert.match(
+      SOURCE,
+      /function scheduleAcceptCleanup\(accepted\) \{[\s\S]{0,420}?if \(accepted\?\.isSvelteComponent\) \{[\s\S]{0,120}?commitAcceptedSvelteComponentToDom\(accepted\.id\);[\s\S]{0,120}?cleanupAcceptedSession\(\);/,
+      'Svelte early accept must tear down its adapter mount before the next picking session starts',
+    );
+  });
+
   it('variant injection resolves the picked anchor before entering recovery', () => {
     assert.match(
       SOURCE,
@@ -772,6 +1070,299 @@ describe('live-browser.js regression guards', () => {
     );
   });
 
+  it('uses dark ink for every control filled with kinpaku gold in the Tune drawer', () => {
+    assert.match(
+      SOURCE,
+      /background: tuneOpen \? C\.brand : BP\.hairline,[\s\S]{0,100}?color: tuneOpen \? C\.ink : 'inherit'/,
+      'the active Tune count badge needs dark ink on gold',
+    );
+    assert.match(
+      SOURCE,
+      /background: active \? C\.brand : 'transparent',[\s\S]{0,100}?color: active \? C\.ink : P\.text/,
+      'active segmented options need dark ink on gold',
+    );
+    assert.match(
+      SOURCE,
+      /btn\.style\.background = on \? C\.brand : 'transparent';\s*btn\.style\.color = on \? C\.ink : P\.text;/,
+      'segmented options must keep dark ink after interaction',
+    );
+    assert.match(
+      SOURCE,
+      /const knob = el\('span',[\s\S]{0,300}?background: C\.ink/,
+      'the toggle knob needs a visible dark edge against gold',
+    );
+  });
+
+  it('acknowledges every successful component mount back to the server', () => {
+    // `arrivedVariants` counts what the agent published. Without this ack the
+    // server has no way to tell "the user is comparing three variants" from
+    // "three modules 404'd and the page is blank".
+    assert.match(
+      SOURCE,
+      /reportVariantMounted\(sessionId, variantNum, moduleUrl\);/,
+      'a successful mount must post variant_mounted so the journal carries render truth',
+    );
+    assert.match(
+      SOURCE,
+      /function reportVariantMounted\([\s\S]{0,400}?sendEvent\(\{\s*type: 'variant_mounted',/,
+      'variant_mounted must go through the normal event POST helper',
+    );
+  });
+
+  it('reports mount failures to the server instead of only logging them', () => {
+    assert.match(
+      SOURCE,
+      /console\.error\('\[impeccable\] Failed to mount component variant[\s\S]{0,200}?reportVariantMountFailed\(sessionId, variantNum, moduleUrl, err\);/,
+      'event=live_browser.silent_mount_failure actor=browser operation=mount_component_variant risk=agent_never_learns_render_failed expected=variant_mount_failed posted actual=console.error only',
+    );
+    assert.match(
+      SOURCE,
+      /function reportVariantMountFailed\([\s\S]{0,900}?sendEvent\(\{ type: 'variant_mount_failed', id: sessionId, variant, url, error: message \}\);/,
+      'variant_mount_failed must carry the failed module URL and the error text',
+    );
+    // Both the first mount and a variant switch route through this one catch,
+    // so the switch path can no longer revert with zero feedback.
+    assert.match(
+      SOURCE,
+      /reportVariantMountFailed\(sessionId, variantNum, moduleUrl, err\);[\s\S]{0,300}?showMountErrorCard\(sessionId, \{/,
+      'a failed mount must raise the persistent error card from the shared catch',
+    );
+  });
+
+  it('keeps the session alive when a component variant fails to mount', () => {
+    const abort = SOURCE.match(
+      /function abortSvelteComponentInjection\(sessionId, details\) \{[\s\S]*?\n  \}\n/,
+    );
+    assert.ok(abort, 'abortSvelteComponentInjection must still exist');
+    const body = abort[0];
+    assert.doesNotMatch(
+      body,
+      /clearSession\(\)/,
+      'event=live_browser.mount_failure_wipe actor=browser operation=abort_svelte_injection risk=durable_session_orphaned expected=localStorage preserved actual=clearSession() called',
+    );
+    assert.doesNotMatch(
+      body,
+      /currentSessionId = null/,
+      'the session id is the only handle Retry and a republish have; abort must not drop it',
+    );
+    assert.doesNotMatch(
+      body,
+      /setLiveState\('PICKING'\)/,
+      'a mount failure is not the end of the session, so the bar must not fall back to PICKING',
+    );
+    assert.doesNotMatch(
+      body,
+      /showToast\(/,
+      'the 5s toast was replaced by a persistent card; a toast that vanishes reads as no feedback at all',
+    );
+    assert.match(body, /showMountErrorCard\(/, 'abort must raise the persistent error card');
+    assert.match(body, /saveSession\(\)/, 'abort must keep the localStorage cache in step with the server');
+  });
+
+  it('gives the manifest fetch failure and the session mismatch the same error card', () => {
+    assert.doesNotMatch(
+      SOURCE,
+      /if \(manifest\.id !== sessionId\) return;/,
+      'event=live_browser.silent_manifest_mismatch actor=browser operation=inject_from_manifest risk=bar_stuck_in_generating expected=error card actual=bare return',
+    );
+    assert.match(
+      SOURCE,
+      /if \(manifest\.id !== sessionId\) \{[\s\S]{0,700}?showMountErrorCard\(sessionId, \{/,
+      'a manifest belonging to another session must surface, not disappear',
+    );
+    assert.match(
+      SOURCE,
+      /Failed to mount component-preview variants:[\s\S]{0,400}?reportVariantMountFailed\(sessionId, visibleVariant \|\| 1, manifestPath, err\);/,
+      'a manifest that cannot be read is a render failure the agent must hear about',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /reportVariantMountFailed\(sessionId, visibleVariant \|\| 1, url,/,
+      'the /source fetch URL carries the live token and must never be journaled; report the manifest path',
+    );
+  });
+
+  it('offers a retry that re-runs injection for the same session', () => {
+    assert.match(
+      SOURCE,
+      /function retryMountErrorCard\(\) \{[\s\S]{0,900}?injectSvelteComponentsFromManifest\(manifestPath, sessionId\);/,
+      'the Retry button must re-enter the normal injection path rather than restarting the session',
+    );
+    assert.match(
+      SOURCE,
+      /function truncateMiddle\(value, max\)/,
+      'the card shows the failed module URL truncated in the middle so both ends stay readable',
+    );
+  });
+
+  it('rehydrates from the server when localStorage has no session', () => {
+    assert.doesNotMatch(
+      SOURCE,
+      /function restoreSessionWithoutWrapper\(reason, activeSessions\) \{\s*const saved = loadSession\(\);/,
+      'event=live_browser.storage_gated_restore actor=browser operation=sse_connected risk=durable_session_unreachable expected=server summary can seed a restore actual=localStorage is a gate',
+    );
+    assert.match(
+      SOURCE,
+      /const adopted = cached\?\.id \? null : findAdoptableServerSession\(activeSessions\);/,
+      'a page with no cached session must be able to adopt the durable one the server reports',
+    );
+    assert.match(
+      SOURCE,
+      /function findAdoptableServerSession\(activeSessions\) \{[\s\S]{0,600}?&& session\.pageUrl\s*&& pageMatchesCurrent\(session\.pageUrl\)/,
+      'adoption must require an explicit pageUrl match so it cannot hijack an unrelated route',
+    );
+    assert.match(
+      SOURCE,
+      /function findAdoptableServerSession\(activeSessions\) \{[\s\S]{0,600}?!isTerminalSessionSummary\(session\)/,
+      'accepted, discarded, and completed sessions must never be adopted',
+    );
+  });
+
+  it('carries no agent phase the server cannot emit', () => {
+    // Every one of these lived in PHASE_RANK and, for most, in a status string
+    // the user could never see: recordAgentPhase() in live-server.mjs has
+    // never emitted them. The validator now rejects them outright, so a
+    // leftover branch here is a branch that cannot run.
+    for (const retired of [
+      'first_variant_generating',
+      'first_variant_validating',
+      'remaining_variants_generating',
+      'remaining_variants_validating',
+      'variant_parameters_generating',
+      'variant_parameters_validating',
+      'parameters_ready',
+    ]) {
+      assert.doesNotMatch(
+        SOURCE,
+        new RegExp(retired),
+        'event=live_browser.dead_agent_phase actor=browser operation=phase_rank risk=ui_branches_on_phase_nothing_sends phase=' + retired,
+      );
+    }
+    // The phases the server does emit must all still rank.
+    for (const live of [
+      'picked_up', 'scaffolding', 'scaffold_fallback', 'source_ready',
+      'generation_ready', 'first_reviewable', 'second_reviewable', 'all_variants_ready',
+    ]) {
+      assert.match(SOURCE, new RegExp('\\n\\s+' + live + ': \\d+,'), live + ' must keep a rank');
+    }
+  });
+
+  it('renders the cycling counter through one function with one denominator', () => {
+    // buildCyclingRow showed visibleVariant/expectedVariants while
+    // syncCyclingControls wrote shown/arrivedVariants, so the same unchanged
+    // state rendered as "2/3" or "2/2" depending on which path ran last.
+    assert.doesNotMatch(
+      SOURCE,
+      /visibleVariant \+ '\/' \+ expectedVariants/,
+      'event=live_browser.counter_drift actor=browser operation=cycling_counter risk=two_denominators_for_one_counter',
+    );
+    assert.doesNotMatch(SOURCE, /shown \+ '\/' \+ arrivedVariants/);
+    assert.match(
+      SOURCE,
+      /function cyclingCounterText\(\) \{[\s\S]{0,300}?arrivedVariants > 0 \? arrivedVariants : expectedVariants/,
+      'the denominator policy is arrived-when-known, expected otherwise, in one place',
+    );
+    const counterAssignments = SOURCE.match(/-variant-counter'\)?;?[\s\S]{0,120}?textContent = ([^;]+);/g) || [];
+    for (const assignment of counterAssignments) {
+      assert.match(assignment, /cyclingCounterText\(\)/, 'every counter write goes through cyclingCounterText');
+    }
+  });
+
+  it('gives the steer bar a visible Send control alongside Enter', () => {
+    assert.match(
+      SOURCE,
+      /pageChatSendBtn = el\('button'/,
+      'event=live_browser.steer_send_affordance actor=user operation=steer risk=enter_only_submit_reads_as_dead_input',
+    );
+    assert.match(SOURCE, /pageChatSendBtn\.id = PREFIX \+ '-page-chat-send'/);
+    assert.match(
+      SOURCE,
+      /function syncPageChatSendButton\(\)[\s\S]{0,900}?pageChatSendBtn\.disabled = !visible \|\| !hasText/,
+      'Send is disabled with an empty input',
+    );
+    assert.match(
+      SOURCE,
+      /function syncPageChatSendButton\(\)[\s\S]{0,900}?const visible = !steerLocked/,
+      'Send disappears while a steer is in flight',
+    );
+    // Enter must still submit.
+    assert.match(
+      SOURCE,
+      /if \(e\.key === 'Enter'\) \{\s*e\.preventDefault\(\);\s*submitSteerMessage\(\);/,
+      'keyboard submit stays',
+    );
+    // The inventory used to be an inline literal here, so this used to be a
+    // source-text match on the surface entry. It now lives in
+    // live/ui-surfaces.mjs (importable, one definition), so assert membership
+    // in the real list instead of the shape of the line that declares it.
+    assert.ok(
+      LIVE_UI_COMPONENT_IDS.includes(`${LIVE_UI_PREFIX}-page-chat-send`),
+      'the Send control must be registered as live UI chrome so it is excluded from capture',
+    );
+  });
+
+  it('says a queued steer is queued instead of pulsing at the user', () => {
+    assert.match(
+      SOURCE,
+      /function steerQueuedBehindGeneration\(\) \{[\s\S]{0,220}?steerLocked && !agentPollingConnected && agentHasWorkInFlight\(\)/,
+      'event=live_browser.steer_queue_feedback actor=user operation=steer_during_generation risk=queued_request_reads_as_lost',
+    );
+    assert.match(SOURCE, /Queued behind current generation/);
+    assert.match(
+      SOURCE,
+      /function syncSteerQueueHint\(\)[\s\S]{0,400}?pageChatDotsEl\.style\.display = 'none'/,
+      'the queue hint replaces the bare dots rather than sitting beside them',
+    );
+    assert.match(SOURCE, /function syncAgentPollingUi\(connected\) \{[\s\S]{0,140}?syncSteerQueueHint\(\)/);
+  });
+
+  it('names the actual cause when a steer times out', () => {
+    assert.doesNotMatch(
+      SOURCE,
+      /Check that live-poll is running and replies with steer_done/,
+      'event=live_browser.steer_timeout_copy actor=user operation=steer_timeout risk=blames_live_poll_for_a_busy_agent',
+    );
+    assert.match(
+      SOURCE,
+      /function steerTimeoutMessage\(\)[\s\S]{0,900}?steerQueuedBehindGeneration\(\)[\s\S]{0,400}?!agentPollingConnected/,
+      'the timeout message branches on agent-busy vs nobody-polling',
+    );
+  });
+
+  it('distinguishes an empty DESIGN.md from a missing one in the design panel', () => {
+    assert.match(
+      SOURCE,
+      /function designEmptyMessage\(\)[\s\S]{0,700}?designState\.hasMd && !designState\.hasSidecar[\s\S]{0,300}?DESIGN\.md found, no structured tokens to display/,
+      'event=live_browser.design_empty_state actor=user operation=open_design_panel risk=present_design_md_reported_as_missing',
+    );
+    assert.match(
+      SOURCE,
+      /const beforeCount = body\.childElementCount;/,
+      'the empty check must ignore the stale hint and CTA the caller already appended',
+    );
+    assert.doesNotMatch(
+      SOURCE,
+      /msgDiv\('empty', 'No design system data available\.'\)/,
+      'the bare message may only survive as the genuinely-absent branch of designEmptyMessage',
+    );
+  });
+
+  it('includes named rules from every canonical narrative section', () => {
+    const narrativeStart = SOURCE.indexOf('  function synthesizeNarrative(parsed) {');
+    const narrativeEnd = SOURCE.indexOf('\n  function renderColorTiles', narrativeStart);
+    assert.notEqual(narrativeStart, -1, 'synthesizeNarrative must exist');
+    assert.notEqual(narrativeEnd, -1, 'synthesizeNarrative must end before renderColorTiles');
+    const narrativeSource = SOURCE.slice(narrativeStart, narrativeEnd);
+
+    for (const section of ['colors', 'typography', 'layout', 'elevation', 'shapes']) {
+      assert.match(
+        narrativeSource,
+        new RegExp(`md\\.${section}\\?\\.rules[^\\n]*section: '${section}'`),
+        `the design panel must carry named rules tagged with their ${section} section`,
+      );
+    }
+  });
+
   it('editing focus timeout does not read a stale inline edit row', () => {
     assert.doesNotMatch(
       SOURCE,
@@ -784,4 +1375,28 @@ describe('live-browser.js regression guards', () => {
       'edit-mode delayed focus should capture the element before scheduling and no-op if editing ended before the timeout fires',
     );
   });
+  it('adopts only variant comparisons from the server, never steer or manual sessions', () => {
+    // A completed-steer session is non-terminal and carries a sourceFile;
+    // adopting it as a comparison hunts for a variant wrapper that never
+    // existed and wedges the bar before the user's next pick (found by the
+    // vite8-react-base-path e2e after server-first rehydration landed).
+    assert.match(
+      SOURCE,
+      /function findAdoptableServerSession\([\s\S]{0,900}?Number\(session\.expectedVariants\) > 0/,
+      'adoption must require a generation-shaped session (expectedVariants > 0)',
+    );
+    assert.match(
+      SOURCE,
+      /function findAdoptableServerSession\([\s\S]{0,900}?ADOPTABLE_SESSION_PHASES\.has\(String\(session\.phase/,
+      'adoption must be limited to the comparison-phase allowlist',
+    );
+    // Accept/carbonize phases are agent-side work; adopting them resurrects
+    // the bar over a decided comparison (the slow-CI astro accept hang).
+    assert.doesNotMatch(
+      SOURCE,
+      /ADOPTABLE_SESSION_PHASES = new Set\(\[[\s\S]{0,200}?(accept_requested|carbonize|steer|manual_edit)/,
+      'accept, carbonize, steer, and manual-edit phases must not be adoptable',
+    );
+  });
+
 });

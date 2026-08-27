@@ -32,6 +32,7 @@ all-skills/
 | | [humanizer-zh](code-quality/humanizer-zh/) | 去除中文 AI 痕迹（24 种模式 + 50 分评分体系） |
 | | [reality-check](code-quality/reality-check/) | 深度代码审计：虚假测试 / mock 滥用 / 浅层健康检查检测 |
 | | [ai-humanizer](code-quality/ai-humanizer/) | 去除英文 AI 写作痕迹：24 种模式检测、统计信号、词汇 3 tier 分级 |
+| | [content-density-review](code-quality/content-density-review/) | 前端页面内容密度审查：explanation-itis / 冗余文案 / 视觉过载，产出分级 Markdown 审计报告（不改代码） |
 | **dev-workflow** | [superpowers](dev-workflow/superpowers/) | 完整开发方法论框架（14 个子 Skill：构思→计划→执行→调试→测试→验证→收尾） |
 | | [remotion](dev-workflow/remotion/) | Remotion React 视频框架最佳实践（30+ 规则文件） |
 | | [html-to-pdf](dev-workflow/html-to-pdf/) | HTML 转 PDF（Puppeteer + 像素级渲染 + RTL 自动检测） |
@@ -59,6 +60,8 @@ all-skills/
 | | [music-generator](creative/music-generator/) | ElevenLabs AI 音乐生成（简单/详细双模式） |
 | | [kinetic-video-creator](creative/kinetic-video-creator/) | 动态排版视频：脚本→TTS→音乐→动画（Remotion） |
 | | [tutorial-creator](creative/tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发） |
+| | [travel-memory-sticker-card](creative/travel-memory-sticker-card/) | 照片→水粉剪纸旅行记忆贴纸卡：3:2 卡片 + 主插画 + 3 英文关键词 + 6 枚贴纸 |
+| | [travel-memory-card-duo](creative/travel-memory-card-duo/) | 照片→双图交付：完整旅行记忆卡 + 同款六枚透明底（RGBA）贴纸 PNG |
 | **writing** | [report-writing](writing/report-writing/) | 端到端长报告创建（4 阶段流水线 / 依赖图分析） |
 | | [paper-writing](writing/paper-writing/) | 端到端学术论文创建（贡献声明 / 4 级审校） |
 | | [copy-editing](writing/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
@@ -157,3 +160,4 @@ all-skills/
 | qclaw | QClaw Skills |
 | **luban-skill** | **鲁班 Skill 打磨系统（五道工序全生命周期）** |
 | **phuryn/pm-skills** | **PM 方法论合集（9 plugins / 68 skills，Darwin 精选 15 个，MIT 协议）** |
+| **carolinaaafy** | **旅行记忆贴纸卡系列（水粉剪纸贴纸化技能，2 个）** |

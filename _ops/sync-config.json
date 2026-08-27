@@ -213,6 +213,20 @@
       ]
     },
     {
+      "name": "travel-memory-sticker-card",
+      "remoteUrl": "https://github.com/carolinaaafy/travel-memory-sticker-card.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "creative/travel-memory-sticker-card"
+    },
+    {
+      "name": "travel-memory-card-duo",
+      "remoteUrl": "https://github.com/carolinaaafy/travel-memory-card-duo.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "creative/travel-memory-card-duo"
+    },
+    {
       "name": "pm-skills",
       "remoteUrl": "https://github.com/phuryn/pm-skills.git",
       "strategy": "mapped",

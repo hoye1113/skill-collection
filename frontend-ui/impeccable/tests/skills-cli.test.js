@@ -10,11 +10,12 @@
  * gracefully when impeccable.style is unreachable.
  */
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { mkdtempSync, existsSync, readdirSync, readFileSync, mkdirSync, writeFileSync, rmSync, lstatSync, realpathSync, readlinkSync, symlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
+  copyProviderAgents,
   copyProviderHooks,
   copyProviderSkills,
   decideHookInstall,
@@ -83,11 +84,13 @@ function createFakeUniversalBundle(root, providers = ['.claude', '.agents', '.cu
     writeFileSync(join(skillDir, 'scripts', 'context.mjs'), 'console.log("local bundle context");\n');
   }
   if (providers.includes('.claude')) {
-    mkdirSync(join(bundleRoot, '.claude'), { recursive: true });
+    mkdirSync(join(bundleRoot, '.claude', 'agents'), { recursive: true });
     writeFileSync(join(bundleRoot, '.claude', 'settings.json'), JSON.stringify({
       description: 'fresh claude hook',
       hooks: { PostToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'node ".claude/skills/impeccable/scripts/hook.mjs"' }] }] },
     }, null, 2));
+    writeFileSync(join(bundleRoot, '.claude', 'agents', 'impeccable-finish-reviewer.md'),
+      '---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\n---\nClaude reviewer body.\n');
   }
   if (providers.includes('.cursor')) {
     mkdirSync(join(bundleRoot, '.cursor'), { recursive: true });
@@ -98,9 +101,31 @@ function createFakeUniversalBundle(root, providers = ['.claude', '.agents', '.cu
   }
   if (providers.includes('.agents')) {
     mkdirSync(join(bundleRoot, '.codex'), { recursive: true });
+    // Mirror production: the Codex bundle's `.codex/hooks.json` targets its own
+    // `.codex/skills` payload. The CLI installs the skill at `.agents/skills`, so
+    // the installer must rewrite this command to `.agents/skills` (see below).
     writeFileSync(join(bundleRoot, '.codex', 'hooks.json'), JSON.stringify({
-      hooks: { PostToolUse: [{ matcher: 'apply_patch', hooks: [{ type: 'command', command: 'node ".agents/skills/impeccable/scripts/hook.mjs"' }] }] },
+      hooks: { PostToolUse: [{ matcher: 'apply_patch', hooks: [{ type: 'command', command: 'node ".codex/skills/impeccable/scripts/hook.mjs"' }] }] },
     }, null, 2));
+  }
+  if (providers.includes('.grok')) {
+    mkdirSync(join(bundleRoot, '.grok', 'hooks'), { recursive: true });
+    writeFileSync(join(bundleRoot, '.grok', 'hooks', 'impeccable.json'), JSON.stringify({
+      hooks: { PostToolUse: [{ matcher: 'Edit|Write|MultiEdit', hooks: [{ type: 'command', command: 'node ".grok/skills/impeccable/scripts/hook.mjs"' }] }] },
+    }, null, 2));
+  }
+  // Native subagent definitions, mirroring the build's provider agents output.
+  if (providers.includes('.github')) {
+    mkdirSync(join(bundleRoot, '.github', 'agents'), { recursive: true });
+    writeFileSync(join(bundleRoot, '.github', 'agents', 'impeccable-finish-reviewer.agent.md'),
+      '---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\n---\nCopilot reviewer body.\n');
+    writeFileSync(join(bundleRoot, '.github', 'agents', 'impeccable-asset-producer.agent.md'),
+      '---\nname: impeccable-asset-producer\ndescription: Produces assets.\n---\nCopilot producer body.\n');
+  }
+  if (providers.includes('.cursor')) {
+    mkdirSync(join(bundleRoot, '.cursor', 'agents'), { recursive: true });
+    writeFileSync(join(bundleRoot, '.cursor', 'agents', 'impeccable-finish-reviewer.md'),
+      '---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\nmodel: inherit\nreadonly: true\nis_background: false\n---\nCursor reviewer body.\n');
   }
   return bundleRoot;
 }
@@ -209,6 +234,168 @@ describe('copyProviderSkills: symlink handling', () => {
     expect(existsSync(join(skillsPath, 'impeccable', 'SKILL.md'))).toBe(true);
     rmSync(tmp, { recursive: true, force: true });
   });
+});
+
+describe('copyProviderAgents: Claude, Copilot, and Cursor subagents', () => {
+  test('Claude project and user scopes use .claude/agents, with project copies taking precedence', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-claude-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-claude-home-'));
+    const bundle = createFakeUniversalBundle(tmp, ['.claude']);
+    mkdirSync(join(home, '.claude', 'agents'), { recursive: true });
+    writeFileSync(join(home, '.claude', 'agents', 'impeccable-finish-reviewer.md'), 'stale copy\n');
+
+    const projectResults = copyProviderAgents(bundle, tmp, ['.claude'], { scope: 'project', home });
+    const userResults = copyProviderAgents(bundle, home, ['.claude'], { scope: 'user' });
+
+    expect(projectResults).toHaveLength(1);
+    expect(projectResults[0].shadowed).toEqual([]);
+    expect(userResults).toHaveLength(1);
+    expect(readFileSync(join(tmp, '.claude', 'agents', 'impeccable-finish-reviewer.md'), 'utf8'))
+      .toContain('Claude reviewer body.');
+    expect(readFileSync(join(home, '.claude', 'agents', 'impeccable-finish-reviewer.md'), 'utf8'))
+      .toContain('Claude reviewer body.');
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test('Claude install and update backfill bundled agents beside an unchanged skill', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-claude-install-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-claude-install-home-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    const agentPath = join(tmp, '.claude', 'agents', 'impeccable-finish-reviewer.md');
+
+    const installOutput = run('skills install -y --no-hooks --providers=claude', { cwd: tmp, env });
+    expect(installOutput).toContain('Installed Claude Code agents into:');
+    expect(existsSync(agentPath)).toBe(true);
+
+    rmSync(agentPath);
+    const updateOutput = run('skills update -y --no-hooks', { cwd: tmp, env });
+    expect(updateOutput).toContain('Updated');
+    expect(updateOutput).toContain('Installed Claude Code agents into:');
+    expect(existsSync(agentPath)).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('project scope places agents at .github/agents/ and .cursor/agents/', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-project-'));
+    const bundle = createFakeUniversalBundle(tmp, ['.github', '.cursor']);
+
+    const results = copyProviderAgents(bundle, tmp, ['.github', '.cursor'], { scope: 'project' });
+
+    expect(existsSync(join(tmp, '.github', 'agents', 'impeccable-finish-reviewer.agent.md'))).toBe(true);
+    expect(existsSync(join(tmp, '.github', 'agents', 'impeccable-asset-producer.agent.md'))).toBe(true);
+    expect(existsSync(join(tmp, '.cursor', 'agents', 'impeccable-finish-reviewer.md'))).toBe(true);
+    expect(results.map(r => r.provider).sort()).toEqual(['.cursor', '.github']);
+
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test('user scope places Copilot agents at ~/.copilot/agents (not ~/.github) and Cursor agents at ~/.cursor/agents, overwriting stale copies', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-user-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-user-home-'));
+    const bundle = createFakeUniversalBundle(tmp, ['.github', '.cursor']);
+    // A stale user-level copy from an older release must be overwritten.
+    mkdirSync(join(home, '.copilot', 'agents'), { recursive: true });
+    writeFileSync(join(home, '.copilot', 'agents', 'impeccable-finish-reviewer.agent.md'), 'stale copy\n');
+
+    copyProviderAgents(bundle, home, ['.github', '.cursor'], { scope: 'user' });
+
+    const copilotAgent = readFileSync(join(home, '.copilot', 'agents', 'impeccable-finish-reviewer.agent.md'), 'utf8');
+    expect(copilotAgent).toContain('Copilot reviewer body.');
+    expect(existsSync(join(home, '.cursor', 'agents', 'impeccable-finish-reviewer.md'))).toBe(true);
+    expect(existsSync(join(home, '.github', 'agents'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test('skills check accepts current Copilot user agents in a home-rooted checkout', () => {
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-check-home-'));
+    execSync('git init', { cwd: home });
+    const bundleRoot = createFakeUniversalBundle(home, ['.github']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+
+    run('skills install -y --scope=global --no-hooks --providers=github', { cwd: home, env });
+    expect(existsSync(join(home, '.copilot', 'agents', 'impeccable-finish-reviewer.agent.md'))).toBe(true);
+    expect(existsSync(join(home, '.github', 'agents'))).toBe(false);
+
+    const output = run('skills check', { cwd: home, env });
+    expect(output).toContain('Skills are up to date');
+    expect(output).not.toContain('Updates available');
+
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('inferred home-rooted updates refresh stale or missing Copilot user agents', () => {
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-update-home-'));
+    execSync('git init', { cwd: home });
+    const bundleRoot = createFakeUniversalBundle(home, ['.github']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    const userAgent = join(home, '.copilot', 'agents', 'impeccable-finish-reviewer.agent.md');
+    const projectAgent = join(home, '.github', 'agents', 'impeccable-finish-reviewer.agent.md');
+
+    run('skills install -y --scope=global --no-hooks --providers=github', { cwd: home, env });
+    writeFileSync(userAgent, 'stale copy\n');
+
+    run('skills update -y --no-hooks', { cwd: home, env });
+    expect(readFileSync(userAgent, 'utf8')).toContain('Copilot reviewer body.');
+    expect(existsSync(projectAgent)).toBe(false);
+
+    rmSync(userAgent);
+    run('skills update -y --no-hooks', { cwd: home, env });
+    expect(readFileSync(userAgent, 'utf8')).toContain('Copilot reviewer body.');
+    expect(existsSync(projectAgent)).toBe(false);
+
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
+
+  test('project scope reports user-level Copilot agents that shadow the installed ones; Cursor never does (project wins there)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-shadow-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-shadow-home-'));
+    const bundle = createFakeUniversalBundle(tmp, ['.github', '.cursor']);
+    mkdirSync(join(home, '.copilot', 'agents'), { recursive: true });
+    writeFileSync(join(home, '.copilot', 'agents', 'impeccable-finish-reviewer.agent.md'), 'user-level copy\n');
+    mkdirSync(join(home, '.cursor', 'agents'), { recursive: true });
+    writeFileSync(join(home, '.cursor', 'agents', 'impeccable-finish-reviewer.md'), 'user-level copy\n');
+
+    const results = copyProviderAgents(bundle, tmp, ['.github', '.cursor'], { scope: 'project', home });
+
+    const github = results.find(r => r.provider === '.github');
+    const cursor = results.find(r => r.provider === '.cursor');
+    expect(github.shadowed).toEqual(['impeccable-finish-reviewer.agent.md']);
+    expect(cursor.shadowed).toEqual([]);
+    // The project copies still land; the shadow report is a warning, not a block.
+    expect(existsSync(join(tmp, '.github', 'agents', 'impeccable-finish-reviewer.agent.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test('fresh install lays agents down alongside skills and reports them', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-agents-install-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-agents-install-home-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.github', '.cursor']);
+
+    const output = run('skills install -y --no-hooks --providers=github,cursor', {
+      cwd: tmp,
+      env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain('Installed impeccable into: .github, .cursor (project)');
+    expect(output).toContain('Installed GitHub Copilot agents into:');
+    expect(output).toContain('Installed Cursor agents into:');
+    expect(existsSync(join(tmp, '.github', 'agents', 'impeccable-finish-reviewer.agent.md'))).toBe(true);
+    expect(existsSync(join(tmp, '.cursor', 'agents', 'impeccable-finish-reviewer.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
 });
 
 describe('skills install: already-installed detection', () => {
@@ -434,6 +621,24 @@ describe('skills link: submodule installs', () => {
     rmSync(tmp, { recursive: true, force: true });
   }, 15000);
 
+  test('maps grok and grok-build provider aliases to .grok', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-link-grok-'));
+    execSync('git init', { cwd: tmp });
+    createFakeLinkSource(tmp, ['.grok']);
+
+    run('skills link --source=.impeccable --providers=grok -y', { cwd: tmp });
+    expect(lstatSync(join(tmp, '.grok', 'skills', 'impeccable')).isSymbolicLink()).toBe(true);
+    rmSync(tmp, { recursive: true, force: true });
+
+    const tmp2 = mkdtempSync(join(tmpdir(), 'imp-test-link-grok-build-'));
+    execSync('git init', { cwd: tmp2 });
+    createFakeLinkSource(tmp2, ['.grok']);
+
+    run('skills link --source=.impeccable --providers=grok-build -y', { cwd: tmp2 });
+    expect(lstatSync(join(tmp2, '.grok', 'skills', 'impeccable')).isSymbolicLink()).toBe(true);
+    rmSync(tmp2, { recursive: true, force: true });
+  }, 15000);
+
   test('skills update leaves linked installs on the submodule path', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'imp-test-link-update-'));
     execSync('git init', { cwd: tmp });
@@ -606,6 +811,64 @@ describe('skills install/update: local universal bundle e2e', () => {
     rmSync(home, { recursive: true, force: true });
   }, 15000);
 
+  test('install completion says /impeccable init runs in the agent chat, not the terminal (#472)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-install-472-msg-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-install-472-msg-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude']);
+
+    const output = run('install -y --providers=claude --no-hooks', {
+      cwd: tmp,
+      env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain("type /impeccable init in your AI coding agent's chat (not in this terminal)");
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('`impeccable init` in the shell points at the agent chat instead of "Unknown command" (#472)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-init-472-'));
+
+    let error;
+    try {
+      run('init', { cwd: tmp, stdio: 'pipe' });
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeDefined();
+    expect(error.status).toBe(1);
+    const stderr = String(error.stderr);
+    expect(stderr).toContain("Type /impeccable init in your AI coding agent's chat");
+    expect(stderr).not.toContain('Unknown command');
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 15000);
+
+  test('a real path named init still routes to detect, not the #472 guidance', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-init-path-472-'));
+    mkdirSync(join(tmp, 'init'), { recursive: true });
+    writeFileSync(join(tmp, 'init', 'page.html'), '<!doctype html><html><head><title>t</title></head><body><p>hello</p></body></html>\n');
+
+    // Detect exits 0 on a clean scan and 2 when findings surface; either way it
+    // must be the detector answering, not the init redirect. --json makes that
+    // positive: the detector always prints a JSON findings array.
+    let output = '';
+    try {
+      output = run('init --json', { cwd: tmp, stdio: 'pipe' });
+    } catch (e) {
+      output = `${e.stdout || ''}${e.stderr || ''}`;
+    }
+
+    expect(output.trim().startsWith('[')).toBe(true);
+    expect(output).not.toContain('is not a CLI command');
+    expect(output).not.toContain('Unknown command');
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 60000);
+
   test('formats detected harnesses as concise source-to-target rows', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'imp-test-detect-lines-'));
     const home = mkdtempSync(join(tmpdir(), 'imp-home-detect-lines-'));
@@ -624,13 +887,21 @@ describe('skills install/update: local universal bundle e2e', () => {
         installRoot: home,
         installPath: join(home, '.agents', 'skills'),
       },
+      {
+        provider: '.pi',
+        scope: 'user',
+        foundPath: join(home, '.pi'),
+        installRoot: home,
+        installPath: join(home, '.pi', 'agent', 'skills'),
+      },
     ];
 
     const lines = formatInstallDetectionLines(tmp, detections, home);
     expect(lines).toEqual([
       'Detected harnesses:',
-      '  Claude Code  ~/.claude',
-      '  Codex CLI    ~/.codex',
+      '  Claude Code      ~/.claude',
+      '  Codex CLI        ~/.codex',
+      '  Pi Coding Agent  ~/.pi',
     ]);
 
     rmSync(tmp, { recursive: true, force: true });
@@ -657,6 +928,53 @@ describe('skills install/update: local universal bundle e2e', () => {
     expect(existsSync(join(tmp, '.claude', 'settings.local.json'))).toBe(true);
     expect(existsSync(join(tmp, '.cursor', 'hooks.json'))).toBe(true);
     expect(existsSync(join(tmp, '.codex', 'hooks.json'))).toBe(true);
+    // The CLI puts Codex's skill at `.agents/skills`, so the project-scope hook
+    // command must point there — not at the bundle's own `.codex/skills` path,
+    // which would resolve to a nonexistent file and silently no-op the hook.
+    const codexHooks = readFileSync(join(tmp, '.codex', 'hooks.json'), 'utf8');
+    expect(codexHooks).toContain('.agents/skills/impeccable/scripts/hook.mjs');
+    expect(codexHooks).not.toContain('.codex/skills/impeccable/scripts/hook.mjs');
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 15000);
+
+  test('installs Antigravity skills into .agent/ with --providers=antigravity', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-antigravity-install-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.agent']);
+
+    const output = run('skills install -y --providers=antigravity --no-hooks', {
+      cwd: tmp,
+      env: { ...process.env, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+    expect(output).toContain('Done!');
+
+    const skillDir = join(tmp, '.agent', 'skills', 'impeccable');
+    expect(existsSync(join(skillDir, 'SKILL.md'))).toBe(true);
+    expect(readFileSync(join(skillDir, 'SKILL.md'), 'utf8')).toContain('Local deterministic bundle for .agent.');
+    expect(existsSync(join(skillDir, 'scripts', 'context.mjs'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 15000);
+
+  test('updates stale Antigravity skills at .agent/ from the local bundle', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-antigravity-update-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.agent']);
+
+    const skillDir = join(tmp, '.agent', 'skills', 'impeccable');
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, 'SKILL.md'), '---\nname: impeccable\nstale: true\n---\nOld content.\n');
+
+    const output = run('skills update -y --no-hooks', {
+      cwd: tmp,
+      env: { ...process.env, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+    expect(output).toContain('Updated');
+
+    const content = readFileSync(join(skillDir, 'SKILL.md'), 'utf8');
+    expect(content).not.toContain('stale: true');
+    expect(content).toContain('version: 9.9.9-local');
 
     rmSync(tmp, { recursive: true, force: true });
   }, 15000);
@@ -813,23 +1131,222 @@ describe('skills install/update: local universal bundle e2e', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'imp-test-scope-user-hooks-'));
     const home = mkdtempSync(join(tmpdir(), 'imp-home-scope-user-hooks-'));
     execSync('git init', { cwd: tmp });
-    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude', '.agents', '.cursor']);
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude', '.agents', '.cursor', '.grok']);
 
-    const output = run('skills install -y --providers=claude,codex,cursor --scope=global', {
+    const output = run('skills install -y --providers=claude,codex,cursor,grok --scope=global', {
       cwd: tmp,
       env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
     });
 
-    expect(output).toContain('Installed impeccable into: .claude, .agents, .cursor (global)');
-    for (const provider of ['.claude', '.agents', '.cursor']) {
+    expect(output).toContain('Installed impeccable into: .claude, .agents, .cursor, .grok (global)');
+    for (const provider of ['.claude', '.agents', '.cursor', '.grok']) {
       expect(existsSync(join(home, provider, 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
       expect(existsSync(join(tmp, provider, 'skills', 'impeccable', 'SKILL.md'))).toBe(false);
     }
     expect(readFileSync(join(tmp, '.claude', 'settings.local.json'), 'utf8')).toContain(join(home, '.claude', 'skills', 'impeccable', 'scripts', 'hook.mjs'));
     expect(readFileSync(join(tmp, '.codex', 'hooks.json'), 'utf8')).toContain(join(home, '.agents', 'skills', 'impeccable', 'scripts', 'hook.mjs'));
     expect(readFileSync(join(tmp, '.cursor', 'hooks.json'), 'utf8')).toContain(join(home, '.cursor', 'skills', 'impeccable', 'scripts', 'hook-before-edit.mjs'));
+    const grokHooks = readFileSync(join(tmp, '.grok', 'hooks', 'impeccable.json'), 'utf8');
+    expect(grokHooks).toContain(join(home, '.grok', 'skills', 'impeccable', 'scripts', 'hook.mjs'));
+    expect(grokHooks).not.toContain('".grok/skills/impeccable/scripts/hook.mjs"');
 
     rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  // Pi discovers global skills from ~/.pi/agent/skills/, not ~/.pi/skills/ (#327).
+  // Also covers the GLOBAL_HARNESS_HINTS detection: no --providers is passed, so
+  // the ~/.pi dir alone must route the install to Pi's agent skills path.
+  test('global install detects ~/.pi and writes Pi skills to ~/.pi/agent/skills', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-scope-user-pi-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-scope-user-pi-'));
+    execSync('git init', { cwd: tmp });
+    mkdirSync(join(home, '.pi'), { recursive: true });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.pi']);
+
+    const output = run('skills install -y --scope=global --no-hooks', {
+      cwd: tmp,
+      env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain('Installed impeccable into: .pi (global)');
+    expect(existsSync(join(home, '.pi', 'agent', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(home, '.pi', 'skills', 'impeccable'))).toBe(false);
+    expect(existsSync(join(tmp, '.pi', 'skills', 'impeccable', 'SKILL.md'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  // OpenCode reads global skills from its config directory, not ~/.opencode:
+  // $OPENCODE_CONFIG_DIR/skills, else $XDG_CONFIG_HOME/opencode/skills, else
+  // ~/.config/opencode/skills. Writing to ~/.opencode/skills produced an
+  // install `opencode debug skill` never saw (#406).
+  test('global install writes OpenCode skills to ~/.config/opencode/skills (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-scope-user-oc-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-scope-user-oc-'));
+    execSync('git init', { cwd: tmp });
+    mkdirSync(join(home, '.opencode'), { recursive: true });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete env.OPENCODE_CONFIG_DIR;
+    delete env.XDG_CONFIG_HOME;
+
+    const output = run('skills install -y --scope=global --no-hooks', { cwd: tmp, env });
+
+    expect(output).toContain('Installed impeccable into: .opencode (global)');
+    expect(existsSync(join(home, '.config', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(home, '.opencode', 'skills', 'impeccable'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('OpenCode global dir honors OPENCODE_CONFIG_DIR and XDG_CONFIG_HOME (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-oc-env-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-oc-env-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const baseEnv = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete baseEnv.OPENCODE_CONFIG_DIR;
+    delete baseEnv.XDG_CONFIG_HOME;
+
+    run('skills install -y --providers=opencode --scope=global --no-hooks', {
+      cwd: tmp,
+      env: { ...baseEnv, OPENCODE_CONFIG_DIR: join(home, 'occfg') },
+    });
+    expect(existsSync(join(home, 'occfg', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+
+    run('skills install -y --providers=opencode --scope=global --no-hooks', {
+      cwd: tmp,
+      env: { ...baseEnv, XDG_CONFIG_HOME: join(home, 'xdg') },
+    });
+    expect(existsSync(join(home, 'xdg', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(home, '.opencode', 'skills', 'impeccable'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
+
+  test('global OpenCode install migrates a legacy ~/.opencode/skills copy, sparing siblings (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-oc-migrate-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-oc-migrate-'));
+    execSync('git init', { cwd: tmp });
+    writeSkill(home, '.opencode', 'impeccable');
+    writeSkill(home, '.opencode', 'unrelated-skill');
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete env.OPENCODE_CONFIG_DIR;
+    delete env.XDG_CONFIG_HOME;
+
+    run('skills install -y --providers=opencode --scope=global --no-hooks', { cwd: tmp, env });
+
+    expect(existsSync(join(home, '.config', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    // The stranded legacy copy is gone; the sibling skill is untouched.
+    expect(existsSync(join(home, '.opencode', 'skills', 'impeccable'))).toBe(false);
+    expect(existsSync(join(home, '.opencode', 'skills', 'unrelated-skill', 'SKILL.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('OpenCode migration never follows a symlinked legacy skills dir (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-oc-symlink-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-oc-symlink-'));
+    execSync('git init', { cwd: tmp });
+    // Shared skill storage with ~/.opencode/skills symlinked at it. Deleting
+    // "the legacy copy" through the link would destroy the shared original.
+    writeSkill(join(home, '.config'), 'agents', 'impeccable');
+    mkdirSync(join(home, '.opencode'), { recursive: true });
+    symlinkSync(join(home, '.config', 'agents', 'skills'), join(home, '.opencode', 'skills'), 'dir');
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete env.OPENCODE_CONFIG_DIR;
+    delete env.XDG_CONFIG_HOME;
+
+    run('skills install -y --providers=opencode --scope=global --no-hooks', { cwd: tmp, env });
+
+    expect(existsSync(join(home, '.config', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    // The shared store behind the symlink is intact, link included.
+    expect(existsSync(join(home, '.config', 'agents', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(lstatSync(join(home, '.opencode', 'skills')).isSymbolicLink()).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('OpenCode migration leaves a home-rooted repo project install alone (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-oc-homerepo-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-oc-homerepo-'));
+    execSync('git init', { cwd: tmp });
+    // The home dir IS a repo (dotfiles setup): .opencode/skills there is a
+    // live project-scope install, not a stranded pre-#406 global one.
+    execSync('git init', { cwd: home });
+    writeSkill(home, '.opencode', 'impeccable');
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete env.OPENCODE_CONFIG_DIR;
+    delete env.XDG_CONFIG_HOME;
+
+    run('skills install -y --providers=opencode --scope=global --no-hooks', { cwd: tmp, env });
+
+    expect(existsSync(join(home, '.config', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(home, '.opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  test('global install detects OpenCode from ~/.config/opencode alone (#406)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-oc-detect-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-oc-detect-'));
+    execSync('git init', { cwd: tmp });
+    // No ~/.opencode at all; only the config dir marks OpenCode as present.
+    mkdirSync(join(home, '.config', 'opencode'), { recursive: true });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.opencode']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete env.OPENCODE_CONFIG_DIR;
+    delete env.XDG_CONFIG_HOME;
+
+    const output = run('skills install -y --scope=global --no-hooks', { cwd: tmp, env });
+
+    expect(output).toContain('Installed impeccable into: .opencode (global)');
+    expect(existsSync(join(home, '.config', 'opencode', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 15000);
+
+  // Project scope must stay at .pi/skills/ even when the git root IS the home
+  // dir (dotfiles repos), where scope can't be inferred from the path alone.
+  // An existing global install at ~/.pi/agent/skills must not swallow the
+  // project-scope request into its already-installed refresh path.
+  test('project-scope install keeps Pi skills in .pi/skills even for a home-rooted repo', () => {
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-rooted-project-pi-'));
+    execSync('git init', { cwd: home });
+    writeSkill(join(home, '.pi'), 'agent', 'impeccable');
+    const bundleRoot = createFakeUniversalBundle(home, ['.pi']);
+
+    const output = run('skills install -y --providers=pi --no-hooks', {
+      cwd: home,
+      env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain('Installed impeccable into: .pi (project)');
+    expect(existsSync(join(home, '.pi', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    // The pre-existing global copy is untouched, not refreshed in place.
+    expect(readFileSync(join(home, '.pi', 'agent', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).toContain('name: impeccable');
+    expect(readFileSync(join(home, '.pi', 'agent', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).not.toContain('Local deterministic bundle');
+
+    // An unscoped update from the same root must refresh BOTH Pi trees, not
+    // just the first layout it finds.
+    run('skills update -y --no-hooks', {
+      cwd: home,
+      env: { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+    expect(readFileSync(join(home, '.pi', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).toContain('Local deterministic bundle');
+    expect(readFileSync(join(home, '.pi', 'agent', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).toContain('Local deterministic bundle');
+
     rmSync(home, { recursive: true, force: true });
   }, 15000);
 
@@ -1082,6 +1599,57 @@ describe('skills install/update: local universal bundle e2e', () => {
     rmSync(tmp, { recursive: true, force: true });
   }, 15000);
 
+  test('explicit --providers installs a missing provider without --force (#500)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-explicit-missing-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude', '.cursor']);
+
+    // Seed an existing .claude install; .cursor has nothing yet.
+    const skillDir = join(tmp, '.claude', 'skills', 'impeccable');
+    mkdirSync(skillDir, { recursive: true });
+    writeFileSync(join(skillDir, 'SKILL.md'), '---\nname: impeccable\nversion: 9.9.9-local\n---\nSeeded install.\n');
+
+    const output = run('skills install -y --providers=cursor --no-hooks', {
+      cwd: tmp,
+      env: { ...process.env, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain('Installed impeccable into: .cursor');
+    expect(readFileSync(join(tmp, '.cursor', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).toContain('version: 9.9.9-local');
+    // The unselected .claude install is left alone.
+    expect(readFileSync(join(skillDir, 'SKILL.md'), 'utf8')).toContain('Seeded install.');
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 15000);
+
+  test('explicit --providers mixes per-target updates and fresh installs (#500)', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-explicit-mixed-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude', '.cursor']);
+
+    // Stale .claude install; .cursor has nothing yet.
+    const skillDir = join(tmp, '.claude', 'skills', 'impeccable');
+    mkdirSync(join(skillDir, 'scripts'), { recursive: true });
+    writeFileSync(join(skillDir, 'SKILL.md'), '---\nname: impeccable\nstale: .claude\n---\nOld content.\n');
+    writeFileSync(join(skillDir, 'scripts', 'context.mjs'), 'console.log("old script");\n');
+
+    const output = run('skills install -y --providers=claude,cursor', {
+      cwd: tmp,
+      env: { ...process.env, IMPECCABLE_BUNDLE_PATH: bundleRoot },
+    });
+
+    expect(output).toContain('already installed');
+    expect(output).toContain('Updated');
+    expect(output).toContain('Installed impeccable into: .cursor');
+    expect(readFileSync(join(skillDir, 'SKILL.md'), 'utf8')).toContain('version: 9.9.9-local');
+    expect(readFileSync(join(tmp, '.cursor', 'skills', 'impeccable', 'SKILL.md'), 'utf8')).toContain('version: 9.9.9-local');
+    // The freshly installed provider gets its hooks and agents too.
+    expect(existsSync(join(tmp, '.cursor', 'hooks.json'))).toBe(true);
+    expect(existsSync(join(tmp, '.cursor', 'agents', 'impeccable-finish-reviewer.md'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+  }, 15000);
+
   test('skills update --no-hooks refreshes skills without touching malformed hook manifests', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'imp-test-update-no-hooks-'));
     execSync('git init', { cwd: tmp });
@@ -1176,6 +1744,248 @@ describe('hook manifest merge helpers', () => {
       'node .cursor/skills/impeccable/scripts/hook-before-edit.mjs',
     ]);
   });
+
+  test('mergeHookManifests replaces legacy Windows-path Claude hooks (#604)', () => {
+    const legacyPath = 'C:\\Users\\alice\\.claude\\skills\\impeccable\\scripts\\hook.mjs';
+    const legacyCommand = `[ ! -f "${legacyPath}" ] || node "${legacyPath}"`;
+    const freshCommand = `node -e "guard" "${legacyPath}"`;
+    const merged = mergeHookManifests(
+      {
+        hooks: {
+          PostToolUse: [{ matcher: 'Edit|Write|MultiEdit', hooks: [
+            { type: 'command', command: legacyCommand },
+          ] }],
+          Stop: [{ hooks: [{ type: 'command', command: legacyCommand }] }],
+        },
+      },
+      {
+        hooks: {
+          PostToolUse: [{ matcher: 'Edit|Write|MultiEdit', hooks: [
+            { type: 'command', command: freshCommand },
+          ] }],
+          Stop: [{ hooks: [{ type: 'command', command: freshCommand }] }],
+        },
+      },
+    );
+
+    expect(merged.hooks.PostToolUse).toHaveLength(1);
+    expect(merged.hooks.Stop).toHaveLength(1);
+    expect(merged.hooks.PostToolUse[0].hooks[0].command).toBe(freshCommand);
+    expect(merged.hooks.Stop[0].hooks[0].command).toBe(freshCommand);
+  });
+});
+
+// ─── Hook command path resolution (issue #399, part 1) ───────────────────────
+// The bundled Claude manifest ships a ${CLAUDE_PROJECT_DIR}-relative command.
+// That resolves per-project, so a user-level (~/.claude/settings.local.json)
+// hook — which fires in EVERY project — must be rewritten to the resolved
+// absolute skill path, or Node crashes on every PostToolUse/Stop in projects
+// without a local skill copy. Project-level hooks keep ${CLAUDE_PROJECT_DIR}.
+// Both are wrapped with a missing-file guard so a missing script exits 0.
+
+// A bundle whose Claude manifest mirrors production: ${CLAUDE_PROJECT_DIR}-relative.
+function createProjectDirBundle(root) {
+  const bundleRoot = join(root, 'projdir-bundle');
+  const skillDir = join(bundleRoot, '.claude', 'skills', 'impeccable', 'scripts');
+  mkdirSync(skillDir, { recursive: true });
+  writeFileSync(join(bundleRoot, '.claude', 'skills', 'impeccable', 'SKILL.md'),
+    '---\nname: impeccable\nversion: 9.9.9-local\n---\nbundle\n');
+  mkdirSync(join(bundleRoot, '.claude'), { recursive: true });
+  writeFileSync(join(bundleRoot, '.claude', 'settings.json'), JSON.stringify({
+    hooks: {
+      PostToolUse: [{ matcher: 'Edit|Write|MultiEdit', hooks: [
+        { type: 'command', command: 'node "${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs"' },
+      ] }],
+      Stop: [{ hooks: [
+        { type: 'command', command: 'node "${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs"' },
+      ] }],
+    },
+  }, null, 2));
+  return bundleRoot;
+}
+
+function claudeHookCommands(manifestPath) {
+  const parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  return Object.values(parsed.hooks).flatMap(entries =>
+    entries.flatMap(entry => (entry.hooks || []).map(h => h.command)));
+}
+
+describe('copyProviderHooks: hook command path resolution (#399)', () => {
+  test('project-scope hook keeps ${CLAUDE_PROJECT_DIR} and adds a missing-file guard', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-hook-project-'));
+    const bundleDir = createProjectDirBundle(tmp);
+
+    // skillRoot === root === a non-home project dir: keep the portable token.
+    copyProviderHooks(bundleDir, tmp, ['.claude'], { skillRoot: tmp });
+
+    const commands = claudeHookCommands(join(tmp, '.claude', 'settings.local.json'));
+    expect(commands.length).toBeGreaterThan(0);
+    for (const command of commands) {
+      expect(command).toContain('${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs');
+      expect(command).not.toContain(tmp); // no absolute rewrite for project scope
+      expect(command).toContain('[ ! -f '); // guarded so a missing file exits 0
+      expect(command).not.toContain('|| true'); // must preserve node's exit code
+    }
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  // The user/global case (isHomeDir(root) true) is driven end-to-end through a
+  // child process below ('user-level update writes an absolute, guarded hook'),
+  // where HOME is set in the child's env so os.homedir() reflects it. It cannot
+  // be faked reliably in-process, so it is not unit-tested here.
+
+  test('project hook pointing at a global skill uses the absolute skill path', () => {
+    // --scope=global shape: manifest root is the project, skill lives in home.
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-hook-split-'));
+    const skillHome = mkdtempSync(join(tmpdir(), 'imp-hook-skillroot-'));
+    const bundleDir = createProjectDirBundle(tmp);
+
+    copyProviderHooks(bundleDir, tmp, ['.claude'], { skillRoot: skillHome });
+
+    const commands = claudeHookCommands(join(tmp, '.claude', 'settings.local.json'));
+    const absolute = join(skillHome, '.claude', 'skills', 'impeccable', 'scripts', 'hook.mjs');
+    for (const command of commands) {
+      expect(command).toContain(absolute);
+      expect(command).not.toContain('${CLAUDE_PROJECT_DIR}');
+      expect(command).toContain('[ ! -f ');
+    }
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(skillHome, { recursive: true, force: true });
+  });
+
+  test('single-quotes an absolute install path that embeds $(...), and the guard is inert under /bin/sh (#476)', () => {
+    // A hook command is re-executed by the harness on every edit. JSON.stringify
+    // is not shell quoting: an install path containing $(...) inside double
+    // quotes would run on each fire. The absolute POSIX form must be
+    // single-quoted so the substitution stays inert.
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-hook-split-'));
+    const skillHome = mkdtempSync(join(tmpdir(), 'imp-hook-$(touch pwned)-'));
+    const bundleDir = createProjectDirBundle(tmp);
+
+    copyProviderHooks(bundleDir, tmp, ['.claude'], { skillRoot: skillHome });
+
+    const raw = readFileSync(join(tmp, '.claude', 'settings.local.json'), 'utf8');
+    // The path appears single-quoted, never double-quoted (which would leave
+    // the substitution live for /bin/sh).
+    expect(raw).toContain(`'${skillHome}`);
+    expect(raw).not.toContain(`"${skillHome}`);
+
+    const commands = claudeHookCommands(join(tmp, '.claude', 'settings.local.json'));
+    expect(commands.length).toBeGreaterThan(0);
+    // End-to-end: actually run each generated guard under /bin/sh from a clean
+    // cwd. The hook script does not exist (skillHome is empty), so `[ ! -f ... ]`
+    // short-circuits and node never runs — and crucially the single-quoted
+    // $(touch pwned) must not execute. Prove it: no `pwned` file appears and the
+    // guard exits 0.
+    if (process.platform !== 'win32') {
+      const runCwd = mkdtempSync(join(tmpdir(), 'imp-hook-run-'));
+      for (const command of commands) {
+        expect(command).toContain('[ ! -f ');
+        expect(command).not.toMatch(/"[^"]*\$\(touch pwned\)/);
+        execFileSync('/bin/sh', ['-c', command], { cwd: runCwd, stdio: 'ignore' });
+      }
+      expect(existsSync(join(runCwd, 'pwned'))).toBe(false);
+      rmSync(runCwd, { recursive: true, force: true });
+    }
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(skillHome, { recursive: true, force: true });
+  });
+
+  test('the Windows hook form keeps a usable double-quoted absolute path (#533)', () => {
+    // cmd.exe does no $(...) substitution but treats single quotes as literal,
+    // so the Windows command form must keep the absolute path double-quoted or
+    // a space in the install path would split the argument. copyProviderHooks
+    // branches on process.platform, so drive it as win32 in-process.
+    const original = process.platform;
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-hook-win-'));
+    const skillHome = mkdtempSync(join(tmpdir(), 'imp-hook-win-home-'));
+    const bundleDir = createProjectDirBundle(tmp);
+    try {
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      copyProviderHooks(bundleDir, tmp, ['.claude'], { skillRoot: skillHome });
+    } finally {
+      Object.defineProperty(process, 'platform', { value: original, configurable: true });
+    }
+
+    const absolute = join(skillHome, '.claude', 'skills', 'impeccable', 'scripts', 'hook.mjs');
+    for (const command of claudeHookCommands(join(tmp, '.claude', 'settings.local.json'))) {
+      // Windows guard shape (node -e wrapper) with the absolute path double-quoted.
+      expect(command).toContain(`"${absolute}"`);
+      expect(command).not.toContain(`'${absolute}`);
+      expect(command).toContain('node -e');
+    }
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(skillHome, { recursive: true, force: true });
+  });
+});
+
+// ─── Update scope resolution (issue #399, part 2) ────────────────────────────
+
+describe('skills update: names the resolved target and honors scope (#399)', () => {
+  test('user-level update writes an absolute, guarded hook to ~/.claude', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-update-user-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-update-user-home-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+
+    // Seed a user-level install (skills only), then update it with hooks.
+    run('skills install -y --providers=claude --scope=global --no-hooks', { cwd: tmp, env });
+    expect(existsSync(join(home, '.claude', 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+
+    const output = run('skills update -y --user', { cwd: tmp, env });
+    expect(output).toContain('user level'); // scope named explicitly
+    expect(output).toContain('~'); // resolved home path named, not a bare ".claude"
+
+    const settingsPath = join(home, '.claude', 'settings.local.json');
+    expect(existsSync(settingsPath)).toBe(true);
+    const raw = readFileSync(settingsPath, 'utf8');
+    expect(raw).toContain(join(home, '.claude', 'skills', 'impeccable', 'scripts', 'hook.mjs'));
+    expect(raw).not.toContain('${CLAUDE_PROJECT_DIR}');
+    expect(raw).toContain('[ ! -f ');
+    // The project dir was never touched.
+    expect(existsSync(join(tmp, '.claude', 'skills', 'impeccable'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
+
+  test('does not vendor impeccable into a repo that only tracks OTHER skills', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-update-vendor-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-update-vendor-home-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+
+    // The repo tracks a first-party, NON-impeccable skill under .claude/skills.
+    writeSkill(tmp, '.claude', 'house-brand');
+    // A real user-level impeccable install exists.
+    run('skills install -y --providers=claude --scope=global --no-hooks', { cwd: tmp, env });
+
+    const output = run('skills update -y', { cwd: tmp, env });
+    // Targets the user level, not the project's unrelated .claude/skills.
+    expect(output).toContain('user level');
+    expect(existsSync(join(tmp, '.claude', 'skills', 'impeccable'))).toBe(false);
+    expect(existsSync(join(tmp, '.claude', 'skills', 'house-brand'))).toBe(true);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
+
+  test('--user with no user-level install reports the resolved user path', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-update-nouser-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-update-nouser-home-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.claude']);
+    const env = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    // Only a project install exists; --user must not fall through to it.
+    run('skills install -y --providers=claude --no-hooks', { cwd: tmp, env });
+
+    expect(() => run('skills update -y --user', { cwd: tmp, env, stdio: 'pipe' })).toThrow();
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
 });
 
 // ─── Update fallback (remote direct download smoke) ──────────────────────────
@@ -1253,4 +2063,154 @@ describeRemote('skills install: production universal bundle download', () => {
     expect(skills).toContain('impeccable');
     expect(skills).not.toContain('i-impeccable');
   }, 90000);
+});
+
+describe('hermesGlobalHome resolver (PR #521)', () => {
+  // hermesGlobalHome was added in PR #521 to honor $HERMES_HOME for
+  // profile-scoped installs. The original PR had a P1 bug at lines
+  // 105-111 of cli/bin/commands/skills.mjs: it called `path.resolve` and
+  // `path.sep` but the file only named-imports `resolve` and `sep` from
+  // `node:path`. The ReferenceError was swallowed by the catch block, so
+  // $HERMES_HOME was silently ignored and installs always landed in
+  // ~/.hermes regardless of the active profile.
+  //
+  // These tests exercise the real implementation (via the export
+  // added to the skills.mjs test surface), not a reimplementation.
+
+  // The resolver is internal to skills.mjs. It reads $HERMES_HOME and
+  // returns the home dir it should use for ~/.hermes/skills. We import
+  // it via the public test surface — see the export block at the bottom
+  // of skills.mjs.
+  let hermesGlobalHome;
+
+  beforeAll(async () => {
+    // Dynamic import so the test can use the same surface as the
+    // production code without forcing a re-export gymnastics on the
+    // rest of the test file.
+    const mod = await import('../cli/bin/commands/skills.mjs');
+    hermesGlobalHome = mod.hermesGlobalHome;
+  });
+
+  test('default (no HERMES_HOME) returns <home>/.hermes', () => {
+    // Use a fresh tmp HOME so the test never depends on the dev's real
+    // ~/.hermes leaking through. The `delete env.HERMES_HOME` happens
+    // in the caller; here we just verify the function honors an
+    // explicitly-unset env (process.env is set per test below).
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-default-'));
+    try {
+      expect(hermesGlobalHome(home)).toBe(join(home, '.hermes'));
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test('HERMES_HOME=<home>/.hermes is honored (default profile)', () => {
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-real-'));
+    const prev = process.env.HERMES_HOME;
+    process.env.HERMES_HOME = join(home, '.hermes');
+    try {
+      // The resolver returns $HERMES_HOME (resolved) when it lives
+      // under the active home. Callers append 'skills'.
+      expect(hermesGlobalHome(home)).toBe(join(home, '.hermes'));
+    } finally {
+      if (prev === undefined) delete process.env.HERMES_HOME;
+      else process.env.HERMES_HOME = prev;
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test('HERMES_HOME=<home>/.hermes/profiles/forge is honored (active profile)', () => {
+    // The whole point of the resolver: a Hermes invocation with
+    // HERMES_HOME pointing at an active profile should install into
+    // that profile's skills dir, not the default ~/.hermes. The
+    // original bug had install/update/check landing in ~/.hermes for
+    // every profile, which is the cross-profile data-corruption class
+    // that hermes_constants.py's active_profile fallback warning is
+    // designed to detect.
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-profile-'));
+    const prev = process.env.HERMES_HOME;
+    process.env.HERMES_HOME = join(home, '.hermes', 'profiles', 'forge');
+    try {
+      const resolved = hermesGlobalHome(home);
+      expect(resolved).toBe(join(home, '.hermes', 'profiles', 'forge'));
+      // And critically: it must NOT fall back to the default profile
+      // when an active profile is selected.
+      expect(resolved).not.toBe(join(home, '.hermes'));
+    } finally {
+      if (prev === undefined) delete process.env.HERMES_HOME;
+      else process.env.HERMES_HOME = prev;
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test('HERMES_HOME outside the active home is ignored (cross-home leakage guard)', () => {
+    // If the developer's shell has HERMES_HOME=/home/dev/.hermes and a
+    // test runs under HOME=/tmp/imp-home-xxx, the resolver must NOT
+    // pick up the dev's real ~/.hermes. Otherwise test output (and
+    // potentially writes) leak into the developer's working state.
+    // The cross-home guard turns the inherited HERMES_HOME into a
+    // not-set, so the resolver falls back to <home>/.hermes.
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-xhome-'));
+    const otherHome = mkdtempSync(join(tmpdir(), 'imp-home-hermes-xhome-other-'));
+    const prev = process.env.HERMES_HOME;
+    process.env.HERMES_HOME = join(otherHome, '.hermes', 'profiles', 'main');
+    try {
+      // HERMES_HOME is set but it doesn't sit under `home`, so the
+      // resolver should treat it as not-set and return <home>/.hermes.
+      expect(hermesGlobalHome(home)).toBe(join(home, '.hermes'));
+    } finally {
+      if (prev === undefined) delete process.env.HERMES_HOME;
+      else process.env.HERMES_HOME = prev;
+      rmSync(home, { recursive: true, force: true });
+      rmSync(otherHome, { recursive: true, force: true });
+    }
+  });
+
+  test('HOME_SKILLS_DIR_OVERRIDES[".hermes"] returns <HERMES_HOME>/skills under an active profile', async () => {
+    // Integration check: the resolver is wired through the override
+    // map, so this is what the install path actually consumes. The
+    // import is cached across the suite (ESM module singleton), so
+    // the same `hermesGlobalHome` from the unit tests above applies
+    // here. We assert inside the async block so process.env is still
+    // set when the override function reads it (the unit-test version
+    // returns synchronously, but this one uses async import to share
+    // the module reference).
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-override-'));
+    const prev = process.env.HERMES_HOME;
+    process.env.HERMES_HOME = join(home, '.hermes', 'profiles', 'savant');
+    try {
+      const mod = await import('../cli/bin/commands/skills.mjs');
+      const override = mod.HOME_SKILLS_DIR_OVERRIDES['.hermes'];
+      expect(override(home)).toBe(join(home, '.hermes', 'profiles', 'savant', 'skills'));
+    } finally {
+      if (prev === undefined) delete process.env.HERMES_HOME;
+      else process.env.HERMES_HOME = prev;
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  test('end-to-end: --scope=user --providers=hermes with HERMES_HOME=profile lands in the active profile', () => {
+    // The full pipeline: drive the real CLI under a controlled HOME and
+    // HERMES_HOME. This catches any regression that breaks the wiring
+    // between hermesGlobalHome and the install path (e.g. if a future
+    // refactor moves the override out of HOME_SKILLS_DIR_OVERRIDES, or
+    // if copyProviderSkills stops reading from it).
+    const tmp = mkdtempSync(join(tmpdir(), 'imp-test-hermes-e2e-'));
+    const home = mkdtempSync(join(tmpdir(), 'imp-home-hermes-e2e-'));
+    execSync('git init', { cwd: tmp });
+    const bundleRoot = createFakeUniversalBundle(tmp, ['.hermes']);
+    const baseEnv = { ...process.env, HOME: home, IMPECCABLE_BUNDLE_PATH: bundleRoot };
+    delete baseEnv.HERMES_HOME;
+    const profileDir = join(home, '.hermes', 'profiles', 'forge');
+    const env = { ...baseEnv, HERMES_HOME: profileDir };
+
+    run('skills install -y --providers=hermes --scope=user --no-hooks', { cwd: tmp, env });
+
+    // Landed in the active profile, not the default ~/.hermes.
+    expect(existsSync(join(profileDir, 'skills', 'impeccable', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(home, '.hermes', 'skills', 'impeccable', 'SKILL.md'))).toBe(false);
+
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }, 20000);
 });

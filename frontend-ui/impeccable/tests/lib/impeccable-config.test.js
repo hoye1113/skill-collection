@@ -182,6 +182,7 @@ describe('cli/lib/impeccable-config', () => {
       { antipattern: 'design-system-color', file: join(root, 'src', 'demo.css'), line: 3, ignoreValue: '#8b5cf6' },
       { antipattern: 'design-system-color', file: join(root, 'src', 'real.css'), line: 4, ignoreValue: '#8b5cf6' },
       { antipattern: 'design-system-font', file: join(root, 'src', 'demo.css'), line: 5, ignoreValue: 'Avenir Next' },
+      { antipattern: 'overused-font', file: join(root, 'src', 'fonts.css'), line: 6, snippet: 'Google Fonts: space grotesk' },
     ];
     const filtered = filterDetectionFindings(findings, {
       ignoreRules: [],
@@ -189,6 +190,7 @@ describe('cli/lib/impeccable-config', () => {
         { rule: 'overused-font', value: 'avenir next' },
         { rule: 'design-system-color', value: '*', files: ['src/demo.css'] },
         { rule: 'design-system-font', value: '*' },
+        { rule: 'overused-font', value: 'space grotesk' },
       ],
     });
 
@@ -197,6 +199,18 @@ describe('cli/lib/impeccable-config', () => {
       'design-system-color:4',
       'design-system-font:5',
     ]);
+  });
+
+  test('filterDetectionFindings honors file-scoped wildcard ignores for non-value-bearing rules', () => {
+    const findings = [
+      { antipattern: 'side-tab', file: join(root, 'components', 'TopicCard.jsx'), line: 331, snippet: "borderLeft: '7px solid" },
+      { antipattern: 'side-tab', file: join(root, 'components', 'Other.jsx'), line: 12, snippet: "borderLeft: '7px solid" },
+    ];
+    const filtered = filterDetectionFindings(findings, {
+      ignoreRules: [],
+      ignoreValues: [{ rule: 'side-tab', value: '*', files: ['**/TopicCard.jsx'] }],
+    });
+    expect(filtered.map((f) => `${f.antipattern}:${f.line}`)).toEqual(['side-tab:12']);
   });
 
   test('filterDetectionFindings matches equivalent design-system color values', () => {
@@ -221,9 +235,67 @@ describe('cli/lib/impeccable-config', () => {
     ]);
   });
 
+  test('filterDetectionFindings normalizes every supported CSS color unit', () => {
+    const findings = [
+      { antipattern: 'design-system-color', line: 1, ignoreValue: '#f00' },
+      { antipattern: 'design-system-color', line: 2, ignoreValue: 'rgb(100% 0% 0%)' },
+      { antipattern: 'design-system-color', line: 3, ignoreValue: 'hsl(360deg 100% 50%)' },
+      { antipattern: 'design-system-color', line: 4, ignoreValue: 'hsl(180deg 100% 50%)' },
+      { antipattern: 'design-system-color', line: 5, ignoreValue: 'hsl(3.141592653589793rad 100% 50%)' },
+      { antipattern: 'design-system-color', line: 6, ignoreValue: 'hsl(0.5turn 100% 50%)' },
+      { antipattern: 'design-system-color', line: 7, ignoreValue: 'hsl(200grad 100% 50%)' },
+      { antipattern: 'design-system-color', line: 8, ignoreValue: 'rgba(255, 0, 0, 0.5)' },
+      { antipattern: 'design-system-color', line: 9, ignoreValue: 'rgb(100% 0% 0% / 50%)' },
+      { antipattern: 'design-system-color', line: 10, ignoreValue: 'hsla(0, 100%, 50%, 50%)' },
+      { antipattern: 'design-system-color', line: 11, ignoreValue: '#f008' },
+    ];
+    const filtered = filterDetectionFindings(findings, {
+      ignoreValues: [
+        { rule: 'design-system-color', value: '#ff0000' },
+        { rule: 'design-system-color', value: '#00ffff' },
+        { rule: 'design-system-color', value: '#ff000080' },
+        { rule: 'design-system-color', value: '#ff000088' },
+      ],
+    });
+
+    expect(filtered).toEqual([]);
+  });
+
+  test('filterDetectionFindings rejects out-of-range and malformed CSS colors', () => {
+    const findings = [
+      { antipattern: 'design-system-color', line: 1, ignoreValue: 'rgb(256 0 0)' },
+      { antipattern: 'design-system-color', line: 2, ignoreValue: 'rgb(100.1% 0% 0%)' },
+      { antipattern: 'design-system-color', line: 3, ignoreValue: 'rgba(255, 0, 0, 101%)' },
+      { antipattern: 'design-system-color', line: 4, ignoreValue: 'rgba(255, 0, 0, -0.1)' },
+      { antipattern: 'design-system-color', line: 5, ignoreValue: 'hsl(0 100 50%)' },
+      { antipattern: 'design-system-color', line: 6, ignoreValue: 'hsl(0 101% 50%)' },
+      { antipattern: 'design-system-color', line: 7, ignoreValue: 'hsl(0foo 100% 50%)' },
+      { antipattern: 'design-system-color', line: 8, ignoreValue: '#ff00000' },
+    ];
+    const filtered = filterDetectionFindings(findings, {
+      ignoreValues: [
+        { rule: 'design-system-color', value: '#ff0000' },
+        { rule: 'design-system-color', value: '#ff000080' },
+      ],
+    });
+
+    expect(filtered.map((finding) => finding.line)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
   test('extractFindingIgnoreValue handles fonts, Google font URLs, and motion snippets', () => {
     expect(extractFindingIgnoreValue({ antipattern: 'overused-font', snippet: 'Primary font: Avenir Next (80% of text)' })).toBe('avenir next');
     expect(extractFindingIgnoreValue({ antipattern: 'overused-font', snippet: 'https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@700' })).toBe('alumni sans');
+    expect(extractFindingIgnoreValue({ antipattern: 'overused-font', snippet: 'Google Fonts: space grotesk' })).toBe('space grotesk');
     expect(extractFindingIgnoreValue({ antipattern: 'bounce-easing', snippet: 'animation: bounce-ball 1s infinite' })).toBe('bounce-ball');
+  });
+
+  // This list is duplicated in skill/scripts/hook-lib.mjs. The two had drifted:
+  // font-size waivers worked in the hook but not in the CLI, so the same config
+  // filtered differently depending on which entry point read it.
+  test('extractFindingIgnoreValue covers design-system-font-size, matching the hook', () => {
+    expect(extractFindingIgnoreValue({ antipattern: 'design-system-font-size', ignoreValue: '0.82rem' })).toBe('0.82rem');
+    expect(extractFindingIgnoreValue({ antipattern: 'design-system-radius', ignoreValue: '18px' })).toBe('18px');
+    // A rule with no waivable value still extracts nothing.
+    expect(extractFindingIgnoreValue({ antipattern: 'side-tab', snippet: 'border-left: 4px' })).toBe('');
   });
 });

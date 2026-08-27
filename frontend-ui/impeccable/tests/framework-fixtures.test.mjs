@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +22,7 @@ import { detectCsp } from '../skill/scripts/detect-csp.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_DIR = join(__dirname, '..', 'skill', 'scripts');
+const REPO_ROOT = join(__dirname, '..');
 const FIXTURES_DIR = join(__dirname, 'framework-fixtures');
 
 function listFixtures() {
@@ -45,6 +46,22 @@ function stageFixture(name) {
   writeFileSync(join(tmp, '.gitignore'), gitignore);
   mkdirSync(join(tmp, '.impeccable', 'live'), { recursive: true });
   writeFileSync(join(tmp, '.impeccable', 'live', 'config.json'), JSON.stringify(fixture.config));
+
+  // The AST scaffolder resolves the app's svelte compiler from the staged
+  // root; the runtime suite gets it from a real npm install, the static sweep
+  // links this repo's devDependency so svelte fixtures take the
+  // component-preview path here too.
+  const repoSvelte = join(REPO_ROOT, 'node_modules', 'svelte');
+  if (existsSync(repoSvelte) && !existsSync(join(tmp, 'node_modules', 'svelte'))) {
+    mkdirSync(join(tmp, 'node_modules'), { recursive: true });
+    try {
+      symlinkSync(repoSvelte, join(tmp, 'node_modules', 'svelte'), 'dir');
+    } catch {
+      // Windows without Developer Mode cannot symlink; copying is slower but
+      // keeps the suite runnable there.
+      cpSync(repoSvelte, join(tmp, 'node_modules', 'svelte'), { recursive: true });
+    }
+  }
 
   execFileSync('git', ['init', '-q'], { cwd: tmp });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmp });
@@ -119,6 +136,9 @@ for (const name of listFixtures()) {
           '.impeccable/live/server.json',
           '.impeccable/live/sessions/example.jsonl',
           '.impeccable/live/previews/example/v1.html',
+          '.impeccable/live/artifacts/example-r1.jsx',
+          '.impeccable/live/accept-receipts/example.json',
+          '.impeccable/live/locks/example.lock',
           '.impeccable/live/deferred-svelte-component-accepts.json',
           'src/lib/impeccable/ImpeccableLiveRoot.svelte',
           'src/lib/impeccable/__runtime.js',
@@ -127,6 +147,9 @@ for (const name of listFixtures()) {
         assert.match(ignored, /\.impeccable\/live\/server\.json/);
         assert.match(ignored, /\.impeccable\/live\/sessions\/example\.jsonl/);
         assert.match(ignored, /\.impeccable\/live\/previews\/example\/v1\.html/);
+        assert.match(ignored, /\.impeccable\/live\/artifacts\/example-r1\.jsx/);
+        assert.match(ignored, /\.impeccable\/live\/accept-receipts\/example\.json/);
+        assert.match(ignored, /\.impeccable\/live\/locks\/example\.lock/);
         assert.match(ignored, /\.impeccable\/live\/deferred-svelte-component-accepts\.json/);
         assert.match(ignored, /src\/lib\/impeccable\/ImpeccableLiveRoot\.svelte/);
         assert.match(ignored, /src\/lib\/impeccable\/__runtime\.js/);
@@ -140,6 +163,28 @@ for (const name of listFixtures()) {
           assert.doesNotMatch(appHtml, /impeccable-live-start/, 'SvelteKit app.html must remain untouched');
           assert.doesNotMatch(appHtml, /localhost:9999\/live\.js/, 'SvelteKit app.html must not own live.js');
           assert.match(root, /localhost:9999\/live\.js/, 'SvelteKit root component loads live.js');
+          return;
+        }
+        if (result.adapter === 'nuxt') {
+          const plugin = result.results[0];
+          const body = readFileSync(join(tmp, plugin.file), 'utf-8');
+          assert.equal(plugin.inserted, true, 'Nuxt client plugin was created');
+          assert.match(body, /impeccable-live-nuxt-plugin/);
+          assert.match(body, /if \(!import\.meta\.dev/);
+          assert.match(body, /localhost:9999\/live\.js/);
+          return;
+        }
+        if (result.adapter === 'tanstack-start') {
+          const adapterResult = result.results[0];
+          const rootDoc = readFileSync(join(tmp, adapterResult.file), 'utf-8');
+          const component = readFileSync(join(tmp, adapterResult.componentFile), 'utf-8');
+          assert.equal(adapterResult.inserted, true, 'TanStack Start root document was patched');
+          assert.match(rootDoc, /impeccable-live-tanstack-start/, 'root document got the adapter marker');
+          assert.match(rootDoc, /<ImpeccableLiveRoot \/>/, 'root document renders the mount component');
+          assert.doesNotMatch(rootDoc, /impeccable-live-start/, 'root document must not get the raw script block');
+          assert.doesNotMatch(rootDoc, /localhost:9999\/live\.js/, 'root document must not own live.js directly');
+          assert.match(component, /localhost:9999\/live\.js/, 'mount component loads live.js');
+          assert.match(component, /useEffect/, 'mount component appends the script on mount');
           return;
         }
         for (const r of result.results) {
@@ -167,6 +212,19 @@ for (const name of listFixtures()) {
           assert.doesNotMatch(layout, /impeccable-live-svelte-start/);
           assert.doesNotMatch(appHtml, /impeccable-live-start/);
           assert.equal(existsSync(join(tmp, 'src/lib/impeccable/ImpeccableLiveRoot.svelte')), false);
+          return;
+        }
+        if (result.adapter === 'nuxt') {
+          assert.equal(result.results[0].removed, true);
+          assert.equal(existsSync(join(tmp, result.results[0].file)), false, 'Nuxt client plugin was removed');
+          return;
+        }
+        if (result.adapter === 'tanstack-start') {
+          const adapterResult = result.results[0];
+          const rootDoc = readFileSync(join(tmp, adapterResult.file), 'utf-8');
+          assert.doesNotMatch(rootDoc, /ImpeccableLiveRoot/);
+          assert.doesNotMatch(rootDoc, /impeccable-live-tanstack-start/);
+          assert.equal(existsSync(join(tmp, adapterResult.componentFile)), false, 'TanStack mount component was removed');
           return;
         }
         for (const r of result.results) {

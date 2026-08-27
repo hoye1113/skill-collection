@@ -9,6 +9,7 @@ colors:
   # Brand anchors
   kinpaku-gold: "oklch(84% 0.19 80.46)"       # primary accent
   verdigris-patina: "oklch(70% 0.12 188)"     # secondary accent / state
+  dark-ink: "oklch(14% 0.018 95)"             # foreground on gold; never theme-remapped
 
   # Surfaces
   lacquer-black: "oklch(7% 0.006 95)"         # page ground
@@ -103,45 +104,79 @@ colors:
   success-soft: "oklch(95% 0.05 145)"
 
 typography:
+  scale:
+    # The enumerated type ramp, at a 16px root. Keys are the px value; values
+    # are the rem form to author with. Every literal font-size in the codebase
+    # lands on one of these steps, and the detector allows +/-0.5px around each,
+    # so the px and rem spellings of a step are interchangeable.
+    #
+    # The named roles below pick from this ramp. The two fluid roles (display,
+    # headline) are the exception: they interpolate between clamp endpoints and
+    # are free to land between steps, which is what makes them fluid.
+    #
+    # Adding a step is a design decision, not a convenience. The tail this ramp
+    # replaced had 86 distinct sizes, including six near-identical steps between
+    # 13.7px and 15.4px that no reader could tell apart.
+    "8": "0.5rem"        # decorative micro-type: badges, superscript markers
+    "9": "0.5625rem"     # dense chrome, viz tick labels
+    "10": "0.625rem"     # overline, smallest legible caps
+    "11": "0.6875rem"    # eyebrow, badge, tag
+    "12": "0.75rem"      # meta lines, table chrome, inline code
+    "13": "0.8125rem"    # secondary UI text, card meta
+    "14": "0.875rem"     # dense body, list rows, controls
+    "15": "0.9375rem"    # long-form secondary text
+    "16": "1rem"         # default body
+    "18": "1.125rem"     # lead paragraph, card heading
+    "20": "1.25rem"      # card and panel titles
+    "24": "1.5rem"       # subsection heads
+    "28": "1.75rem"      # section heads
+    "32": "2rem"         # large section heads
+    "40": "2.5rem"       # sub-display
+    "48": "3rem"         # small display
+    "56": "3.5rem"       # display
+    "64": "4rem"         # large display
+    "72": "4.5rem"       # hero display
+    "80": "5rem"         # hero display, wide viewports
+    "88": "5.5rem"       # largest hero display
   wordmark:
-    # Solid Alumni Sans (token --ks-font-wordmark), the weightable sibling of
-    # the pinstripe display face. The pinstripe itself is single-weight and
-    # reads too thin in the small lockup, so the wordmark uses the solid cut.
-    fontFamily: "Alumni Sans, Alumni Sans Pinstripe, Albert Sans, Arial, sans-serif"
-    fontSize: "1.3rem"
+    # Alumni Sans (token --ks-font-wordmark), the same face as display, held
+    # at weight 400 for the small brand lockup where the thin display cut
+    # would read too light.
+    fontFamily: "Alumni Sans, Albert Sans, Arial, sans-serif"
+    fontSize: "1.125rem"
     fontWeight: 400
     letterSpacing: "0.15em"
     lineHeight: 1
   display:
-    fontFamily: "Alumni Sans Pinstripe, Albert Sans, Arial, sans-serif"
+    fontFamily: "Alumni Sans, Albert Sans, Arial, sans-serif"
     fontSize: "clamp(3.4rem, 6.5vw, 5.6rem)"
-    fontWeight: 300
+    fontWeight: 100
     letterSpacing: "-0.01em"
     lineHeight: 1.02
   headline:
-    fontFamily: "Alumni Sans Pinstripe, Albert Sans, Arial, sans-serif"
+    fontFamily: "Alumni Sans, Albert Sans, Arial, sans-serif"
     fontSize: "clamp(2.6rem, 4vw, 3.4rem)"
-    fontWeight: 600
+    fontWeight: 300
     letterSpacing: "0"
     lineHeight: 1.04
   title:
     fontFamily: "Albert Sans, Avenir Next, Helvetica Neue, Arial, system-ui, sans-serif"
-    fontSize: "1.18rem"
+    fontSize: "1.125rem"
     fontWeight: 500
     lineHeight: 1.35
   body:
     fontFamily: "Albert Sans, Avenir Next, Helvetica Neue, Arial, system-ui, sans-serif"
-    fontSize: "1.02rem"
+    fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.8
   eyebrow:
     fontFamily: "SFMono-Regular, Roboto Mono, Consolas, monospace"
-    fontSize: "0.7rem"
+    fontSize: "0.6875rem"
     fontWeight: 500
     letterSpacing: "0.18em"
   mono:
     fontFamily: "SFMono-Regular, Roboto Mono, Consolas, monospace"
-    fontSize: "0.72rem"
+    fontSize: "0.6875rem"
     fontWeight: 500
     letterSpacing: "0.22em"
 
@@ -172,13 +207,13 @@ spacing:
 components:
   button-primary:
     backgroundColor: "{colors.kinpaku-gold}"
-    textColor: "{colors.lacquer-deep}"
+    textColor: "{colors.dark-ink}"
     typography: "{typography.title}"
     rounded: "{rounded.xs}"
     padding: "0 38px"
   button-primary-hover:
     backgroundColor: "{colors.kinpaku-pale}"
-    textColor: "{colors.lacquer-deep}"
+    textColor: "{colors.dark-ink}"
   button-secondary:
     backgroundColor: "transparent"
     textColor: "{colors.kinpaku-gold}"
@@ -262,7 +297,7 @@ Every class below is a global primitive. Drop it on any element on any page usin
 - `.ks-section` — page-level section container, 1320px max-width, kit gutters.
 - `.ks-section-head` — the section header block.
 - `.ks-section-eyebrow` — small mono eyebrow above the h2 (optional).
-- `.ks-section-head h2` — auto-styles any h2 inside `.ks-section-head` to the section title scale (weight 600, kit display family).
+- `.ks-section-head h2` — auto-styles any h2 inside `.ks-section-head` to the section title scale (weight 300, kit display family).
 - `.ks-section-sub` — subhead paragraph below the h2.
 - `.ks-subsection` — nested grouping inside a section.
 - `.ks-subsection-label` — small mono label above a subsection's content.
@@ -376,17 +411,17 @@ Do not hand-type oklch values or font sizes in page CSS. If a value isn't in the
 
 ## 4. Typography: Two faces, weight inversion at the top
 
-**Display font:** Alumni Sans Pinstripe, Albert Sans, Arial, sans-serif (pinstripe horizontal strikes carry the brand at display sizes)
+**Display font:** Alumni Sans, Albert Sans, Arial, sans-serif (a thin hairline cut carries the brand at display sizes)
 **Body and UI font:** Albert Sans, Avenir Next, Helvetica Neue, Arial, system-ui, sans-serif
 **Mono font:** SFMono-Regular, Roboto Mono, Consolas, monospace
 
-The voice is geometric and restrained. The pinstripe display face is reserved for the hero h1 and section h2s; the brand wordmark uses its solid sibling (Alumni Sans). Everything else (body, UI labels, controls, code) uses Albert Sans. The faces pair cleanly because they share humanist proportions without fighting for attention.
+The voice is geometric and restrained. The Alumni Sans display face is reserved for the hero h1 and section h2s; the brand wordmark uses the same face at a heavier weight. Everything else (body, UI labels, controls, code) uses Albert Sans. The faces pair cleanly because they share humanist proportions without fighting for attention.
 
 ### Hierarchy
 
-- **Wordmark**: solid Alumni Sans (`--ks-font-wordmark`), weight 400, uppercase, `1.3rem`, letter-spacing `0.15em`. Brand lockup only. The pinstripe sibling reads too thin at lockup size, so the wordmark uses the weightable cut.
-- **Display · h1**: Alumni Sans Pinstripe, `clamp(3.4rem, 6.5vw, 5.6rem)`, **weight 300**, line-height 1.02, letter-spacing `-0.01em`. Hero and major statements.
-- **Headline · h2**: Alumni Sans Pinstripe, `clamp(2.6rem, 4vw, 3.4rem)`, **weight 600**, line-height 1.04. Section titles.
+- **Wordmark**: Alumni Sans (`--ks-font-wordmark`), weight 400, uppercase, `1.3rem`, letter-spacing `0.15em`. Brand lockup only. The thin display cut reads too light at lockup size, so the wordmark holds weight 400.
+- **Display · h1**: Alumni Sans, `clamp(3.4rem, 6.5vw, 5.6rem)`, **weight 100**, line-height 1.02, letter-spacing `-0.01em`. Hero and major statements.
+- **Headline · h2**: Alumni Sans, `clamp(2.6rem, 4vw, 3.4rem)`, **weight 300**, line-height 1.04. Section titles.
 - **Title · h3**: Albert Sans, `1.18rem`, weight 500, line-height 1.35. Component and panel headings.
 - **Body**: Albert Sans, `1.02rem`, weight 400, line-height 1.8. Long copy on dark surfaces needs air.
 - **Eyebrow**: Mono, `0.7rem`, weight 500, uppercase, letter-spacing `0.18em`. Small markers above titles.
@@ -394,9 +429,9 @@ The voice is geometric and restrained. The pinstripe display face is reserved fo
 
 ### Typography Rules
 
-**The Weight-Inversion Rule.** Section h2s read heavier (600) than the hero h1 (300). This is deliberate: the hero is elegant and thin so the page can breathe; section anchors carry more weight to ground each block. Do not normalize the two weights.
+**The Weight-Inversion Rule.** Section h2s read heavier (300) than the hero h1 (100). This is deliberate: the hero is elegant and thin so the page can breathe; section anchors carry more weight to ground each block. Do not normalize the two weights.
 
-**The Two-Face Rule.** Display sizes use Alumni Sans Pinstripe. Anything sized below `1.2rem` uses Albert Sans. Pinstripe at small sizes loses its identity and reads as a bad rendering.
+**The Two-Face Rule.** Display sizes use Alumni Sans — thin (100) for the h1, heavier (300) for h2s. Anything sized below `1.2rem` uses Albert Sans. The thin display cut reads too light at small sizes, so it never carries body or UI text.
 
 **Tracked Labels Are Short Rule.** Tracked uppercase labels are for short system markers. Do not write full sentences in tracked caps.
 
@@ -446,7 +481,7 @@ The command table uses dark category cells. Kinpaku covers Create, Refine, and S
 
 ### DESIGN.md Panel
 
-The DESIGN.md visualization must show kinpaku as the primary color, patina as the secondary color, Alumni Sans Pinstripe and Albert Sans as the display and body families, and dark component samples. Magenta is not representative of the current system.
+The DESIGN.md visualization must show kinpaku as the primary color, patina as the secondary color, Alumni Sans and Albert Sans as the display and body families, and dark component samples. Magenta is not representative of the current system.
 
 ### Dividers and Material Accents
 

@@ -6,16 +6,153 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   detectHtml,
   detectText,
+  formatFindings,
   normalizeDesignSystem,
 } from '../cli/engine/detect-antipatterns.mjs';
+import { checkEmDashOveruse } from '../cli/engine/rules/checks.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, 'fixtures', 'antipatterns');
+
+describe('detectText - Astro structural CSS fixtures', () => {
+  const SHOULD_FLAG = [
+    'Kinpaku Edge',
+    'Patina Edge',
+    'Accent Edge',
+    'Signal Blue Edge',
+    'Chromatic Hex Edge',
+    'Named Red Edge',
+    'Chromatic Rgb Edge',
+    'Chromatic Oklch Edge',
+    // `inset` may follow the offsets/color. Requiring it first missed the same
+    // stripe written the other legal way.
+    'Trailing Inset Edge',
+    'Trailing Inset Token Edge',
+    'Inset Named Token Edge',
+    // Only the two offsets are required; blur/spread default to 0.
+    'Two Length Edge',
+    'Important Edge',
+    'Cascade Override Edge',
+    'Color First Edge',
+    'Color First Var Edge',
+    'Two Length Trailing Inset Edge',
+  ];
+  const SHOULD_PASS = [
+    'Neutral Shadow Token',
+    'Current Color Edge',
+    'Selected State Edge',
+    'Hairline Edge',
+    'Thick Fill Edge',
+    'Blurred Edge',
+    'Narrow Artwork',
+    // Authored CSS spells neutrals as hex and keywords. isNeutralColor only
+    // parses the computed function forms and reports everything else as
+    // chromatic, so routing these through it flagged plain black and gray
+    // hairlines as the "colored stripe" AI tell.
+    'Black Hex Edge',
+    'Black Named Edge',
+    'Gray Hex Edge',
+    'Dimgray Named Edge',
+    'Black Rgb Edge',
+    'Shorthand Neutral Hex Edge',
+    // Commented-out CSS is not a live rule.
+    'Commented Out Edge',
+    // Trailing `inset` still respects the neutral-color exemption.
+    'Trailing Inset Neutral Edge',
+    // The short form still respects the neutral and blur exclusions.
+    'Two Length Neutral Edge',
+    'Space Rgb Neutral Edge',
+    'Cascade Cancelled Edge',
+    'Two Length Blurred Edge',
+  ];
+
+  it('Astro style blocks flag unresolved chromatic inset stripes only', () => {
+    const filePath = path.join(FIXTURES, 'astro-inset-shadow-stripe.astro');
+    const source = fs.readFileSync(filePath, 'utf8');
+    const findings = detectText(source, filePath).filter(r => r.antipattern === 'side-tab');
+    const snippets = findings.map(r => r.snippet || '').join(' | ');
+    for (const heading of SHOULD_FLAG) {
+      assert.match(snippets, new RegExp(`data-case=${JSON.stringify(heading)}`), `expected "${heading}" to flag`);
+    }
+    for (const heading of SHOULD_PASS) {
+      assert.doesNotMatch(snippets, new RegExp(`data-case=${JSON.stringify(heading)}`), `"${heading}" should pass`);
+    }
+  });
+});
+
+describe('detectText — pseudo-element stripe fixtures (issue #394)', () => {
+  // The side-tab silhouette drawn as an absolutely-positioned ::before/::after
+  // bar instead of a border. The scanner already ran on full HTML pages via
+  // checkHtmlPatterns; these pin the standalone-stylesheet and component
+  // style-block paths, which used to pass this construction clean.
+  const SHOULD_FLAG = [
+    'Inset Shorthand Left Edge',
+    'Longhand Left Edge',
+    'Bottom Edge',
+    'Full Height Right Edge',
+  ];
+  const SHOULD_PASS = [
+    'Neutral Divider',
+    'Wide Panel',
+    'Static Underline',
+    'Hairline Divider',
+    'Hover Underline',
+    'Floating Badge',
+    // Commented-out CSS is not a live rule.
+    'Commented Out Stripe',
+  ];
+
+  // The 1-based line a case's selector sits on in a fixture file, so the
+  // reported finding line can be checked against the actual source.
+  const selectorLine = (source, caseName) => {
+    const idx = source.split('\n').findIndex(l => l.includes(`data-case="${caseName}"`));
+    assert.notEqual(idx, -1, `fixture is missing case "${caseName}"`);
+    return idx + 1;
+  };
+
+  it('standalone .css files flag chromatic pseudo-element stripes only', () => {
+    const filePath = path.join(FIXTURES, 'pseudo-stripe.css');
+    const source = fs.readFileSync(filePath, 'utf8');
+    const findings = detectText(source, filePath).filter(r => r.antipattern === 'side-tab');
+    const snippets = findings.map(r => r.snippet || '').join(' | ');
+    for (const heading of SHOULD_FLAG) {
+      assert.match(snippets, new RegExp(`data-case=${JSON.stringify(heading)}`), `expected "${heading}" to flag`);
+    }
+    for (const heading of SHOULD_PASS) {
+      assert.doesNotMatch(snippets, new RegExp(`data-case=${JSON.stringify(heading)}`), `"${heading}" should pass`);
+    }
+    // Every finding must carry the selector's real source line, so
+    // line-scoped inline ignores (impeccable-disable-line and
+    // impeccable-disable-next-line) can match it.
+    for (const f of findings) {
+      const caseName = (f.snippet.match(/data-case="([^"]+)"/) || [])[1];
+      assert.equal(
+        f.line, selectorLine(source, caseName),
+        `finding for "${caseName}" reports line ${f.line}, selector sits on line ${selectorLine(source, caseName)}`,
+      );
+    }
+  });
+
+  it('component style blocks flag pseudo-element stripes at their source line', () => {
+    const filePath = path.join(FIXTURES, 'pseudo-stripe.vue');
+    const source = fs.readFileSync(filePath, 'utf8');
+    const findings = detectText(source, filePath).filter(r => r.antipattern === 'side-tab');
+    const snippets = findings.map(r => r.snippet || '').join(' | ');
+    assert.match(snippets, /data-case="Component Left Edge"/, 'expected the component stripe to flag');
+    assert.doesNotMatch(snippets, /data-case="Component Neutral Divider"/, 'neutral divider should pass');
+    const stripe = findings.find(r => /data-case="Component Left Edge"/.test(r.snippet || ''));
+    assert.equal(
+      stripe.line, selectorLine(source, 'Component Left Edge'),
+      'style-block finding must map back to the whole-file line, not the block-local one',
+    );
+  });
+});
 
 describe('detectHtml — static HTML/CSS fixtures', () => {
   it('should-flag: catches border anti-patterns', async () => {
@@ -35,8 +172,8 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     const accents = f.filter(r => r.antipattern === 'border-accent-on-rounded');
     assert.equal(
       sideTabs.length,
-      4,
-      `expected 4 side-tab findings, got ${sideTabs.length}: ${sideTabs.map(r => r.snippet).join('; ')}`
+      6,
+      `expected 6 side-tab findings, got ${sideTabs.length}: ${sideTabs.map(r => r.snippet).join('; ')}`
     );
     assert.equal(
       accents.length,
@@ -87,6 +224,79 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     );
   });
 
+  it('color: currentcolor surface resolves var() text color instead of abstaining', async () => {
+    // background-color: currentcolor paints with the element's own text
+    // color, which in jsdom can itself be a var() token. The surface is
+    // knowable through the custom-prop map, so the faint text on it is a
+    // real low-contrast finding — abstention here would hide it.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    assert.ok(
+      f.some(r =>
+        r.antipattern === 'low-contrast' &&
+        /#cfc9bd/i.test(r.snippet || '') &&
+        /#e8e2d6/i.test(r.snippet || '')
+      ),
+      'expected low-contrast finding on the currentcolor var() surface',
+    );
+    // Good contrast on the same surface must not flag.
+    const goodFP = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#3a352c/i.test(r.snippet || '')
+    );
+    assert.equal(goodFP.length, 0, `dark ink on bone must pass, got: ${goodFP.map(r => r.snippet).join('; ')}`);
+    // An undefined token keeps the surface unknowable: abstain, don't guess.
+    const unknownFP = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#efe9dd/i.test(r.snippet || '')
+    );
+    assert.equal(
+      unknownFP.length, 0,
+      `unresolvable currentcolor surface must abstain, got: ${unknownFP.map(r => r.snippet).join('; ')}`,
+    );
+  });
+
+  it('color: a color-mix gradient stop never leaks its nested ingredient as a phantom surface', async () => {
+    // The stop paints as a 16% wash composited near-black over the dark
+    // wrap; the bright oklch(90% ...) nested inside the color-mix is an
+    // ingredient, never painted. Re-extracting nested tokens appended it as
+    // a phantom opaque stop, and the worst-case ratio then flagged the
+    // light text at ~1:1 against a color nobody sees.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const phantom = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#ded9cf/i.test(r.snippet || '')
+    );
+    assert.equal(
+      phantom.length, 0,
+      `light text on the mixed wash must not flag: ${phantom.map(r => r.snippet).join('; ')}`,
+    );
+  });
+
+  it('color: nested #000 inside color-mix must not become on #000000', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const light = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#f7f3ea/i.test(r.snippet || '')
+    );
+    assert.equal(
+      light.length, 0,
+      `light text on the mixed green must not flag: ${light.map(r => r.snippet).join('; ')}`,
+    );
+    const leaked = f.filter(r => /#3d2418 on #000000/i.test(r.snippet || ''));
+    assert.equal(
+      leaked.length, 0,
+      `nested #000 must not become on #000000: ${leaked.map(r => r.snippet).join('; ')}`,
+    );
+    assert.ok(
+      f.some(r =>
+        r.antipattern === 'low-contrast' &&
+        /#3d2418/i.test(r.snippet || '') &&
+        /#17372d|#295344/i.test(r.snippet || '')
+      ),
+      'dark ink on the mixed stop should flag against the mix, not phantom black',
+    );
+  });
+
   it('color: white text on background-image url() ancestor is not flagged as low-contrast', async () => {
     const f = await detectHtml(path.join(FIXTURES, 'color.html'));
     // The pass column has white text on a div with background-image: url().
@@ -100,6 +310,41 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
       falsePositive.length, 0,
       `expected no low-contrast from bg-image ancestor, got: ${falsePositive.map(r => r.snippet).join('; ')}`
     );
+  });
+
+  it('scoped-ignore: data-impeccable-ignore waives its subtree per rule, star, and list', async () => {
+    // Six identical side-tab violations; four sit under waiving containers
+    // (exact rule, star, comma list, and one two levels deep) and must not
+    // flag. The control and the container waived for a DIFFERENT rule must.
+    const f = await detectHtml(path.join(FIXTURES, 'scoped-ignore.html'));
+    const sideTabs = f.filter(r => r.antipattern === 'side-tab');
+    const snippets = sideTabs.map(r => r.snippet || '').join('\n');
+    // Width-attributed cases: control 6, other-rule 8, sibling-waiver 12,
+    // misspelled-rule 5 flag; the five waived shapes must not.
+    for (const w of [5, 6, 8, 12]) {
+      assert.match(snippets, new RegExp(`border-left: ${w}px`), `flag case ${w}px missing:\n${snippets}`);
+    }
+    for (const w of [4, 7, 9, 10, 11]) {
+      assert.doesNotMatch(snippets, new RegExp(`border-left: ${w}px`), `waived case ${w}px must not flag:\n${snippets}`);
+    }
+    assert.equal(sideTabs.length, 4, `expected exactly the 4 flag cases, got ${sideTabs.length}:\n${snippets}`);
+  });
+
+  it('dark-gradient-ground: a gradient body ground is measured against its stops, never assumed white', async () => {
+    // Static-engine twin of the browser test: the page ground is a dark oklch
+    // gradient set via `background:` shorthand on body (backgroundColor stays
+    // transparent). The old walk assumed white for any body-level gradient,
+    // flagging every light text at ~1.3:1 "on #ffffff" and missing the muted
+    // dark-gray true positives entirely. Stops must be measured instead, and
+    // the frosted translucent wash must composite over them.
+    const f = await detectHtml(path.join(FIXTURES, 'dark-gradient-ground.html'));
+    const contrast = f.filter(r => r.antipattern === 'low-contrast');
+    const snippets = contrast.map(r => r.snippet || '').join('\n');
+    assert.doesNotMatch(snippets, /on #ffffff/, `light-on-dark text was measured against an assumed white body:\n${snippets}`);
+    assert.match(snippets, /text #2e2e2e on /, `flag-muted-direct missing:\n${snippets}`);
+    assert.match(snippets, /text #333333 on /, `flag-muted-nested missing:\n${snippets}`);
+    assert.match(snippets, /text #d7d7d7 on #d/, `flag-light-on-frosted missing against the composited wash:\n${snippets}`);
+    assert.equal(contrast.length, 3, `expected exactly the 3 flag-column cases, got ${contrast.length}:\n${snippets}`);
   });
 
   it('color: styled <a> and <button> with their own background get contrast checks', async () => {
@@ -154,6 +399,47 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     );
   });
 
+  it('color: text-bearing chips with their own background get contrast checks', async () => {
+    // A <span> chip painting an opaque background under direct text is a real
+    // contrast surface even though span sits in SAFE_TAGS. Mirrors a shipped
+    // miss: a SEV-2 chip whose white text lost a specificity fight and
+    // rendered muted brown on red at 1.2:1.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const chipFlag = f.some(r =>
+      r.antipattern === 'low-contrast' &&
+      /#5c5449/i.test(r.snippet || '') &&
+      /#b6322d/i.test(r.snippet || '')
+    );
+    assert.ok(chipFlag, 'expected low-contrast finding for the SEV-2 style chip');
+
+    // The properly contrasted chip must pass, and the sub-9px decorative
+    // chip stays below the font floor.
+    const chipOkFalsePositive = f.some(r =>
+      r.antipattern === 'low-contrast' &&
+      /#f5f0e8/i.test(r.snippet || '') &&
+      /#141419/i.test(r.snippet || '')
+    );
+    assert.equal(chipOkFalsePositive, false, 'high-contrast chip must not flag');
+    const sub9FalsePositive = f.some(r =>
+      r.antipattern === 'low-contrast' &&
+      /#963c37/i.test(r.snippet || '')
+    );
+    assert.equal(sub9FalsePositive, false, 'sub-9px chip must stay below the font floor');
+  });
+
+  it('color: background none shorthand resets an earlier background-color', async () => {
+    // `pre code { background: none }` after `code { background: <light> }`
+    // must leave the code text transparent over the dark panel. Keeping the
+    // light surface produces a phantom 1.1:1 finding the browser never paints.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const phantom = f.some(r =>
+      r.antipattern === 'low-contrast' &&
+      /#e6e8ed/i.test(r.snippet || '') &&
+      /#f6f2f4/i.test(r.snippet || '')
+    );
+    assert.equal(phantom, false, 'background: none must reset the earlier code background');
+  });
+
   it('color: emoji-only text is never flagged as low-contrast', async () => {
     // Emojis render as multicolor glyphs regardless of CSS `color`, so the
     // CSS text color is irrelevant for contrast. The fixture's emoji cards
@@ -168,6 +454,43 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     assert.equal(
       matches.length, 0,
       `expected no contrast findings on emoji-only text, got: ${matches.map(r => r.snippet).join('; ')}`
+    );
+  });
+
+  it('color: gradient-clipped text is not contrast-checked against its own fill (issue #409 Case A)', async () => {
+    // background-clip: text with a transparent fill paints the glyphs with the
+    // gradient; the inherited `color` is never painted, so measuring it against
+    // the element's own gradient stops (#6d8cff / #a78bfa) is a false positive.
+    // The gradient-text pattern flag still fires; the backdrop-contrast rules
+    // (low-contrast / gray-on-color) must stay silent for the clipped element.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const clippedContrastFP = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#6d8cff|#a78bfa/i.test(r.snippet || '')
+    );
+    assert.equal(
+      clippedContrastFP.length, 0,
+      `gradient-clipped text must not be contrast-checked against its own fill, got: ${clippedContrastFP.map(r => `${r.antipattern}:${r.snippet}`).join('; ')}`
+    );
+    // The pattern itself must still be surfaced.
+    assert.ok(
+      f.some(r => r.antipattern === 'gradient-text'),
+      'gradient-text pattern flag must still fire'
+    );
+  });
+
+  it('color: alpha gradient-glow stops composite against the surface beneath (issue #409 Case B)', async () => {
+    // A 9%-alpha teal glow stop (rgba(52,192,168,0.09)) over a dark section
+    // composites to ~near-black, not the full-opacity #34c0a8. Text on it is
+    // high-contrast; treating the stop as opaque flagged every text child.
+    const f = await detectHtml(path.join(FIXTURES, 'color.html'));
+    const glowFP = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#34c0a8/i.test(r.snippet || '')
+    );
+    assert.equal(
+      glowFP.length, 0,
+      `alpha glow stops must composite against the underlying surface, got: ${glowFP.map(r => `${r.antipattern}:${r.snippet}`).join('; ')}`
     );
   });
 
@@ -219,6 +542,42 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     );
   });
 
+  it('named-color-borders: named-color side-tabs are flagged, neutral names pass', async () => {
+    // Regression for issue #359: the static cascade's shorthand color
+    // extraction recognized only 9 named colors, so `border-left: 4px solid
+    // purple` (or any of the other named colors parseAnyColor understands)
+    // lost its color during expansion, defaulted to neutral black, and never
+    // fired side-tab — while the same declaration in a .css file was flagged
+    // by the regex engine. The extraction list is now derived from the same
+    // CSS_NAMED_COLORS table the parser uses, so the two can't drift apart.
+    const f = await detectHtml(path.join(FIXTURES, 'named-color-borders.html'));
+    const sideTabs = f.filter(r => r.antipattern === 'side-tab').map(r => r.snippet).sort();
+    // Six FLAG cases, each with a unique width/radius signature so every
+    // finding attributes to exactly one case (an offsetting miss + false
+    // positive can't cancel out in an aggregate count):
+    //   purple 4px + radius 8 (the issue reproducer), rebeccapurple 5px +
+    //   radius 4 (contains "purple" as a substring — whole-token matching),
+    //   crimson 4px top stripe, bare 3px teal, var() resolving to a named
+    //   color at 6px + radius 4, and a 7px inline style attribute.
+    // The PASS column (neutral named colors at 3-4px, 1px thin, uniform)
+    // must contribute nothing — dimgray/gainsboro/black have to parse AND
+    // read as neutral rather than being dropped as unknown colors, and none
+    // of its shapes can produce any of the signatures below.
+    assert.deepEqual(sideTabs, [
+      'border-left: 3px',
+      'border-left: 4px + border-radius: 8px',
+      'border-left: 5px + border-radius: 4px',
+      'border-left: 6px + border-radius: 4px',
+      'border-left: 7px',
+      'border-top: 4px',
+    ]);
+    const borderAccent = f.filter(r => r.antipattern === 'border-accent-on-rounded');
+    assert.equal(
+      borderAccent.length, 0,
+      `expected 0 border-accent-on-rounded, got ${borderAccent.length}: ${borderAccent.map(r => r.snippet).join('; ')}`
+    );
+  });
+
   it('modern-color-borders: regex fallback skips neutral 1px oklch dividers', () => {
     const css = `
       .flag-side-tab {
@@ -246,10 +605,12 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     assert.match(sideTabs[0].snippet, /border-left: 2px solid oklch/);
   });
 
-  it('typography-should-flag: detects all three issues', async () => {
+  it('typography-should-flag: detects both issues', async () => {
     const f = await detectHtml(path.join(FIXTURES, 'typography-should-flag.html'));
     assert.ok(f.some(r => r.antipattern === 'overused-font'));
-    assert.ok(f.some(r => r.antipattern === 'single-font'));
+    // single-font retired 2026-07-29: one family with weight/size contrast is
+    // a legitimate system, and the rule mostly punished minimal test pages.
+    assert.ok(!f.some(r => r.antipattern === 'single-font'), 'retired rule single-font should not resurface');
     assert.ok(f.some(r => r.antipattern === 'flat-type-hierarchy'));
     assert.equal(
       f.some(r => r.antipattern === 'low-contrast'),
@@ -276,8 +637,9 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     const designSystem = normalizeDesignSystem({
       frontmatter: {
         typography: {
-          display: { fontFamily: 'Avenir Next, Georgia, serif' },
-          body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif' },
+          display: { fontFamily: 'Avenir Next, Georgia, serif', fontSize: 'clamp(2.5rem, 6vw, 4rem)' },
+          body: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: '16px' },
+          label: { fontFamily: 'IBM Plex Sans, Arial, sans-serif', fontSize: '14px' },
         },
         colors: {
           ink: '#241f1a',
@@ -315,6 +677,13 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
       designFindings.some((r) => r.antipattern === 'design-system-font' && /Google Fonts: Poppins/.test(r.snippet || '')),
       'expected source-level Google Fonts usage in HTML to be flagged',
     );
+    assert.ok(
+      designFindings.some((r) => r.antipattern === 'design-system-font-size' && /12\.5px/.test(r.snippet || '')),
+      'expected off-ramp literal font-size to be flagged',
+    );
+    assert.doesNotMatch(snippets, /1rem is off/, 'documented rem step must pass');
+    assert.doesNotMatch(snippets, /1\.2em is off/, 'relative em sizes are abstained on');
+    assert.doesNotMatch(snippets, /16px is off|14px is off/, 'on-ramp sizes must pass');
     assert.doesNotMatch(snippets, /Undocumented color #ff00aa/, 'source and computed color findings should not duplicate');
     assert.doesNotMatch(snippets, /font-family: Poppins/, 'source and computed font findings should not duplicate');
     assert.doesNotMatch(snippets, /border-radius: 18px is outside/, 'source and computed radius findings should not duplicate');
@@ -341,6 +710,8 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     }
     for (const label of [
       'Pass Display Font',
+      'Pass Rem Font Size',
+      'Pass Relative Font Size',
       'Pass Generic Font',
       'Pass Token Color',
       'Pass Alpha Color',
@@ -355,15 +726,43 @@ describe('detectHtml — static HTML/CSS fixtures', () => {
     }
   });
 
-  it('numbered-section-markers: visible sequence flags while script/style/svg internals pass', async () => {
+  it('numeric content is not classified without DOM context', async () => {
     const f = await detectHtml(path.join(FIXTURES, 'numbered-section-markers.html'));
     const numbered = f.filter(r => r.antipattern === 'numbered-section-markers');
+    assert.equal(numbered.length, 0, 'raw numeric sequences must not masquerade as semantic section evidence');
+  });
+
+  it('numbered-section-labels: tiny repeated index labels flag, deliberate/list/card numbering passes', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'numbered-section-labels.html'));
+    const labels = f.filter(r => r.antipattern === 'numbered-section-labels');
+    const snippets = labels.map(r => r.snippet).join(' | ');
     assert.equal(
-      numbered.length,
-      1,
-      `expected one visible numbered-marker finding, got: ${numbered.map(r => r.snippet).join('; ')}`
+      labels.length,
+      4,
+      `expected 4 numbered-label findings, got ${labels.length}: ${snippets}`
     );
-    assert.match(numbered[0].snippet, /01, 02, 03/);
+    for (const heading of ['Alpha ships first', 'Beta earns trust', 'Gamma holds the line', 'Delta closes the loop']) {
+      assert.match(snippets, new RegExp(heading), `expected label beside "${heading}" to flag`);
+    }
+    for (const heading of ['Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu']) {
+      assert.doesNotMatch(snippets, new RegExp(heading), `label beside "${heading}" should pass`);
+    }
+  });
+
+  it('repeated-container-text: same string in 3+ distinct slots of one card flags; structural repetition passes', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'repeated-container-text.html'));
+    const repeats = f.filter(r => r.antipattern === 'repeated-container-text');
+    const snippets = repeats.map(r => r.snippet).join(' | ');
+    assert.equal(
+      repeats.length,
+      2,
+      `expected 2 repeated-text findings, got ${repeats.length}: ${snippets}`
+    );
+    assert.match(snippets, /Suspended.*3×|Suspended" rendered 3/, 'expected the 3-slot status word to flag');
+    assert.match(snippets, /Unavailable" rendered 4/, 'expected the 4-slot status word to flag');
+    for (const passText of ['Rolled back', 'On schedule', 'Overview page', 'Standby mode', 'Open slot', 'Rescheduled', '2026']) {
+      assert.doesNotMatch(snippets, new RegExp(passText), `"${passText}" should pass`);
+    }
   });
 });
 
@@ -404,6 +803,115 @@ describe('detectHtml — icon-tile-stack', () => {
     for (const text of SHOULD_PASS) {
       assert.ok(!flagged.has(text), `"${text}" should NOT be flagged as icon-tile-stack`);
     }
+  });
+});
+
+describe('detectHtml — radial-spotlight-glow', () => {
+  // Two-column fixture convention: left col = should-flag, right col = should-pass.
+  // The rule's snippet embeds the element's data-name in quotes, e.g.
+  //   radial-gradient spotlight glow "Hero Spotlight Blue" (#506fff a0.26 → transparent).
+  const SHOULD_FLAG = [
+    'Hero Spotlight Blue',
+    'Section Glow Violet',
+    'Overlay Glow Cyan',
+    'Two Stop Soft Glow',
+    'Hex Alpha Glow',
+  ];
+  const SHOULD_PASS = [
+    'Opaque Radial Background',
+    'Small Accent Badge',
+    'Avatar Glow Light',
+    'Neutral Vignette',
+    'White Vignette',
+    'Rich Radial Composition',
+    'Rich Transparent Composition',
+    'Opaque Center Glow',
+    'Linear Gradient Wash',
+  ];
+
+  it('radial-spotlight-glow: flags only the should-flag column', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'radial-spotlight-glow.html'));
+    const flagged = new Set();
+    for (const r of f) {
+      if (r.antipattern !== 'radial-spotlight-glow') continue;
+      const m = (r.snippet || '').match(/"([^"]+)"/);
+      if (m) flagged.add(m[1]);
+    }
+
+    for (const text of SHOULD_FLAG) {
+      assert.ok(flagged.has(text), `expected "${text}" to be flagged as radial-spotlight-glow`);
+    }
+    for (const text of SHOULD_PASS) {
+      assert.ok(!flagged.has(text), `"${text}" should NOT be flagged as radial-spotlight-glow`);
+    }
+  });
+});
+
+describe('detectHtml — undersized-ui-text', () => {
+  // Two-column fixture: left col = should-flag, right col = should-pass.
+  // The rule's snippet embeds the element's direct text in quotes, e.g.
+  //   `8px functional text "Flag Nav Link" (below 11px floor)`.
+  // The test extracts those quoted texts and matches them against the lists.
+  const SHOULD_FLAG = [
+    'Flag Nav Link',      // interactive nav link at 8px
+    'Flag Category',      // non-interactive furniture label at 8px
+    'Flag Meta Row',      // meta row at 9px
+    'Flag Button',        // interactive button at 10px
+    'Flag Table Cell',    // structural table cell at 9px
+    'Flag Caps Label',    // uppercase letterspaced micro-label — NOT exempt
+    'Flag Footer Link',   // interactive text in footer stays on the 11px floor
+  ];
+  const SHOULD_PASS = [
+    'Pass Legal Fine Print', // non-interactive footer smallprint at 10px (floor 10)
+    'Pass Sr Only',          // visually-hidden text
+    'Pass Sup Marker',       // sup tag exempt
+    'Pass Sub Marker',       // sub tag exempt
+    'Pass Em Sized',         // 0.6em of a 20px parent = 12px, above the floor
+    'Pass Terminal Line',    // code/terminal mock, legitimately small
+    'Pass Normal Link',      // functional text at the 12px floor
+  ];
+
+  it('undersized-ui-text: flags only the should-flag column', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'undersized-ui-text.html'));
+    const flagged = new Set();
+    for (const r of f) {
+      if (r.antipattern !== 'undersized-ui-text') continue;
+      const m = (r.snippet || '').match(/"([^"]+)"/);
+      if (m) flagged.add(m[1]);
+    }
+
+    for (const text of SHOULD_FLAG) {
+      assert.ok(flagged.has(text), `expected "${text}" to be flagged as undersized-ui-text`);
+    }
+    for (const text of SHOULD_PASS) {
+      assert.ok(!flagged.has(text), `"${text}" should NOT be flagged as undersized-ui-text`);
+    }
+  });
+});
+
+describe('detectHtml — non-rendered text (issue #408)', () => {
+  // On sites that set `html { font-size: 62.5% }` the root computes to 10px, so
+  // <script>/<style>/<title>/<noscript> and display:none / visibility:hidden
+  // blocks — whose JS/CSS/JSON-LD text clears the hasDirectText gate — report a
+  // 10px size and used to produce dozens of phantom "10px body text" findings.
+  // Both text-size floors (tiny-text and undersized-ui-text) must skip them and
+  // measure only genuinely rendered text.
+  it('tiny-text / undersized-ui-text: non-rendered elements produce no findings, rendered text still flags', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'nonrendered-text.html'));
+    const tiny = f.filter(r => r.antipattern === 'tiny-text');
+    const undersized = f.filter(r => r.antipattern === 'undersized-ui-text');
+
+    // Exactly the two genuinely rendered elements flag: the 10px body <p>
+    // (tiny-text) and the 9px interactive nav link (undersized-ui-text).
+    assert.equal(
+      tiny.length, 1,
+      `expected exactly 1 tiny-text finding (rendered body copy), got ${tiny.length}: ${tiny.map(r => r.snippet).join('; ')}`
+    );
+    assert.equal(
+      undersized.length, 1,
+      `expected exactly 1 undersized-ui-text finding (rendered nav link), got ${undersized.length}: ${undersized.map(r => r.snippet).join('; ')}`
+    );
+    assert.match(undersized[0].snippet || '', /Rendered Nav Link/, 'the one undersized finding must be the rendered nav link');
   });
 });
 
@@ -483,10 +991,6 @@ describe('detectHtml — hero-eyebrow-chip', () => {
     'Span Eyebrow Above Hero',
     'Pill Chip Above Hero',
     'Already Uppercase Text',
-    // The rule no longer gates on heading font size (modern hero h1s
-    // use clamp() / vw / var() that static HTML/CSS cannot resolve), and the
-    // eyebrow text ceiling moved 30 → 60 chars. Both shapes now flag.
-    'Body-Sized Heading Below Eyebrow',
     'Long Uppercase Sentence Above Hero',
   ];
   const SHOULD_PASS = [
@@ -494,6 +998,8 @@ describe('detectHtml — hero-eyebrow-chip', () => {
     'Uppercase Caption Far From Hero',
     'Hero With No Eyebrow',
     'Heading Above Heading',
+    'Body-Sized Heading Below Eyebrow',
+    'Application Panel Heading',
   ];
 
   it('hero-eyebrow-chip: flags only the should-flag column', async () => {
@@ -516,50 +1022,64 @@ describe('detectHtml — hero-eyebrow-chip', () => {
   });
 });
 
-describe('detectHtml — repeated-section-kickers', () => {
+describe('detectHtml — kicker-above-heading', () => {
   const SHOULD_FLAG = [
-    'The Future Is Admitted',
-    'A Private Rehearsal',
-    'Reviewed, Not Sold',
-    'Touch the Future',
+    'A Single Kicker Still Flags',
+    'Standard Tracking Kicker',
+    'Kicker Above An H3',
+    'Kicker Above An H4',
+    'Sub Hero Heading',
+    'Small Caps Kicker',
+    'Heading Role Kicker',
   ];
   const SHOULD_PASS = [
     'Breadcrumb Before Heading',
+    'Breadcrumb Trail Outside Nav',
+    'Dateline Above Headline',
+    'Editorial Card Meta',
     'Form Heading Is Separate',
-    'Step Indicator',
     'Figure Caption Label',
-    'Normal Case Kicker',
+    'Limitation Of Liability',
+    'Indemnification Clause',
+    'Chapter Numbering Passes',
+    'Application Panel Context',
+    'Page Title After Nav',
+    '48%',
+    'Sentence Case Lead In',
+    'Untracked Caps Label',
     'Intentional Brand Label',
+    'Hero Owned By Hero Rule',
     'Garden Suite',
     'Sea Loft',
-    'Cliff Suite',
-    '/impeccabletypeset',
-    '/impeccablelayout',
-    '/impeccablecolorize',
-    '/impeccablecraft',
-    '/impeccableaudit',
-    '/impeccablepolish',
+    'Step Indicator',
     'Mockup Hero Variant One',
-    'Mockup Hero Variant Two',
-    'Mockup Hero Variant Three',
   ];
 
-  it('repeated-section-kickers: flags only repeated section scaffolding', async () => {
-    const f = await detectHtml(path.join(FIXTURES, 'repeated-section-kickers.html'));
+  it('kicker-above-heading: flags any kicker above a heading, without repetition', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'kicker-above-heading.html'));
     const flagged = new Set();
     for (const r of f) {
-      if (r.antipattern !== 'repeated-section-kickers') continue;
-      assert.equal(r.severity, 'advisory');
+      if (r.antipattern !== 'kicker-above-heading') continue;
+      assert.equal(r.severity, 'warning');
       const matches = [...(r.snippet || '').matchAll(/"([^"]+)"/g)];
       if (matches.length) flagged.add(matches[matches.length - 1][1]);
     }
 
     for (const text of SHOULD_FLAG) {
-      assert.ok(flagged.has(text), `expected "${text}" to be flagged as repeated-section-kickers`);
+      assert.ok(flagged.has(text), `expected "${text}" to be flagged as kicker-above-heading`);
     }
     for (const text of SHOULD_PASS) {
-      assert.ok(!flagged.has(text), `"${text}" should NOT be flagged as repeated-section-kickers`);
+      assert.ok(!flagged.has(text), `"${text}" should NOT be flagged as kicker-above-heading`);
     }
+
+    // The retired repeated-section-kickers id must never resurface.
+    assert.ok(!f.some(r => r.antipattern === 'repeated-section-kickers'),
+      'retired rule id repeated-section-kickers should not fire');
+
+    // The hero-scale h1 eyebrow stays with hero-eyebrow-chip, exactly once.
+    const heroHits = f.filter(r => r.antipattern === 'hero-eyebrow-chip'
+      && /Hero Owned By Hero Rule/.test(r.snippet || ''));
+    assert.equal(heroHits.length, 1, 'hero-eyebrow-chip should own the hero-scale h1 eyebrow');
   });
 });
 
@@ -575,9 +1095,36 @@ describe('detectHtml — motion', () => {
 
 describe('detectHtml — dark glow', () => {
   // Calibrated static baseline — see motion test note above.
+  // 12 element-level findings (glow-blue, glow-purple, glow-cyan, glow-multi,
+  // inline pink, glow-oklch, glow-hex, glow-hsl, glow-var, glow-text,
+  // glow-light-oklch, glow-photo-halo) + 1 page-level text-scan finding.
+  // Pass column adds none.
   it('glow: flag column triggers dark-glow, pass column adds none', async () => {
     const f = await detectHtml(path.join(FIXTURES, 'glow.html'));
-    assert.equal(f.filter(r => r.antipattern === 'dark-glow').length, 1);
+    const glow = f.filter(r => r.antipattern === 'dark-glow');
+    assert.equal(glow.length, 13);
+    // Every finding is a glow tell, none reference the pass-column shadows
+    for (const g of glow) {
+      assert.match(g.snippet, /Zero-offset (box|text)-shadow glow|Colored (box|text)-shadow glow/);
+    }
+    // Zero-offset halo under an unreadable url() surface still fires: the
+    // halo tell does not depend on the background at all.
+    assert.ok(
+      glow.some(g => /Zero-offset box-shadow glow \(#d946ef\)/i.test(g.snippet)),
+      'expected zero-offset halo finding under unreadable image surface',
+    );
+    // Offset chromatic shadow under the same unreadable surface abstains:
+    // the dark-background tell needs a surface we can actually read.
+    assert.equal(
+      glow.filter(g => /#10b981/i.test(g.snippet)).length, 0,
+      'offset chromatic shadow on unknown surface must not be scored',
+    );
+    // Translucent gradient over a url() image blends with pixels the engine
+    // cannot read; the wash stops must never be scored as the surface.
+    assert.equal(
+      glow.filter(g => /#f43f5e/i.test(g.snippet)).length, 0,
+      'offset chromatic shadow under a translucent wash over an image must abstain',
+    );
   });
 });
 
@@ -743,40 +1290,276 @@ describe('detectHtml — cream-palette', () => {
   });
 });
 
-describe('detectHtml — gated provider tells (--gpt / --gemini)', () => {
+describe('detectHtml — generated-UI tells', () => {
   const GPT_IDS = ['gpt-thin-border-wide-shadow', 'repeating-stripes-gradient', 'codex-grid-background', 'theater-slop-phrase'];
 
-  it('gpt-tells: gated OFF by default — none of the GPT idioms surface', async () => {
+  it('gpt-tells: each flag case surfaces by default and the pass column adds none', async () => {
     const f = await detectHtml(path.join(FIXTURES, 'gpt-tells.html'));
     for (const id of GPT_IDS) {
       assert.equal(
-        f.some(r => r.antipattern === id), false,
-        `${id} must not surface without --gpt`,
-      );
-    }
-  });
-
-  it('gpt-tells: with providers:[gpt], each flag case triggers once, pass column adds none', async () => {
-    const f = await detectHtml(path.join(FIXTURES, 'gpt-tells.html'), { providers: ['gpt'] });
-    for (const id of GPT_IDS) {
-      assert.equal(
         f.filter(r => r.antipattern === id).length, 1,
-        `expected exactly one ${id} finding under --gpt, got ${f.filter(r => r.antipattern === id).length}`,
+        `expected exactly one default ${id} finding, got ${f.filter(r => r.antipattern === id).length}`,
       );
     }
   });
 
-  it('gemini-tells: gated OFF by default, ON under providers:[gemini]', async () => {
-    const off = await detectHtml(path.join(FIXTURES, 'gemini-tells.html'));
+  it('codex-grid-background: 1D dashed rules and px-pair line-fields stay legal', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'codex-grid-1d-pass.html'));
     assert.equal(
-      off.some(r => r.antipattern === 'image-hover-transform'), false,
-      'image-hover-transform must not surface without --gemini',
+      f.filter(r => r.antipattern === 'codex-grid-background').length, 0,
+      `1D tiled hairlines must not flag, got: ${f.filter(r => r.antipattern === 'codex-grid-background').map(r => r.snippet).join('; ')}`,
     );
-    const on = await detectHtml(path.join(FIXTURES, 'gemini-tells.html'), { providers: ['gemini'] });
+  });
+
+  it('gemini-tells: both flag cases surface by default and pass cases stay legal', async () => {
+    const findings = await detectHtml(path.join(FIXTURES, 'gemini-tells.html'));
     // Two flag cases: a CSS img:hover{transform} rule and a Tailwind hover:scale on <img>.
     assert.equal(
-      on.filter(r => r.antipattern === 'image-hover-transform').length, 2,
-      `expected 2 image-hover-transform findings under --gemini, got ${on.filter(r => r.antipattern === 'image-hover-transform').length}`,
+      findings.filter(r => r.antipattern === 'image-hover-transform').length, 2,
+      `expected 2 default image-hover-transform findings, got ${findings.filter(r => r.antipattern === 'image-hover-transform').length}`,
+    );
+  });
+});
+
+describe('em-dash overuse — HTML entity escapes', () => {
+  // Build a full page so the page-level text-content analyzer runs. `body` is the
+  // prose that carries the dashes; the doctype/html scaffold is required by
+  // isFullPage(). Each dash spelling is a separate case because the rule counts
+  // per page, not per element.
+  const page = (body) =>
+    `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>t</title></head>` +
+    `<body><main><h1>A real page heading of ordinary length</h1><p>${body}</p></main></body></html>`;
+
+  // Eight dashes clears the raised advisory floor (EM_DASH_FLOOR = 8, up from
+  // the old flat 5). Packed into one short paragraph they also clear the density
+  // gate. Sentence fragments keep the surrounding prose realistic so nothing
+  // else in the pipeline objects.
+  const eightNamed = 'fast &mdash; cheap &mdash; honest &mdash; simple &mdash; quiet &mdash; kind &mdash; bright &mdash; calm &mdash; done';
+  const eightNumeric = 'fast &#8212; cheap &#8212; honest &#8212; simple &#8212; quiet &#8212; kind &#8212; bright &#8212; calm &#8212; done';
+  const eightHex = 'fast &#x2014; cheap &#x2014; honest &#x2014; simple &#x2014; quiet &#x2014; kind &#x2014; bright &#x2014; calm &#x2014; done';
+  const eightHexUpper = 'fast &#X2014; cheap &#X2014; honest &#X2014; simple &#X2014; quiet &#X2014; kind &#X2014; bright &#X2014; calm &#X2014; done';
+  const eightNumericPadded = 'fast &#08212; cheap &#08212; honest &#08212; simple &#08212; quiet &#08212; kind &#08212; bright &#08212; calm &#08212; done';
+  // Four literal glyphs + four named entities render identically; the count
+  // must see all eight.
+  const mixed = 'fast — cheap — honest — simple — quiet &mdash; kind &mdash; bright &mdash; calm &mdash; done';
+
+  const SHOULD_FLAG = {
+    'named &mdash;': eightNamed,
+    'numeric &#8212;': eightNumeric,
+    'hex &#x2014;': eightHex,
+    'uppercase-hex &#X2014;': eightHexUpper,
+    'zero-padded decimal &#08212;': eightNumericPadded,
+    'mixed literal + entity': mixed,
+  };
+
+  // A long paragraph carrying exactly eight dashes across several thousand
+  // characters of prose. Above the absolute floor, but the density gate
+  // (one per ~500 chars) keeps ordinary long-form writing from flagging.
+  const longLowDensityFiller = 'This paragraph is written in ordinary human prose that runs on for quite a while. '.repeat(60);
+  const longLowDensity = `a — b — c — d — e — f — g — h — end. ${longLowDensityFiller}`;
+
+  // False-positive shapes: none of these should trip the em-dash counter.
+  const SHOULD_PASS = {
+    // Below the floor: seven dashes on a short page is under the raised floor of 8.
+    'seven dashes below floor': 'a — b — c — d — e — f — g — done, otherwise plain sentences fill the paragraph body',
+    // Below the floor: occasional em-dash entity use is legitimate prose.
+    'two entities below threshold': 'fast &mdash; cheap &mdash; done, otherwise plain sentences fill the paragraph body',
+    // Above the floor but below the density gate: a long human article.
+    'eight dashes across a long article': longLowDensity,
+    // En-dashes are a different character and a different job (ranges); the em-dash
+    // rule must not decode or count them.
+    'en-dash entities': 'pages 10&ndash;20 and 30&ndash;40 and 50&ndash;60 and 70&ndash;80 and 90&ndash;100 and 1&ndash;2 and 3&ndash;4 and 5&ndash;6 and 7&ndash;8',
+    'numeric en-dash entities': 'pages 10&#8211;20 and 30&#8211;40 and 50&#8211;60 and 70&#8211;80 and 90&#8211;100 and 1&#8211;2 and 3&#8211;4 and 5&#8211;6',
+    // Double-escaped: the visible text is the literal string "&mdash;", not a dash.
+    'double-escaped ampersand': 'write &amp;mdash; and &amp;mdash; and &amp;mdash; and &amp;mdash; and &amp;mdash; and &amp;mdash; and &amp;mdash; and &amp;mdash; literally',
+    // Unrelated entities must never be miscounted as dashes.
+    'non-dash entities': 'a&nbsp;b &copy; c &hellip; d &amp; e &trade; f &reg; g &deg; h &sect; i &para;',
+    // Ordinary hyphenated compounds are single hyphens, not the double-hyphen tell.
+    'hyphenated compounds': 'state-of-the-art, well-being, high-quality, self-service, end-to-end, at-a-glance, day-to-day, off-the-shelf copy',
+  };
+
+  const emDashFindings = (findings) =>
+    findings.filter((r) => r.antipattern === 'em-dash-overuse');
+
+  for (const [label, body] of Object.entries(SHOULD_FLAG)) {
+    it(`flags em-dash overuse spelled as ${label}`, () => {
+      const findings = detectText(page(body), 'em-dash.html');
+      const hits = emDashFindings(findings);
+      assert.equal(
+        hits.length, 1,
+        `expected em-dash-overuse for "${label}", got: ${findings.map((r) => r.antipattern).join(', ') || 'none'}`,
+      );
+      // The rule is advisory: the finding must carry the flag so the CLI, JSON,
+      // and hook can partition it out of the failure set.
+      assert.equal(hits[0].advisory, true, `"${label}" finding should be marked advisory`);
+    });
+  }
+
+  for (const [label, body] of Object.entries(SHOULD_PASS)) {
+    it(`does not flag ${label}`, () => {
+      const findings = detectText(page(body), 'em-dash.html');
+      assert.equal(
+        emDashFindings(findings).length, 0,
+        `"${label}" should not flag em-dash overuse`,
+      );
+    });
+  }
+
+  it('static-HTML path decodes entity em-dashes too (fixture file)', async () => {
+    const findings = await detectHtml(path.join(FIXTURES, 'em-dash-entities.html'));
+    const hits = findings.filter((r) => r.antipattern === 'em-dash-overuse');
+    assert.equal(
+      hits.length, 1,
+      'em-dash-entities.html should flag em-dash overuse via the static-HTML path',
+    );
+    assert.equal(hits[0].advisory, true, 'static-HTML em-dash finding should be advisory');
+  });
+});
+
+describe('formatFindings — advisory partitioning', () => {
+  const primary = { antipattern: 'side-tab', name: 'Side-tab', description: 'A primary finding.', file: 'a.css', line: 1, snippet: 'x' };
+  const advisory = { antipattern: 'em-dash-overuse', name: 'Em-dash', description: 'An advisory finding.', file: 'a.html', line: 0, snippet: '8 em-dashes', advisory: true };
+
+  it('lists advisory findings in a separate section and excludes them from the failure count', () => {
+    const text = formatFindings([primary, advisory], false);
+    assert.match(text, /1 anti-pattern found\./); // primary count only
+    assert.match(text, /Advisory \(not counted as failures\)/);
+    assert.match(text, /em-dash-overuse/);
+    assert.match(text, /1 advisory note/);
+  });
+
+  it('reports zero failures for an advisory-only set but still shows the advisory section', () => {
+    const text = formatFindings([advisory], false);
+    assert.match(text, /0 anti-patterns found\./);
+    assert.match(text, /em-dash-overuse/);
+  });
+
+  it('keeps every finding (advisory flagged) in JSON output', () => {
+    const json = JSON.parse(formatFindings([primary, advisory], true));
+    assert.equal(json.length, 2);
+    assert.equal(json.find((f) => f.antipattern === 'em-dash-overuse').advisory, true);
+    assert.equal(json.find((f) => f.antipattern === 'side-tab').advisory, undefined);
+  });
+});
+
+describe('em-dash overuse — browser adapter parity (checkEmDashOveruse)', () => {
+  // The browser DOM check operates on already-rendered text, so it exercises
+  // the same two-gate logic without entity decoding. checkEmDashOveruse is the
+  // pure core the DOM wrapper calls.
+  const id = (findings) => findings.map((f) => f.id).join(',');
+
+  it('flags eight dense em-dashes', () => {
+    const findings = checkEmDashOveruse('a — b — c — d — e — f — g — h — done');
+    assert.equal(id(findings), 'em-dash-overuse');
+  });
+
+  it('does not flag seven em-dashes (below the floor)', () => {
+    const findings = checkEmDashOveruse('a — b — c — d — e — f — g — done');
+    assert.equal(findings.length, 0);
+  });
+
+  it('does not flag eight em-dashes spread across long prose (density gate)', () => {
+    const filler = 'This is ordinary human prose that continues at length. '.repeat(80);
+    const findings = checkEmDashOveruse(`a — b — c — d — e — f — g — h — end. ${filler}`);
+    assert.equal(findings.length, 0);
+  });
+
+  it('counts the double-hyphen em-dash substitute', () => {
+    const findings = checkEmDashOveruse('a--b c--d e--f g--h i--j k--l m--n o--p done');
+    assert.equal(id(findings), 'em-dash-overuse');
+  });
+});
+
+describe('detectHtml — CSS patterns in prose (css-in-prose fixtures)', () => {
+  // CSS-property regexes must scan only real style carriers (<style> blocks,
+  // style="" attributes, linked stylesheets, class="" attributes). Prose,
+  // <code>/<pre> samples, and comments documenting a pattern are not styling.
+  // Live FP: impeccable.style's changelog line
+  // `<code>background-clip: text</code> gradients stop tripping contrast`.
+  const SCOPED_RULE_IDS = ['gradient-text', 'ai-color-palette', 'side-tab', 'pulsing-dot'];
+
+  it('documentation about the patterns adds no findings', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'css-in-prose-should-pass.html'));
+    const hits = f.filter(r => SCOPED_RULE_IDS.includes(r.antipattern));
+    assert.equal(
+      hits.length, 0,
+      `prose/code/comment mentions must not flag, got: ${hits.map(r => `${r.antipattern}:${r.snippet}`).join('; ')}`
+    );
+  });
+
+  it('the same patterns applied as real styling still flag', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'css-in-prose-should-flag.html'));
+    const gradient = f.filter(r => r.antipattern === 'gradient-text');
+    assert.ok(
+      gradient.some(r => /background-clip: text \+ gradient/.test(r.snippet || '')),
+      'expected the CSS-mechanism gradient-text finding'
+    );
+    assert.ok(
+      gradient.some(r => /bg-clip-text \+ bg-gradient \(Tailwind\)/.test(r.snippet || '')),
+      'expected the Tailwind gradient-text finding'
+    );
+    assert.ok(f.some(r => r.antipattern === 'ai-color-palette'), 'expected ai-color-palette');
+  });
+});
+
+describe('detectHtml — dark themes written in modern color syntax', () => {
+  // A dark page whose ground and surfaces are written in oklch, color(srgb),
+  // color(display-p3), and lch. Backgrounds the parser cannot read must make
+  // the contrast checks abstain; assuming the browser default of white turns
+  // every light-on-dark line into a false "on #ffffff" finding.
+  const FLAG_PAIRS = [
+    // The ground is a two-stop oklch gradient; the check reports the worst
+    // stop, which for charcoal copy is the lighter one.
+    ['#35332d', '#050403'],  // Flag Muted On Oklch Ground
+    ['#47474d', '#1a1c1f'],  // Flag Dim On Srgb Panel
+    ['#59595c', '#121215'],  // Flag Dim On Display P3 Panel
+    ['#56514e', '#302b27'],  // Flag Dim On Lch Panel
+    ['#bfbdb8', '#faf7f2'],  // Flag Pale On Light Panel
+    ['#c7c4bf', '#faf7f2'],  // Flag Pale On Inherited Light Panel
+    ['#bfbdb8', '#f0ede8'],  // Flag Pale On Currentcolor Panel
+  ];
+
+  it('flags text that genuinely fails against a ground the parser can read', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'dark-theme-modern-color.html'));
+    const snippets = f.filter(r => r.antipattern === 'low-contrast').map(r => r.snippet || '');
+    for (const [text, bg] of FLAG_PAIRS) {
+      assert.ok(
+        snippets.some(s => s.includes(`text ${text}`) && s.includes(`on ${bg}`)),
+        `expected low-contrast for text ${text} on ${bg}, got: ${snippets.join('; ')}`,
+      );
+    }
+  });
+
+  it('never assumes white when the ground is unreadable', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'dark-theme-modern-color.html'));
+    const onWhite = f.filter(r => /on #ffffff/i.test(r.snippet || ''));
+    assert.equal(
+      onWhite.length, 0,
+      `no finding may claim a white ground on this page, got: ${onWhite.map(r => r.snippet).join('; ')}`,
+    );
+  });
+
+  it('light copy on readable dark surfaces stays quiet', async () => {
+    const f = await detectHtml(path.join(FIXTURES, 'dark-theme-modern-color.html'));
+    const pale = f.filter(r =>
+      (r.antipattern === 'low-contrast' || r.antipattern === 'gray-on-color') &&
+      /#e7e4dd/i.test(r.snippet || '')
+    );
+    assert.equal(
+      pale.length, 0,
+      `ivory copy on dark grounds must not flag, got: ${pale.map(r => r.snippet).join('; ')}`,
+    );
+  });
+
+  it('never measures a gradient hidden beneath an image layer', async () => {
+    // `url(...), linear-gradient(red, blue)` paints the image on top; the
+    // gradient is invisible. Falling back to its stops manufactured
+    // gray-on-color / low-contrast findings against colors nobody sees.
+    const f = await detectHtml(path.join(FIXTURES, 'dark-theme-modern-color.html'));
+    const hidden = f.filter(r => /#ff0000|#0000ff/i.test(r.snippet || ''));
+    assert.equal(
+      hidden.length, 0,
+      `no finding may reference the occluded gradient's stops, got: ${hidden.map(r => r.snippet).join('; ')}`,
     );
   });
 });

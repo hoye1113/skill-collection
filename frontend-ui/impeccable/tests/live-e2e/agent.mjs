@@ -89,12 +89,24 @@ export const STEER_MARKER_VALUE = 'e2e';
  *   - first variant visible (no display:none), rest hidden by the agent caller
  *   - inner content = single <h1> per variant
  */
-export function createFakeAgent() {
+export function createFakeAgent({ autoRepairMountFailures = true } = {}) {
   return {
+    // Read by runAgentLoop's `variant_mount_failed` handler. Scenarios that
+    // assert on the persistent mount-error card turn this off so the agent
+    // does not republish the session out from under them.
+    autoRepairMountFailures,
+
     /** @type {LiveAgent['generateVariants']} */
     async generateVariants(event, context = {}) {
       if (event.mode === 'insert') {
         return generateInsertFakeVariants(context);
+      }
+      // Contract-v2 Svelte component previews get their own author path: the
+      // scaffolder already wrote stubs whose control flow and prop references
+      // are correct, so the only honest thing a variant can change is style.
+      if (context.wrapInfo?.previewMode === 'svelte-component') {
+        const svelteOutput = await generateSvelteComponentFakeVariants(event, context);
+        if (svelteOutput) return svelteOutput;
       }
       const text = event.element?.textContent?.trim() || extractText(event.element?.outerHTML) || 'Title';
       const tag = (event.element?.tagName || 'h1').toLowerCase();
@@ -105,7 +117,14 @@ export function createFakeAgent() {
       const preservedAttrs = buildPreservedVariantAttrs(event.element || {}, cls);
       const elementOpen = `<${tag}${preservedAttrs}>`;
       const elementClose = `</${tag}>`;
-      const variantHtml = `${elementOpen}${htmlEscape(text)}${elementClose}`;
+      // The JSX source may bind its text through an expression (`{item.title}`
+      // inside a `.map()`). The DOM only ever hands the agent the rendered
+      // string, so writing that back would freeze one item's text into the
+      // template for every item. The Svelte path already solves this with a
+      // prop contract; on the source-preview path the equivalent is to carry
+      // the original expression through untouched.
+      const sourceExprInner = await readJsxExpressionInner(context);
+      const variantHtml = `${elementOpen}${sourceExprInner ?? htmlEscape(text)}${elementClose}`;
       const useAstroGlobalCss = context.wrapInfo?.styleMode === 'astro-global-prefixed';
 
       // Variant 1 — red color, with a `range` param tuning hue lightness.
@@ -158,20 +177,25 @@ export function createFakeAgent() {
       // Scoped CSS for most frameworks. Astro component styles are transformed
       // and scoped by the compiler, so live preview CSS must use a global style
       // tag plus explicit variant prefixes instead of raw @scope rules.
+      // Each variant carries a distinct font-weight so the E2E suite can prove
+      // which variant is actually rendered, not merely which one the bar says
+      // is selected. Keep these in sync with FAKE_VARIANT_FONT_WEIGHTS.
       const scopedCss = useAstroGlobalCss
         ? [
             `[data-impeccable-variant="1"] > ${tag} {`,
+            '  font-weight: 300;',
             '  color: oklch(var(--p-lightness, 0.5) 0.25 25);',
             '}',
             `[data-impeccable-variant="2"] > ${tag} { font-weight: 900; }`,
             `[data-impeccable-variant="2"][data-p-face="serif"] > ${tag} { font-family: ui-serif, serif; }`,
             `[data-impeccable-variant="2"][data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
-            `[data-impeccable-variant="3"] > ${tag} { text-transform: uppercase; letter-spacing: 0.04em; }`,
+            `[data-impeccable-variant="3"] > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
             `[data-impeccable-variant="3"][data-p-italic] > ${tag} { font-style: italic; }`,
           ].join('\n')
         : [
             '@scope ([data-impeccable-variant="1"]) {',
             `  :scope > ${tag} {`,
+            '    font-weight: 300;',
             '    color: oklch(var(--p-lightness, 0.5) 0.25 25);',
             '  }',
             '}',
@@ -181,7 +205,7 @@ export function createFakeAgent() {
             `  :scope[data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
             '}',
             '@scope ([data-impeccable-variant="3"]) {',
-            `  :scope > ${tag} { text-transform: uppercase; letter-spacing: 0.04em; }`,
+            `  :scope > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
             `  :scope[data-p-italic] > ${tag} { font-style: italic; }`,
             '}',
           ].join('\n');
@@ -256,17 +280,19 @@ function generateInsertFakeVariants(context = {}) {
   const scopedCss = useAstroGlobalCss
     ? [
         '[data-impeccable-variant="1"] .inserted-copy {',
+        '  font-weight: 300;',
         '  color: oklch(var(--p-lightness, 0.5) 0.25 25);',
         '}',
         '[data-impeccable-variant="2"] .inserted-copy { font-weight: 900; }',
         '[data-impeccable-variant="2"][data-p-face="serif"] .inserted-copy { font-family: ui-serif, serif; }',
         '[data-impeccable-variant="2"][data-p-face="mono"]  .inserted-copy { font-family: ui-monospace, monospace; }',
-        '[data-impeccable-variant="3"] .inserted-copy { text-transform: uppercase; letter-spacing: 0.04em; }',
+        '[data-impeccable-variant="3"] .inserted-copy { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }',
         '[data-impeccable-variant="3"][data-p-italic] .inserted-copy { font-style: italic; }',
       ].join('\n')
     : [
         '@scope ([data-impeccable-variant="1"]) {',
         '  :scope .inserted-copy {',
+        '    font-weight: 300;',
         '    color: oklch(var(--p-lightness, 0.5) 0.25 25);',
         '  }',
         '}',
@@ -276,7 +302,7 @@ function generateInsertFakeVariants(context = {}) {
         '  :scope[data-p-face="mono"]  .inserted-copy { font-family: ui-monospace, monospace; }',
         '}',
         '@scope ([data-impeccable-variant="3"]) {',
-        '  :scope .inserted-copy { text-transform: uppercase; letter-spacing: 0.04em; }',
+        '  :scope .inserted-copy { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }',
         '  :scope[data-p-italic] .inserted-copy { font-style: italic; }',
         '}',
       ].join('\n');
@@ -285,6 +311,187 @@ function generateInsertFakeVariants(context = {}) {
     scopedCss,
     variants: [variant1, variant2, variant3],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Svelte component preview (contract v2)
+//
+// The scaffolder hands the agent stubs that already carry the selection's
+// control flow ({#each}, {#if}) and prop references. A variant that re-derives
+// markup from the live DOM would bake one item's rendered text into the loop
+// template — exactly the failure the v2 contract exists to prevent. So the fake
+// agent behaves like a well-behaved real one: it keeps every stub's script,
+// comment, and markup byte-for-byte and rewrites only the <style> block.
+//
+// Each variant gets a distinct computed-style marker on the selection root
+// (font-weight 300 / 900 / 600) so the E2E suite can prove which variant is
+// actually mounted, plus the param hooks live.md section 7 describes:
+// `var(--p-<id>, default)` for range/toggle and `:global([data-p-<id>="…"])`
+// for steps. Params are declared in componentDir/params.json by the writer.
+// ---------------------------------------------------------------------------
+
+/**
+ * The computed `font-weight` each fake variant renders with, on every preview
+ * path (HTML/JSX scoped CSS, Astro global-prefixed, Svelte component). The E2E
+ * suite reads these back through getComputedStyle so "variant N is visible" is
+ * a render fact rather than a bar-label claim.
+ */
+export const FAKE_VARIANT_FONT_WEIGHTS = { 1: '300', 2: '900', 3: '600' };
+
+async function generateSvelteComponentFakeVariants(event, context = {}) {
+  const manifest = await readSvelteComponentManifest(context);
+  if (!manifest || manifest.mode === 'insert') return null;
+
+  const shape = svelteSelectionShape(manifest.originalMarkup || '');
+  const count = Math.max(1, Number(event.count) || 3);
+  const variants = [];
+  for (let i = 0; i < count; i++) {
+    const variantId = i + 1;
+    variants.push({
+      // Stub-preserving path: the writer ignores innerHtml entirely and keeps
+      // the scaffolded markup. Kept as an empty string so the shared
+      // normalizeVariantOutput pass has a string to walk.
+      innerHtml: '',
+      params: svelteFakeVariantParams(variantId),
+      svelteComponent: { css: svelteFakeVariantCss(variantId, shape) },
+    });
+  }
+  return { scopedCss: '', variants };
+}
+
+/**
+ * Selection root + first classed descendant, read off the scaffold's own
+ * `originalMarkup`. Param-conditioned selectors need a descendant: after
+ * accept, `[data-p-*]` is stripped from the selector, and a rule whose whole
+ * selector was the stripped `:global([data-p-x="y"])` would be dropped along
+ * with it. Selections without a classed descendant still declare their params;
+ * they just don't wire CSS to them.
+ */
+function svelteSelectionShape(originalMarkup) {
+  const openTags = [...String(originalMarkup || '').matchAll(/<([a-zA-Z][\w:-]*)\b([^>]*)>/g)];
+  const described = openTags.map(([, tag, attrs]) => ({
+    tag: tag.toLowerCase(),
+    className: staticClassToken(attrs),
+  }));
+  const root = described[0] || { tag: 'div', className: '' };
+  const descendant = described.slice(1).find((entry) => entry.className);
+  return {
+    rootSelector: root.className ? `.${root.className}` : root.tag,
+    descendantSelector: descendant ? `.${descendant.className}` : null,
+  };
+}
+
+function staticClassToken(attrs) {
+  const match = String(attrs || '').match(/\bclass\s*=\s*(["'])(.*?)\1/);
+  if (!match) return '';
+  return match[2].split(/\s+/).find((token) => token && !token.includes('{')) || '';
+}
+
+function svelteFakeVariantParams(variantId) {
+  if (variantId === 1) {
+    return [
+      { id: 'lightness', kind: 'range', min: 0.3, max: 0.7, step: 0.05, default: 0.5, label: 'Lightness' },
+    ];
+  }
+  if (variantId === 2) {
+    return [
+      { id: 'lead', kind: 'range', min: 1.2, max: 2, step: 0.1, default: 1.4, label: 'Lead' },
+      {
+        id: 'density',
+        kind: 'steps',
+        default: 'airy',
+        label: 'Density',
+        options: [
+          { value: 'airy', label: 'Airy' },
+          { value: 'snug', label: 'Snug' },
+        ],
+      },
+    ];
+  }
+  return [{ id: 'italic', kind: 'toggle', default: false, label: 'Italic' }];
+}
+
+function svelteFakeVariantCss(variantId, { rootSelector, descendantSelector }) {
+  const lines = [];
+  if (variantId === 1) {
+    lines.push(`${rootSelector} { font-weight: 300; color: oklch(var(--p-lightness, 0.5) 0.25 25); }`);
+    if (descendantSelector) lines.push(`${descendantSelector} { border-radius: 8px; }`);
+  } else if (variantId === 2) {
+    lines.push(`${rootSelector} { font-weight: 900; line-height: var(--p-lead, 1.4); }`);
+    if (descendantSelector) {
+      lines.push(`:global([data-p-density="airy"]) ${descendantSelector} { letter-spacing: 0.14em; }`);
+      lines.push(`:global([data-p-density="snug"]) ${descendantSelector} { letter-spacing: 0.01em; }`);
+    }
+  } else {
+    lines.push(`${rootSelector} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`);
+    if (descendantSelector) {
+      lines.push(`:global([data-p-italic]) ${descendantSelector} { font-style: italic; }`);
+    }
+  }
+  return lines.join('\n');
+}
+
+async function readSvelteComponentManifest(context = {}) {
+  const { tmp, wrapInfo } = context;
+  if (!tmp || !wrapInfo?.file) return null;
+  try {
+    return JSON.parse(await fs.readFile(path.join(tmp, wrapInfo.file), 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Replace a variant component's <style> block, keeping everything above it
+ * (script, prop comment, markup) exactly as the scaffolder wrote it.
+ */
+export function restyleSvelteComponentSource(source, css) {
+  const text = String(source || '');
+  const styleStart = text.lastIndexOf('<style');
+  const head = (styleStart === -1 ? text : text.slice(0, styleStart)).replace(/\s+$/, '');
+  const body = String(css || '').trim() || ':global(*) {}';
+  const indented = body.split('\n').map((line) => (line.trim() ? '  ' + line : '')).join('\n');
+  return `${head}\n\n<style>\n${indented}\n</style>\n`;
+}
+
+/**
+ * Re-author every variant of a live component session and tell the server the
+ * publish happened, exactly as the poll loop does after a generate. The server
+ * snapshots a fresh `r<N>/` revision dir on the `done` reply, so the browser
+ * imports from a path it has never seen and cannot serve a cached compile of
+ * the previous content.
+ *
+ * @param {object} opts
+ * @param {string} opts.tmp           app root (where the manifest path resolves)
+ * @param {string} opts.manifestFile  manifest path relative to `tmp`
+ * @param {{port: number, token: string}} opts.live
+ * @param {(variantNum: number, shape: object) => string} opts.css
+ */
+export async function republishSvelteComponentVariants({ tmp, manifestFile, live, css }) {
+  const manifestPath = path.join(tmp, manifestFile);
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf-8'));
+  const componentDir = path.join(tmp, manifest.componentDir);
+  const shape = svelteSelectionShape(manifest.originalMarkup || '');
+  const count = Number(manifest.arrivedVariants) || Number(manifest.count) || 1;
+  for (let variantNum = 1; variantNum <= count; variantNum++) {
+    const file = path.join(componentDir, `v${variantNum}.svelte`);
+    let source;
+    try { source = await fs.readFile(file, 'utf-8'); } catch { continue; }
+    await fs.writeFile(file, restyleSvelteComponentSource(source, css(variantNum, shape)), 'utf-8');
+  }
+  const res = await fetch(`http://127.0.0.1:${live.port}/poll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: live.token,
+      type: 'done',
+      sourceEventType: 'generate',
+      id: manifest.id,
+      file: manifestFile,
+    }),
+  });
+  if (!res.ok) throw new Error(`republish done reply failed: ${res.status} ${await res.text()}`);
+  return { manifest, shape };
 }
 
 export function insertTargetFromEvent(event) {
@@ -350,6 +557,74 @@ function attrEscape(str, { svelte = false } = {}) {
     s = s.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
   }
   return s;
+}
+
+/**
+ * JSX-source counterpart to the Svelte prop contract.
+ *
+ * When the picked element's source content is a bare JSX expression (or text
+ * mixed with expressions), return it verbatim so the variant markup keeps the
+ * binding instead of the rendered snapshot. Returns null for every other
+ * shape, including nested elements, so this stays a narrow substitution rather
+ * than a general source-copy path.
+ *
+ * @param {{ wrapInfo?: object, tmp?: string }} context
+ * @returns {Promise<string|null>}
+ */
+async function readJsxExpressionInner(context = {}) {
+  const wrapInfo = context.wrapInfo;
+  if (!wrapInfo) return null;
+  // Svelte previews bind through propContract downstream; leave them alone.
+  if (wrapInfo.previewMode === 'svelte-component') return null;
+  if (wrapInfo.commentSyntax?.open !== '{/*') return null;
+
+  const original = await readOriginalMarkupFromWrap(wrapInfo, context.tmp);
+  const inner = extractInnerSourceMarkup(original);
+  if (inner == null) return null;
+  const trimmed = inner.trim();
+  if (!trimmed || trimmed.includes('<')) return null;
+  if (!/\{[^{}]+\}/.test(trimmed)) return null;
+  return trimmed;
+}
+
+/**
+ * Recover the picked element's source markup from the scaffold. Deferred
+ * writes carry it in `wrapperBlock`; otherwise the wrapper is already in the
+ * file and the same block can be read back from disk.
+ */
+async function readOriginalMarkupFromWrap(wrapInfo, tmp) {
+  let text = wrapInfo.wrapperBlock;
+  if (!text && tmp && wrapInfo.file) {
+    try {
+      text = await fs.readFile(path.join(tmp, wrapInfo.file), 'utf-8');
+    } catch {
+      return null;
+    }
+  }
+  if (!text) return null;
+
+  const lines = String(text).split('\n');
+  const startIdx = lines.findIndex((line) => line.includes('data-impeccable-variant="original"'));
+  if (startIdx === -1) return null;
+  const indent = (lines[startIdx].match(/^\s*/) || [''])[0];
+  const closer = `${indent}</div>`;
+  for (let i = startIdx + 1; i < lines.length; i++) {
+    if (lines[i] === closer) return lines.slice(startIdx + 1, i).join('\n');
+  }
+  return null;
+}
+
+/** Content between an element's opening and closing tag, or null. */
+function extractInnerSourceMarkup(markup) {
+  const src = String(markup || '').trim();
+  if (!src) return null;
+  const open = src.match(/^<([A-Za-z][\w:.-]*)([^>]*)>/);
+  if (!open || open[2].trim().endsWith('/')) return null;
+  const tag = open[1].toLowerCase();
+  const closeIdx = src.toLowerCase().lastIndexOf(`</${tag}`);
+  if (closeIdx < open[0].length) return null;
+  if (!/^<\/[A-Za-z][\w:.-]*\s*>$/.test(src.slice(closeIdx))) return null;
+  return src.slice(open[0].length, closeIdx);
 }
 
 /**
@@ -1292,14 +1567,12 @@ function renderVariantsBlock({ sessionId, indent, output, commentSyntax, file, s
 }
 
 /**
- * Read the wrapped file, find the "insert below this line" marker, splice in
- * the rendered variants block, write back.
+ * Splice the rendered variants block into an array of wrapper lines at the
+ * "insert below this line" marker. Pure: returns the new lines array. Used
+ * both against a whole file (wrapper already in source) and against a
+ * standalone wrapper block (deferred source write, agent writes it now).
  */
-async function spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId, output }) {
-  const filePath = path.join(tmp, wrapInfo.file);
-  const src = await fs.readFile(filePath, 'utf-8');
-  const lines = src.split('\n');
-
+function spliceVariantsIntoLines(lines, { sessionId, output, commentSyntax, file, styleMode }) {
   // Find the "Variants: insert below this line" comment line — definitive
   // marker, robust to any indentation off-by-one. Matches in any comment
   // style (HTML / JSX / Astro).
@@ -1307,7 +1580,7 @@ async function spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId, output }) {
     l.includes('Variants: insert below this line'),
   );
   if (markerIdx === -1) {
-    throw new Error('insert marker not found in ' + wrapInfo.file);
+    throw new Error('insert marker not found in ' + file);
   }
 
   const indent = (lines[markerIdx].match(/^\s*/) || [''])[0];
@@ -1320,20 +1593,77 @@ async function spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId, output }) {
     sessionId,
     indent: wrapperIndent,
     output,
+    commentSyntax,
+    file,
+    styleMode,
+  });
+
+  const endMarkerIdx = lines.findIndex((line, index) =>
+    index > markerIdx && line.includes('impeccable-variants-end ' + sessionId),
+  );
+  if (endMarkerIdx === -1) {
+    throw new Error('end marker not found in ' + file);
+  }
+  const tailIdx = commentSyntax.open === '{/*'
+    ? endMarkerIdx
+    : endMarkerIdx - 1;
+
+  return [
+    ...lines.slice(0, markerIdx + 1),
+    block,
+    ...lines.slice(tailIdx),
+  ];
+}
+
+/**
+ * Read the wrapped file, find the "insert below this line" marker, splice in
+ * the rendered variants block, write back. Used when the wrapper is already
+ * present in source (agent's own wrap fallback, no preflight).
+ */
+async function spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId, output }) {
+  const filePath = path.join(tmp, wrapInfo.file);
+  const src = await fs.readFile(filePath, 'utf-8');
+  const lines = src.split('\n');
+  const next = spliceVariantsIntoLines(lines, {
+    sessionId,
+    output,
     commentSyntax: wrapInfo.commentSyntax,
     file: wrapInfo.file,
     styleMode: wrapInfo.styleMode,
   });
+  await fs.writeFile(filePath, next.join('\n'), 'utf-8');
+}
 
+/**
+ * Deferred source write (preflight computed the scaffold but left source
+ * untouched). Splice the variants into the scaffold's `wrapperBlock`, then
+ * replace the picked element's source range with the result in ONE write —
+ * the 3.5 atomic single-edit semantics. `replaceEndLine < replaceStartLine`
+ * expresses a pure insertion (insert mode).
+ */
+async function writeDeferredWrapperWithVariants({ tmp, wrapInfo, sessionId, output }) {
+  const filePath = path.join(tmp, wrapInfo.file);
+  const src = await fs.readFile(filePath, 'utf-8');
+  const lines = src.split('\n');
+  const wrapperLines = String(wrapInfo.wrapperBlock).split('\n');
+  const splicedWrapper = spliceVariantsIntoLines(wrapperLines, {
+    sessionId,
+    output,
+    commentSyntax: wrapInfo.commentSyntax,
+    file: wrapInfo.file,
+    styleMode: wrapInfo.styleMode,
+  });
+  const startIdx = wrapInfo.replaceStartLine - 1;
+  const endIdx = wrapInfo.replaceEndLine - 1; // may be startIdx-1 for insertion
   const next = [
-    ...lines.slice(0, markerIdx + 1),
-    block,
-    ...lines.slice(markerIdx + 1),
+    ...lines.slice(0, startIdx),
+    ...splicedWrapper,
+    ...lines.slice(endIdx + 1),
   ];
   await fs.writeFile(filePath, next.join('\n'), 'utf-8');
 }
 
-async function writeSvelteComponentVariants({ tmp, wrapInfo, event, output }) {
+async function writeSvelteComponentVariants({ tmp, wrapInfo, event, output, writeParams = true }) {
   const manifestPath = path.join(tmp, wrapInfo.file);
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf-8'));
   const componentDir = path.join(tmp, manifest.componentDir);
@@ -1347,6 +1677,15 @@ async function writeSvelteComponentVariants({ tmp, wrapInfo, event, output }) {
   for (let i = 0; i < output.variants.length; i++) {
     const variantId = i + 1;
     const variant = output.variants[i];
+    // Contract-v2 path: keep the scaffolded stub (control flow + prop
+    // references) and swap only its <style> block.
+    if (variant.svelteComponent && !isInsert) {
+      const variantPath = path.join(componentDir, `v${variantId}.svelte`);
+      const stub = await fs.readFile(variantPath, 'utf-8');
+      await fs.writeFile(variantPath, restyleSvelteComponentSource(stub, variant.svelteComponent.css), 'utf-8');
+      paramsByVariant[String(variantId)] = Array.isArray(variant.params) ? variant.params : [];
+      continue;
+    }
     const tag = firstTagName(variant.innerHtml) || firstTagName(baseMarkup) || 'div';
     let markup = substituteLiveTextWithProps(variant.innerHtml || '', contract, textValues).trim();
     if (!isInsert && contract.length > 0 && !propNames.some((name) => markup.includes(`{${name}}`))) {
@@ -1373,7 +1712,11 @@ async function writeSvelteComponentVariants({ tmp, wrapInfo, event, output }) {
     paramsByVariant[String(variantId)] = Array.isArray(variant.params) ? variant.params : [];
   }
 
-  await fs.writeFile(path.join(componentDir, 'params.json'), JSON.stringify(paramsByVariant, null, 2) + '\n', 'utf-8');
+  if (writeParams) {
+    await fs.writeFile(path.join(componentDir, 'params.json'), JSON.stringify(paramsByVariant, null, 2) + '\n', 'utf-8');
+  }
+  manifest.arrivedVariants = output.variants.length;
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
 }
 
 function variantMarkupHasVisibleContent(markup) {
@@ -1507,11 +1850,20 @@ export async function runAgentLoop({
   agent,
   signal,
   log = () => {},
+  trace = () => {},
+  atomicDelayMs = 0,
   wrapTarget = { classes: 'hero-title', tag: 'h1' },
   steerSourceFile,
   steerTarget,
 }) {
   const base = `http://127.0.0.1:${port}`;
+  // Everything the agent needs to republish a component session without
+  // re-running generate: the scaffold info and the variant set it authored.
+  const publishedComponentSessions = new Map();
+  // A republish that fails to mount for the same reason would loop forever;
+  // repair each (session, variant) at most once and let the user's Retry (or
+  // the mount-error card) own anything beyond that.
+  const repairedMounts = new Set();
 
   while (!signal.aborted) {
     let event;
@@ -1529,6 +1881,8 @@ export async function runAgentLoop({
     if (event.type === 'exit') return;
     if (event.type === 'prefetch') continue;
     if (event.type === 'connected') continue;
+
+    trace('agent.event.received', { id: event.id, type: event.type, clientSentAt: event.clientSentAt ?? null });
 
     if (event.type === 'steer') {
       log(`steer id=${event.id} message=${JSON.stringify(event.message)}`);
@@ -1578,7 +1932,16 @@ export async function runAgentLoop({
       log(`generate id=${event.id} mode=${isInsert ? 'insert' : 'replace'}${isInsert ? '' : ` action=${event.action}`} count=${event.count}`);
       try {
         let wrapInfo;
-        if (isInsert) {
+        if (event.scaffold) {
+          wrapInfo = event.scaffold;
+          trace('agent.scaffold.reused', {
+            id: event.id,
+            file: wrapInfo.file,
+            previewMode: wrapInfo.previewMode || 'source',
+            durationMs: event.scaffoldDurationMs ?? null,
+          });
+        } else if (isInsert) {
+          trace('agent.scaffold.start', { id: event.id, mode: 'insert' });
           const insertTarget = insertTargetFromEvent(event);
           wrapInfo = await runInsert({
             tmp,
@@ -1587,7 +1950,9 @@ export async function runAgentLoop({
             count: event.count,
             ...insertTarget,
           });
+          trace('agent.scaffold.end', { id: event.id, file: wrapInfo.file, previewMode: wrapInfo.previewMode || 'source' });
         } else {
+          trace('agent.scaffold.start', { id: event.id, mode: 'replace' });
           // 1. Wrap the original element in the variant scaffold (deterministic CLI)
           // wrapTarget can be a static {classes, tag, elementId} (test fixtures
           // know what they pick) or a function (event) => target (real-use
@@ -1606,43 +1971,121 @@ export async function runAgentLoop({
             ...target,
             text,
           });
+          trace('agent.scaffold.end', { id: event.id, file: wrapInfo.file, previewMode: wrapInfo.previewMode || 'source' });
         }
         log(`scaffolded: ${wrapInfo.file} insertLine=${wrapInfo.insertLine}`);
 
-        // 2. Agent generates variant content (LLM-pluggable seam)
-        let output = await agent.generateVariants(event, { wrapTarget, wrapInfo });
-        output = normalizeVariantOutput(output, wrapInfo);
+        // 2. Agent generates variant content (LLM-pluggable seam).
+        // Providers may expose a true split path so variant 1 is written before
+        // the request for the remaining variants completes.
+        trace('agent.generate.start', { id: event.id, count: event.count });
+        let output = normalizeVariantOutput(
+          await agent.generateVariants(event, { wrapTarget, wrapInfo, tmp }),
+          wrapInfo,
+        );
+        if (atomicDelayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, atomicDelayMs));
+        }
+        trace('agent.generate.first_ready', { id: event.id, count: output?.variants?.length || 0 });
+        trace('agent.generate.end', { id: event.id, count: output?.variants?.length || 0 });
+
         if (output.variants.length !== event.count) {
           log(`warning: agent returned ${output.variants.length} variants, expected ${event.count}`);
         }
 
-        // 3. Write variants into the deterministic preview target.
+        // 3. Write the complete set into the deterministic preview target.
+        trace('agent.write.start', { id: event.id, file: wrapInfo.file });
         if (wrapInfo.previewMode === 'svelte-component') {
-          await writeSvelteComponentVariants({ tmp, wrapInfo, event, output });
+          await writeSvelteComponentVariants({ tmp, wrapInfo, event, output, writeParams: true });
+          publishedComponentSessions.set(event.id, { wrapInfo, event, output });
+        } else if (wrapInfo.sourceWritten === false) {
+          await writeDeferredWrapperWithVariants({ tmp, wrapInfo, sessionId: event.id, output });
         } else {
           await spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId: event.id, output });
         }
+        trace('agent.write.end', { id: event.id, file: wrapInfo.file });
         if (process.env.IMPECCABLE_E2E_DEBUG) {
           const post = await fs.readFile(path.join(tmp, wrapInfo.file), 'utf-8');
           log(`--- post-splice (variants written) ---\n${post}`);
         }
 
         // 4. Tell the server we're done (broadcasts SSE done → browser settles to CYCLING)
+        trace('agent.reply.start', { id: event.id });
         await fetch(`${base}/poll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, type: 'done', id: event.id, file: wrapInfo.file }),
+          body: JSON.stringify({ token, type: 'done', sourceEventType: 'generate', id: event.id, file: wrapInfo.file }),
           signal,
         });
+        trace('agent.reply.end', { id: event.id });
       } catch (err) {
         if (signal.aborted) return;
+        if (isExpectedGenerationCancellation(err)) {
+          trace('agent.generate.canceled', { id: event.id, reason: 'stale_generation_epoch' });
+          log('generate canceled after Accept/Discard: ' + err.message);
+          continue;
+        }
+        trace('agent.generate.error', { id: event.id, message: err.message });
         log('generate failed: ' + err.message);
         await fetch(`${base}/poll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, type: 'error', id: event.id, message: err.message }),
+          body: JSON.stringify({ token, type: 'error', sourceEventType: 'generate', id: event.id, message: err.message }),
           signal,
         }).catch(() => {});
+      }
+      continue;
+    }
+
+    // The browser could not render something the agent published. Only the
+    // agent can fix that, which is why the server queues it as a first-class
+    // event instead of leaving it in the journal. Rewriting the variant files
+    // and replying `done` makes the server snapshot a fresh revision dir and
+    // rebroadcast, which is what drives the browser's remount.
+    if (event.type === 'variant_mount_failed') {
+      const key = `${event.id}|${event.variant}`;
+      const published = publishedComponentSessions.get(event.id);
+      log(`variant_mount_failed id=${event.id} variant=${event.variant} error=${JSON.stringify(event.error)}`);
+      if (agent.autoRepairMountFailures === false) {
+        log('auto-repair disabled; leaving the mount-error card for the user to retry');
+        continue;
+      }
+      if (!published) {
+        log('no published component session to repair; ignoring');
+        continue;
+      }
+      if (repairedMounts.has(key)) {
+        log('already republished this variant once; not looping');
+        continue;
+      }
+      repairedMounts.add(key);
+      try {
+        await writeSvelteComponentVariants({
+          tmp,
+          wrapInfo: published.wrapInfo,
+          event: published.event,
+          output: published.output,
+          writeParams: true,
+        });
+        await fetch(`${base}/poll`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            type: 'done',
+            // No explicit sourceEventType: the server's inferSourceEventType
+            // maps this done onto the pending variant_mount_failed event, so
+            // the failure is acknowledged and leaves the poll queue instead
+            // of being redelivered forever.
+            id: event.id,
+            file: published.wrapInfo.file,
+          }),
+          signal,
+        });
+        log(`republished component variants for ${event.id}`);
+      } catch (err) {
+        if (signal.aborted) return;
+        log('variant_mount_failed repair failed: ' + err.message);
       }
       continue;
     }
@@ -1740,6 +2183,7 @@ export async function runAgentLoop({
           body: JSON.stringify({
             token,
             type: completionType,
+            sourceEventType: 'accept',
             id: event.id,
             file: acceptResult.file,
             message: acceptResult.error,
@@ -1769,6 +2213,7 @@ export async function runAgentLoop({
           body: JSON.stringify({
             token,
             type: completionType,
+            sourceEventType: 'discard',
             id: event.id,
             file: discardResult.file,
             message: discardResult.error,
@@ -1785,6 +2230,10 @@ export async function runAgentLoop({
 
     log(`unhandled event: ${event.type}`);
   }
+}
+
+export function isExpectedGenerationCancellation(error) {
+  return /(?:^|\b)stale_generation_epoch(?:\b|$)/.test(String(error?.message || error || ''));
 }
 
 async function runPollReply({ tmp, scriptsDir, id, status, message, data }) {

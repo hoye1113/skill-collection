@@ -22,11 +22,15 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createFakeAgent } from './live-e2e/agent.mjs';
+import {
+  createFakeAgent,
+  republishSvelteComponentVariants,
+  FAKE_VARIANT_FONT_WEIGHTS,
+} from './live-e2e/agent.mjs';
 import { createLlmAgent, resolveLlmAgentConfig } from './live-e2e/agents/llm-agent.mjs';
 import { bootFixtureSession, FIXTURES_DIR } from './live-e2e/session.mjs';
 import {
@@ -34,10 +38,14 @@ import {
   assertApplyDockLoading,
   assertAnnotationUploadEvent,
   assertSourceApplied,
+  chooseTuneStep,
   clickExitLiveMode,
+  cycleToVariant,
   clickAccept,
   clickApplyEdits,
   clickEditCopy,
+  clickDiscard,
+  clickMountRetry,
   clickSaveEdit,
   clickGo,
   clickNext,
@@ -45,11 +53,19 @@ import {
   editTextLeaf,
   drawAnnotationPinAndStroke,
   getVisibleVariant,
+  installLiveQueryHelpers,
+  isMountErrorCardVisible,
+  openTunePanel,
   pickElement,
+  readComputedFontWeight,
   runLiveChromeBottomBarSmoke,
+  setTuneRange,
   waitForApplyDockHidden,
   waitForBarHidden,
+  waitForComputedFontWeight,
   waitForCycling,
+  waitForMountErrorCard,
+  waitForMountErrorCardGone,
   runInsertFlow,
   waitForHandshake,
 } from './live-e2e/ui.mjs';
@@ -94,6 +110,10 @@ const reloadVariants = process.env.IMPECCABLE_E2E_RELOAD_VARIANTS === '1'
 const scenarioNames = parseFixtureFilter(process.env.IMPECCABLE_E2E_SCENARIOS);
 const liveE2eTestTimeoutMs = readPositiveIntEnv('IMPECCABLE_E2E_TEST_TIMEOUT_MS');
 const liveE2eTestOptions = liveE2eTestTimeoutMs ? { timeout: liveE2eTestTimeoutMs } : {};
+// Widens the window between the server-side preflight scaffold (which triggers
+// a framework HMR reload) and the agent's variant write. Used to reproduce
+// races where the browser observes a wrapper with zero variants mid-generation.
+const atomicDelayMs = readPositiveIntEnv('IMPECCABLE_E2E_ATOMIC_DELAY_MS') || 0;
 
 if (fixtures.length === 0) {
   describe('live-e2e (no runtime fixtures registered)', () => {
@@ -122,6 +142,33 @@ function readPositiveIntEnv(name) {
 
 function shouldRunScenario(name) {
   return scenarioNames.size === 0 || scenarioNames.has('all') || scenarioNames.has(name);
+}
+
+// Anything served out of the live preview / runtime tree. A 404 here is never
+// benign: it means the variant preview module or its runtime never loaded, and
+// the flow silently fell back to the untouched original.
+const LIVE_TREE_URL_RE = /\.impeccable-live|impeccable\/live\/preview/i;
+
+// The two framework dev-mode notices every React fixture emits.
+const FRAMEWORK_NOISE_RE = /Download the React DevTools|StrictMode/i;
+
+// Chromium's resource-failure console line. Only the favicon flavour is
+// allowlisted; a favicon is not part of any fixture and its absence proves
+// nothing about live mode.
+const RESOURCE_404_RE = /Failed to load resource: the server responded with a status of 404/i;
+const FAVICON_URL_RE = /favicon(\.[a-z0-9]+)?(\?|$)|\/favicon/i;
+
+function isLiveTreeUrl(url) {
+  return LIVE_TREE_URL_RE.test(String(url || ''));
+}
+
+function isBenignConsoleError(entry) {
+  const text = String(entry || '');
+  // Live-tree failures are never allowlisted, whatever else they match.
+  if (LIVE_TREE_URL_RE.test(text)) return false;
+  if (FRAMEWORK_NOISE_RE.test(text)) return true;
+  if (RESOURCE_404_RE.test(text)) return FAVICON_URL_RE.test(text);
+  return false;
 }
 
 before(async () => {
@@ -206,10 +253,15 @@ for (const { name, fixture } of fixtures) {
         browser,
         agent,
         wrapTarget: wrapTargetFromPickedElement,
+        atomicDelayMs,
         log: (m) => t.diagnostic(m),
       });
 
-      const { page, tmp, consoleErrors, teardown } = session;
+      // `tmp` is the staged repo root; `appRoot` is the directory the dev
+      // server serves. They differ only for fixtures declaring
+      // `runtime.appDir`. Every fixture-relative source path resolves against
+      // appRoot — the repo root may not contain a single source file.
+      const { page, tmp, appRoot, consoleErrors, teardown } = session;
       const expectedCount = 3;
       const isInsert = fixture.runtime.mode === 'insert';
       const insertCfg = fixture.runtime.insert || {};
@@ -220,16 +272,26 @@ for (const { name, fixture } of fixtures) {
       const domSelector = isInsert
         ? insertDomSelector
         : pickSelector;
-      const usesSvelteComponentPreview = fixtureUsesSvelteKitAdapter(fixture);
-      const variantContentSelector = isInsert
-        ? (usesSvelteComponentPreview ? '.inserted-copy' : '[data-impeccable-variant="2"] .inserted-copy')
+      const usesSvelteComponentPreview = fixtureUsesSvelteKitAdapter(fixture) || name === 'nuxt-vite7';
+      // Component previews mount every variant into the same node, so one
+      // selector serves all three; the HTML/JSX paths keep a div per variant.
+      const variantContentSelectorFor = (variantNum) => (isInsert
+        ? (usesSvelteComponentPreview ? '.inserted-copy' : `[data-impeccable-variant="${variantNum}"] .inserted-copy`)
         : usesSvelteComponentPreview
         ? pickSelector
-        : '[data-impeccable-variant="2"] > :first-child';
+        : `[data-impeccable-variant="${variantNum}"] > :first-child`);
       let stateProbeBaseline = null;
       let sourceFile = null;
 
       try {
+        // 0. Root resolution — only for fixtures whose app is not the repo
+        //    root. live.mjs booted from the repo root and had to find the app
+        //    on its own; everything after this depends on it having done so.
+        if (session.appDir) {
+          t.diagnostic(`Asserting resolved roots for nested app ${session.appDir}/`);
+          assertNestedAppRoots(session);
+        }
+
         // 1. Handshake
         t.diagnostic('Waiting for live handshake');
         await waitForHandshake(page);
@@ -248,7 +310,7 @@ for (const { name, fixture } of fixtures) {
           const steerTimeouts = agentMode === 'llm'
             ? { unlockTimeoutMs: 90_000, selectorTimeoutMs: 45_000, runPreActions }
             : { runPreActions };
-          await runSteerSmoke(page, tmp, fixture, (m) => t.diagnostic(m), steerTimeouts);
+          await runSteerSmoke(page, appRoot, fixture, (m) => t.diagnostic(m), steerTimeouts);
         }
 
         // 2. preActions — fixtures with hidden/conditional content (modals,
@@ -271,7 +333,7 @@ for (const { name, fixture } of fixtures) {
           });
         } else {
           t.diagnostic(`Picking ${pickSelector}`);
-          await pickElement(page, pickSelector);
+          await pickElement(page, pickSelector, { position: fixture.runtime.pickPosition });
 
           if (process.env.IMPECCABLE_E2E_DEBUG) {
             const barText = await page.evaluate(() => {
@@ -310,14 +372,21 @@ for (const { name, fixture } of fixtures) {
         }
 
         // 5. Source-side check: wrapper + style + variants are present
-        sourceFile = await locateSessionFile(tmp);
+        sourceFile = await locateSessionFile(appRoot);
+        if (session.appDir) {
+          assert.ok(
+            relative(tmp, sourceFile).startsWith(session.appDir + '/'),
+            `session source must live under ${session.appDir}/, got ${relative(tmp, sourceFile)}`,
+          );
+        }
         const after = readFileSync(sourceFile, 'utf-8');
         const svelteComponentSession = svelteComponentTargetFor(sourceFile);
         if (svelteComponentSession) {
-          const variantFile = join(tmp, svelteComponentSession.manifest.componentDir, 'v2.svelte');
+          const componentExtension = svelteComponentSession.manifest.componentExtension || 'svelte';
+          const variantFile = join(appRoot, svelteComponentSession.manifest.componentDir, `v2.${componentExtension}`);
           const variantBody = readFileSync(variantFile, 'utf-8');
-          const routeBody = readFileSync(join(tmp, svelteComponentSession.manifest.sourceFile), 'utf-8');
-          assert.match(after, /"previewMode": "svelte-component"/, 'Svelte component manifest inserted');
+          const routeBody = readFileSync(join(appRoot, svelteComponentSession.manifest.sourceFile), 'utf-8');
+          assert.match(after, /"previewMode": "(?:svelte|vue)-component"/, 'framework component manifest inserted');
           if (isInsert) {
             assert.equal(svelteComponentSession.manifest.mode, 'insert', 'Svelte insert manifest marks insert mode');
             if (agentMode === 'fake') {
@@ -328,9 +397,9 @@ for (const { name, fixture } of fixtures) {
               assert.match(variantBody, /<([a-z][\w:-]*)\b[\s\S]*<\/\1>|<[a-z][\w:-]*\b[^>]*\/>/i, 'Svelte insert variant component contains a root element');
             }
           } else {
-            assert.match(variantBody, new RegExp(`<${svelteComponentSession.expectedTag}\\b`), 'Svelte variant component contains target element');
+            assert.match(variantBody, new RegExp(`<${svelteComponentSession.expectedTag}\\b`), 'component variant contains target element');
           }
-          assert.doesNotMatch(routeBody, /data-impeccable-variants="/, 'Svelte route source is not edited during generation');
+          assert.doesNotMatch(routeBody, /data-impeccable-variants="/, 'route source is not edited during component preview');
         } else {
           assert.match(after, /data-impeccable-variants="/, 'wrapper inserted');
         }
@@ -343,13 +412,14 @@ for (const { name, fixture } of fixtures) {
           }
           if (insertCfg.assertAnchorContains) {
             const anchorSource = svelteComponentSession
-              ? readFileSync(join(tmp, svelteComponentSession.manifest.sourceFile), 'utf-8')
+              ? readFileSync(join(appRoot, svelteComponentSession.manifest.sourceFile), 'utf-8')
               : after;
             assert.match(anchorSource, new RegExp(insertCfg.assertAnchorContains), 'anchor section untouched');
           }
         }
         if (svelteComponentSession) {
-          assert.match(readFileSync(join(tmp, svelteComponentSession.manifest.componentDir, 'v2.svelte'), 'utf-8'), /<style>/, 'Svelte component variant has scoped style block');
+          const componentExtension = svelteComponentSession.manifest.componentExtension || 'svelte';
+          assert.match(readFileSync(join(appRoot, svelteComponentSession.manifest.componentDir, `v2.${componentExtension}`), 'utf-8'), /<style\b/, 'component variant has a style block');
         } else if (sourceFile.endsWith('.astro')) {
           assert.match(after, /<style is:inline data-impeccable-css="/, 'Astro live CSS uses an inline compiler-bypassing style block');
           assert.match(
@@ -370,12 +440,19 @@ for (const { name, fixture } of fixtures) {
         // emit no params per the live.md spec ("variants are fixed points").
         if (agentMode === 'fake') {
           const paramsSource = svelteComponentSession
-            ? readFileSync(join(tmp, svelteComponentSession.manifest.componentDir, 'params.json'), 'utf-8')
+            ? readFileSync(join(appRoot, svelteComponentSession.manifest.componentDir, 'params.json'), 'utf-8')
             : after;
           assert.match(paramsSource, svelteComponentSession ? /"1"\s*:/ : /data-impeccable-params=/, 'params manifest emitted');
           for (const kind of ['range', 'steps', 'toggle']) {
             assert.match(paramsSource, new RegExp(`"kind"\\s*:\\s*"${kind}"`), `param kind ${kind} present`);
           }
+          await page.waitForFunction(() => {
+            const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.()
+              || window.__IMPECCABLE_LIVE_UI_ROOT__
+              || document;
+            const tune = root.querySelector('[data-iceq-tune="1"]');
+            return tune && tune.disabled === false && /Tune/.test(tune.textContent || '');
+          }, { timeout: 5_000 });
         }
 
         // 6. Cycle variants. Most fixtures stop at variant 2; Svelte Insert
@@ -384,75 +461,90 @@ for (const { name, fixture } of fixtures) {
           ? fixture.runtime.variantSequence
           : [2];
         let visible = await readVisibleVariantForCycle(page);
-        let checkedVariantTwoStyle = false;
-        for (const targetVariant of cycleSequence) {
-          t.diagnostic(`Cycling to variant ${targetVariant}`);
-          let cycleAttempts = 0;
-          while (visible !== targetVariant) {
-            if (cycleAttempts++ > expectedCount + 6) {
-              throw new Error(`variant ${targetVariant} did not become visible; last visible=${visible}`);
-            }
-            if (visible == null || visible < targetVariant) await clickNext(page);
-            else await clickPrev(page);
-            visible = await readVisibleVariantForCycle(page);
-          }
-          assert.equal(visible, targetVariant, `variant ${targetVariant} visible`);
-          if (agentMode === 'fake' && targetVariant === 2 && !checkedVariantTwoStyle) {
-            await page.waitForFunction((sel) => {
-              const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
-              const el = query(sel) || document.querySelector(sel);
-              return el && getComputedStyle(el).fontWeight === '900';
-            }, variantContentSelector, { timeout: 5_000 }).catch(() => {});
-            const variantWeight = await evaluatePageWithTimeout(
+        // Render proof, not bar-label proof: the fake agent gives every variant
+        // a distinct font-weight, so a computed read says which variant the
+        // user is actually looking at. Checked for each variant the run reaches.
+        const styleCheckedVariants = new Set();
+        const assertVisibleVariantStyle = async (variantNum) => {
+          if (agentMode !== 'fake') return;
+          const expected = FAKE_VARIANT_FONT_WEIGHTS[variantNum];
+          if (!expected || styleCheckedVariants.has(variantNum)) return;
+          styleCheckedVariants.add(variantNum);
+          const selector = variantContentSelectorFor(variantNum);
+          await waitForComputedFontWeight(page, selector, expected, { timeout: 5_000 }).catch(() => {});
+          const variantWeight = await readComputedFontWeight(page, selector).catch(() => null);
+          if (variantWeight !== expected) {
+            const styleSnapshot = await evaluatePageWithTimeout(
               page,
               (sel) => {
                 const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
                 const el = query(sel) || document.querySelector(sel);
-                return el ? getComputedStyle(el).fontWeight : null;
-              },
-              variantContentSelector,
-              5_000,
-              'variant font-weight read',
-            );
-            if (variantWeight !== '900') {
-              const styleSnapshot = await evaluatePageWithTimeout(
-                page,
-                (sel) => {
-                  const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
-                  const el = query(sel) || document.querySelector(sel);
-                  const styleEl = document.querySelector('style[data-impeccable-css]');
-                  const rules = [];
-                  for (const sheet of [...document.styleSheets]) {
-                    if (sheet.ownerNode !== styleEl) continue;
-                    try {
-                      rules.push(...[...sheet.cssRules].map((rule) => rule.cssText));
-                    } catch (err) {
-                      rules.push(`cssRules error: ${err.message}`);
-                    }
+                const styleEl = document.querySelector('style[data-impeccable-css]');
+                const rules = [];
+                for (const sheet of [...document.styleSheets]) {
+                  if (sheet.ownerNode !== styleEl) continue;
+                  try {
+                    rules.push(...[...sheet.cssRules].map((rule) => rule.cssText));
+                  } catch (err) {
+                    rules.push(`cssRules error: ${err.message}`);
                   }
-                  return {
-                    selector: sel,
-                    element: el?.outerHTML || null,
-                    parent: el?.parentElement?.outerHTML?.slice(0, 800) || null,
-                    computedWeight: el ? getComputedStyle(el).fontWeight : null,
-                    styleText: styleEl?.textContent || null,
-                    rules,
-                  };
-                },
-                variantContentSelector,
-                5_000,
-                'variant style snapshot',
-              ).catch((err) => ({ error: err.message }));
-              t.diagnostic('--- variant style snapshot ---');
-              t.diagnostic(JSON.stringify(styleSnapshot, null, 2));
-            }
-            assert.equal(
-              variantWeight,
-              '900',
-              'event=live_e2e.variant_css_applied actor=browser operation=render_visible_variant risk=unstyled_live_preview expected=font-weight 900 actual=' + variantWeight + ' suggestion=inspect live CSS style mode and selector shape',
-            );
-            checkedVariantTwoStyle = true;
+                }
+                return {
+                  selector: sel,
+                  element: el?.outerHTML || null,
+                  parent: el?.parentElement?.outerHTML?.slice(0, 800) || null,
+                  computedWeight: el ? getComputedStyle(el).fontWeight : null,
+                  styleText: styleEl?.textContent || null,
+                  rules,
+                };
+              },
+              selector,
+              5_000,
+              'variant style snapshot',
+            ).catch((err) => ({ error: err.message }));
+            t.diagnostic(`--- variant ${variantNum} style snapshot ---`);
+            t.diagnostic(JSON.stringify(styleSnapshot, null, 2));
           }
+          assert.equal(
+            variantWeight,
+            expected,
+            `event=live_e2e.variant_css_applied actor=browser operation=render_visible_variant variant=${variantNum} risk=unstyled_live_preview expected=font-weight ${expected} actual=${variantWeight} suggestion=inspect live CSS style mode and selector shape`,
+          );
+        };
+        await assertVisibleVariantStyle(visible);
+        // Optional fixture hook: assert attribute/text values inside the
+        // MOUNTED variant DOM. Component previews hydrate collection items
+        // from the rendered page (text slots and attribute slots); a probe
+        // here catches a preview that mounts but with empty hydrated values,
+        // which every other assertion (style, counter, accept) misses.
+        if (Array.isArray(fixture.runtime.mountedDomProbe)) {
+          for (const probe of fixture.runtime.mountedDomProbe) {
+            const actual = await evaluatePageWithTimeout(
+              page,
+              ({ sel, attr }) => {
+                const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
+                const el = query(sel) || document.querySelector(sel);
+                if (!el) return null;
+                return attr ? el.getAttribute(attr) : (el.textContent || '').trim();
+              },
+              { sel: probe.selector, attr: probe.attr || null },
+              5_000,
+              'mounted DOM probe',
+            );
+            assert.equal(
+              actual,
+              probe.expect,
+              `mounted variant DOM: ${probe.selector}${probe.attr ? ` [${probe.attr}]` : ' text'}`,
+            );
+          }
+        }
+        for (const targetVariant of cycleSequence) {
+          t.diagnostic(`Cycling to variant ${targetVariant}`);
+          visible = await cycleToVariant(page, targetVariant, expectedCount, {
+            settleTimeout: agentMode === 'llm' ? 60_000 : 15_000,
+          });
+          assert.equal(visible, targetVariant, `variant ${targetVariant} visible`);
+          await assertVisibleVariantStyle(targetVariant);
         }
 
         if (reloadVariants && usesSvelteComponentPreview) {
@@ -538,11 +630,11 @@ for (const { name, fixture } of fixtures) {
         const final = await waitForSourceClean(sourceFile, 20_000, { svelteComponentTarget });
         if (svelteComponentTarget) {
           assert.equal(existsSync(svelteComponentTarget.manifestPath), false, 'Svelte temp preview session removed after accept');
-          const snapshotPath = join(tmp, '.impeccable/live/sessions', `${svelteComponentTarget.manifest.id}.snapshot.json`);
+          const snapshotPath = join(appRoot, '.impeccable/live/sessions', `${svelteComponentTarget.manifest.id}.snapshot.json`);
           const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'));
           assert.equal(snapshot.phase, 'completed');
           assert.equal(snapshot.sourceFile, svelteComponentTarget.manifest.sourceFile);
-          assert.doesNotMatch(snapshot.sourceFile, /node_modules\/\.impeccable-live/);
+          assert.doesNotMatch(snapshot.sourceFile, /node_modules\/\.impeccable-live|\.impeccable\/live\/previews/);
         }
         assert.doesNotMatch(final, /data-impeccable-variants="/,    'variants wrapper removed');
         assert.doesNotMatch(final, /impeccable-variants-start/,      'variants-start marker removed');
@@ -611,11 +703,22 @@ for (const { name, fixture } of fixtures) {
           await page.waitForSelector(expectSelector, { timeout: 10_000 });
         }
 
+        // 9c. Network hygiene — nothing under the live preview/runtime tree
+        //     may 404 or fail. A missing `.impeccable-live` module means the
+        //     preview never mounted, which the DOM assertions above can miss
+        //     when the original element still renders.
+        const liveTreeFailures = (session.failedRequests || []).filter((f) => isLiveTreeUrl(f.url));
+        assert.equal(
+          liveTreeFailures.length,
+          0,
+          `live preview/runtime requests must all succeed, got:\n${
+            liveTreeFailures.map((f) => `${f.reason} ${f.url}`).join('\n')
+          }`,
+        );
+
         // 10. Console hygiene — no errors during the whole flow.
         if (fixture.runtime.probe?.expectConsoleClean) {
-          const realErrors = consoleErrors.filter((e) =>
-            !/(Download the React DevTools|StrictMode|Failed to load resource: the server responded with a status of 404)/i.test(e),
-          );
+          const realErrors = consoleErrors.filter((e) => !isBenignConsoleError(e));
           if (realErrors.length > 0) {
             t.diagnostic('--- console errors ---');
             for (const e of realErrors) t.diagnostic(e);
@@ -648,6 +751,454 @@ for (const { name, fixture } of fixtures) {
         await teardownAndResetBrowser(teardown);
       }
     });
+
+
+
+    // -----------------------------------------------------------------
+    // Params end-to-end: knob → accept → baked literal in source.
+    //
+    // The Svelte accept pipeline bakes params mechanically, so the unit
+    // tests already cover the transform. What they cannot cover is that the
+    // value the user actually dialled in the Tune popover is the value that
+    // reaches it. This drives the real controls and reads the real source.
+    // -----------------------------------------------------------------
+    if (shouldRunScenario('params') && fixture.runtime.paramsScenario) {
+      it('bakes tuned param values into the accepted source', liveE2eTestOptions, async (t) => {
+        if (!canRunFakeAgentScenario(t)) return;
+        const scenario = fixture.runtime.paramsScenario;
+        const targetVariant = scenario.variant || 2;
+        const run = await bootComponentScenario({ t, name, fixture, expectedCount: 3 });
+        const { session, sourceFile, svelteComponentTarget } = run;
+        const { page } = session;
+        try {
+          await cycleToVariant(page, targetVariant, 3);
+
+          t.diagnostic('Opening the Tune popover');
+          await openTunePanel(page);
+          const applied = await setTuneRange(page, scenario.rangeLabel, scenario.rangeValue);
+          assert.equal(applied, scenario.rangeValue, 'range knob took the requested value');
+          await chooseTuneStep(page, scenario.stepsLabel, scenario.stepsOptionLabel);
+
+          t.diagnostic(`Accepting variant ${targetVariant} with tuned params`);
+          await clickAccept(page, { expectedVariant: targetVariant });
+          await waitForBarHidden(page);
+          const final = await waitForSourceClean(sourceFile, 20_000, { svelteComponentTarget });
+
+          for (const needle of scenario.expectSourceContains || []) {
+            assert.ok(
+              final.includes(needle),
+              `accepted source should bake ${JSON.stringify(needle)}; got:\n${final}`,
+            );
+          }
+          for (const needle of scenario.expectSourceMissing || []) {
+            assert.equal(
+              final.includes(needle),
+              false,
+              `accepted source should drop the unchosen branch ${JSON.stringify(needle)}; got:\n${final}`,
+            );
+          }
+          // The generic contract, independent of this fixture's values: every
+          // preview-only param hook is gone once the source is accepted.
+          assert.doesNotMatch(final, /data-p-[A-Za-z0-9_-]+/, 'no data-p-* param attributes survive accept');
+          assert.doesNotMatch(final, /var\(--p-/, 'no unbaked var(--p-*) survives accept');
+        } finally {
+          await teardownAndResetBrowser(session.teardown);
+        }
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // Failure injection for component previews.
+    // -----------------------------------------------------------------
+    if (fixture.runtime.componentFailureScenarios) {
+      const failure = fixture.runtime.componentFailureScenarios;
+      const brokenVariant = failure.variant || 2;
+
+      if (shouldRunScenario('mount-failure')) {
+        it('surfaces a broken variant without losing the session, and recovers on Retry', liveE2eTestOptions, async (t) => {
+          if (!canRunFakeAgentScenario(t)) return;
+          // Auto-repair off: this scenario is about what the USER sees and can
+          // do when a publish is unrenderable. An agent that silently
+          // republishes would hide exactly the surface under test.
+          const run = await bootComponentScenario({
+            t,
+            name,
+            fixture,
+            expectedCount: 3,
+            agent: createFakeAgent({ autoRepairMountFailures: false }),
+          });
+          const { session, svelteComponentTarget } = run;
+          const { page, appRoot } = session;
+          try {
+            const sessionId = svelteComponentTarget.manifest.id;
+            const variantPath = revisionVariantPath(appRoot, run.manifestPath, brokenVariant);
+            const saved = readFileSync(variantPath, 'utf-8');
+            // Corrupt rather than delete: a published variant that does not
+            // compile is the failure an agent actually produces, and it keeps
+            // the module resolvable so the recovery is about the content.
+            t.diagnostic(`Corrupting published revision file ${relative(appRoot, variantPath)}`);
+            writeFileSync(variantPath, '<div class="impeccable-broken-variant">{ not valid svelte\n', 'utf-8');
+
+            // One step forward onto the variant whose module is gone. The step
+            // deliberately does not settle, so drive the click directly.
+            t.diagnostic(`Stepping onto the broken variant ${brokenVariant}`);
+            await clickNext(page);
+
+            const cardText = await waitForMountErrorCard(page, { variant: brokenVariant });
+            assert.match(cardText, /Retry/, 'the mount-error card offers a Retry');
+
+            // The session must survive the failure: the old behaviour wiped
+            // local state and orphaned a session the server still tracked.
+            const barVisible = await page.evaluate(() => {
+              const bar = window.__impeccableLiveQuery('#impeccable-live-bar');
+              return Boolean(bar) && bar.style.display !== 'none';
+            });
+            assert.equal(barVisible, true, 'the cycling bar survives a mount failure');
+            const stored = await readLiveSessionStorage(page);
+            assert.equal(stored?.id, sessionId, 'the local session record survives a mount failure');
+
+            const events = await waitForJournalEvent(appRoot, sessionId, 'variant_mount_failed', 15_000);
+            const failedEvent = events.at(-1);
+            assert.equal(failedEvent.variant, brokenVariant, 'the journal names the variant that failed');
+            assert.ok(failedEvent.error, 'the journal carries the mount error text');
+
+            // A failed step reverts to the variant that still renders, so the
+            // comparison is usable rather than blank; Retry re-imports the
+            // session, and the repaired variant is reachable again.
+            t.diagnostic('Restoring the revision file and clicking Retry');
+            writeFileSync(variantPath, saved, 'utf-8');
+            await clickMountRetry(page);
+            await waitForMountErrorCardGone(page);
+            await cycleToVariant(page, brokenVariant, 3, { settleTimeout: 20_000 });
+            await waitForComputedFontWeight(
+              page,
+              fixture.runtime.pickSelector || 'h1.hero-title',
+              FAKE_VARIANT_FONT_WEIGHTS[brokenVariant],
+              { timeout: 20_000 },
+            );
+            assert.equal(await getVisibleVariant(page), brokenVariant, 'the repaired variant is the visible one');
+            assert.equal(await isMountErrorCardVisible(page), false, 'the repaired mount raises no new error');
+          } finally {
+            await teardownAndResetBrowser(session.teardown);
+          }
+        });
+      }
+
+      if (shouldRunScenario('republish')) {
+        it('mounts republished variant content instead of a cached compile', liveE2eTestOptions, async (t) => {
+          if (!canRunFakeAgentScenario(t)) return;
+          const run = await bootComponentScenario({ t, name, fixture, expectedCount: 3 });
+          const { session } = run;
+          const { page, appRoot } = session;
+          const pickSelector = fixture.runtime.pickSelector || 'h1.hero-title';
+          try {
+            await cycleToVariant(page, brokenVariant, 3);
+            await waitForComputedFontWeight(page, pickSelector, FAKE_VARIANT_FONT_WEIGHTS[brokenVariant]);
+            const beforeRevision = readManifest(run.manifestPath).revision;
+
+            t.diagnostic('Republishing every variant with new styling');
+            await republishSvelteComponentVariants({
+              tmp: appRoot,
+              manifestFile: relative(appRoot, run.manifestPath),
+              live: session.live,
+              css: (variantNum, shape) => `${shape.rootSelector} { font-weight: ${100 * variantNum}; }`,
+            });
+
+            // A stale transform cache would keep serving the previous compile;
+            // the server-stamped revision dir is what makes the import path new.
+            await waitForComputedFontWeight(page, pickSelector, String(100 * brokenVariant), { timeout: 20_000 });
+            const afterRevision = readManifest(run.manifestPath).revision;
+            assert.ok(
+              afterRevision > beforeRevision,
+              `republish must bump the preview revision (${beforeRevision} → ${afterRevision})`,
+            );
+            assert.equal(await isMountErrorCardVisible(page), false, 'a clean republish shows no mount error');
+          } finally {
+            await teardownAndResetBrowser(session.teardown);
+          }
+        });
+      }
+
+      if (shouldRunScenario('storage-loss') && failure.storageLoss !== false) {
+        it('rehydrates the comparison from the server after localStorage is cleared', liveE2eTestOptions, async (t) => {
+          if (!canRunFakeAgentScenario(t)) return;
+          const run = await bootComponentScenario({ t, name, fixture, expectedCount: 3 });
+          const { session } = run;
+          const { page } = session;
+          try {
+            await cycleToVariant(page, brokenVariant, 3);
+            assert.ok(await readLiveSessionStorage(page), 'a local session record exists before the wipe');
+
+            t.diagnostic('Clearing localStorage and reloading');
+            await page.evaluate(() => localStorage.clear());
+            assert.equal(await readLiveSessionStorage(page), null, 'the local session record really was wiped');
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await waitForHandshake(page);
+            if (fixture.runtime.preActions) await runPreActions(page, fixture.runtime.preActions);
+
+            // Nothing local is left: reaching CYCLING again can only come from
+            // the server's durable session record.
+            await waitForCycling(page, 3, { timeout: 30_000 });
+            const restored = await readLiveSessionStorage(page);
+            assert.equal(restored?.id, run.svelteComponentTarget.manifest.id, 'the adopted session keeps its id');
+            assert.equal(restored?.expected, 3, 'the adopted session knows the variant count');
+          } finally {
+            await teardownAndResetBrowser(session.teardown);
+          }
+        });
+      }
+    }
+
+    if (shouldRunScenario('missed-done') && fixture.runtime.missedDoneReloadScenario) {
+      it('recovers when the preflight reload makes the browser miss the done broadcast', liveE2eTestOptions, async (t) => {
+        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+          t.skip('manual scenario filter is active');
+          return;
+        }
+        const scenarioLimitation = fixture.runtime.missedDoneReloadScenario.knownLimitation;
+        if (scenarioLimitation) {
+          t.diagnostic(`KNOWN LIMITATION: ${scenarioLimitation}`);
+          t.skip(`known limitation: ${scenarioLimitation}`);
+          return;
+        }
+        // Deterministic reproduction of the race the CI astro-vite7 timeout
+        // exposed: the server-side preflight scaffold write triggers a
+        // framework full-reload, and the agent's variant write + `done` SSE
+        // land while the browser is mid-reload. The resumed page misses both
+        // signals and used to sit in GENERATING at 0/N forever. Here the
+        // reloaded page's HMR websocket connects to a dead mock and its SSE
+        // stream is refused until after the agent finishes, forcing the miss
+        // every time; recovery must come from the live server redelivering
+        // the completion once the browser's SSE reconnects.
+        const agent = createFakeAgent();
+        const session = await bootFixtureSession({
+          name,
+          fixture,
+          browser,
+          agent,
+          wrapTarget: wrapTargetFromPickedElement,
+          atomicDelayMs: 2500,
+          log: (m) => t.diagnostic(m),
+        });
+        const { page, appRoot, teardown } = session;
+        const pickSelector = fixture.runtime.pickSelector || 'h1.hero-title';
+        try {
+          await waitForHandshake(page);
+
+          // Arm the blocks before Go. They only affect connections opened
+          // after this point — the current page keeps its live SSE and HMR
+          // socket, so the scaffold-triggered reload still goes through; it is
+          // the page that boots FROM that reload which comes up deaf.
+          let liveConnectionsBlocked = true;
+          await page.context().route('**/events?token=*', (route) => {
+            if (liveConnectionsBlocked && route.request().method() === 'GET') {
+              return route.abort();
+            }
+            return route.continue();
+          });
+          await page.context().routeWebSocket('**', () => {
+            // Never connectToServer(): the reloaded page's HMR client talks to
+            // a dead mock, so the variant-write full-reload push is lost.
+          });
+
+          await pickElement(page, pickSelector);
+          t.diagnostic('Clicking Go (agent write delayed 2.5s; reloaded page will miss HMR + SSE)');
+          await clickGo(page);
+
+          // The scaffold write reloads the page into wrapped-but-empty source.
+          await page.waitForFunction(() => {
+            const wrapper = document.querySelector('[data-impeccable-variants]');
+            if (!wrapper) return false;
+            const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+            return variants.length === 0;
+          }, { timeout: 15_000 });
+          t.diagnostic('Browser reloaded into the scaffold-only wrapper (0 variants)');
+
+          // Capture the scaffold-only source now (the agent write is still
+          // ~1.5s away). The first post-reconnect /source read will be served
+          // this stale copy, forcing the completion-driven fallback through
+          // its retry path — a single no-retry read here strands the tab in
+          // GENERATING forever.
+          const scaffoldSourceFile = join(appRoot, fixture.runtime.missedDoneReloadScenario.sourceFile);
+          const scaffoldOnlySource = readFileSync(scaffoldSourceFile, 'utf-8');
+          let staleSourceServed = false;
+          await page.context().route('**/source?token=*', (route) => {
+            if (!staleSourceServed) {
+              staleSourceServed = true;
+              return route.fulfill({
+                status: 200,
+                contentType: 'text/html; charset=utf-8',
+                body: scaffoldOnlySource,
+              });
+            }
+            return route.continue();
+          });
+
+          // Wait for the delayed agent write to land in source while the page
+          // is deaf to both delivery channels.
+          const writeDeadline = Date.now() + 20_000;
+          for (;;) {
+            if (/data-impeccable-variant="3"/.test(readFileSync(scaffoldSourceFile, 'utf-8'))) break;
+            if (Date.now() > writeDeadline) throw new Error('agent variant write never landed in source');
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          t.diagnostic('Variants in source; the browser missed the broadcast. Unblocking SSE.');
+          liveConnectionsBlocked = false;
+
+          // EventSource auto-retries. On reconnect the live server must
+          // redeliver the missed completion; the browser's recovery read gets
+          // the stale scaffold first, retries, and then injects the real
+          // variants from source — reaching CYCLING despite the dead HMR.
+          await waitForCycling(page, 3, { timeout: 30_000 });
+          assert.equal(staleSourceServed, true, 'the stale /source intercept must have exercised the retry path');
+          t.diagnostic('Session recovered to CYCLING after SSE redelivery + stale-read retry');
+        } finally {
+          await teardownAndResetBrowser(teardown);
+        }
+      });
+    }
+
+    if (shouldRunScenario('orphan') && fixture.runtime.orphanedWrapperScenario) {
+      it('self-discards an orphaned session when its wrapper is edited out of source', liveE2eTestOptions, async (t) => {
+        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+          t.skip('manual scenario filter is active');
+          return;
+        }
+        // Repro of issue #439: a cycling session is abandoned (no Accept or
+        // Discard), the wrapped region is edited out of source, and the page
+        // reloads. The resumed session used to freeze the picker forever;
+        // recovery required a manual live-complete --discarded. It must now
+        // self-discard and hand the surface back to the picker.
+        const agent = createFakeAgent();
+        const session = await bootFixtureSession({
+          name,
+          fixture,
+          browser,
+          agent,
+          wrapTarget: wrapTargetFromPickedElement,
+          log: (m) => t.diagnostic(m),
+        });
+        const { page, appRoot, teardown } = session;
+        const cfg = fixture.runtime.orphanedWrapperScenario;
+        const pickSelector = fixture.runtime.pickSelector || 'h1.hero-title';
+        try {
+          await waitForHandshake(page);
+          const sourceFile = join(appRoot, cfg.sourceFile);
+          const pristine = readFileSync(sourceFile, 'utf-8');
+
+          await pickElement(page, pickSelector, { position: fixture.runtime.pickPosition });
+          await clickGo(page);
+          await waitForCyclingRobust(page, 3, { timeout: 60_000, log: (m) => t.diagnostic(m) });
+          const saved = await readLiveSessionStorage(page);
+          assert.ok(saved?.id, 'cycling session persisted to local storage');
+
+          t.diagnostic('Restoring pristine source (simulated external edit that removes the wrapper)');
+          writeFileSync(sourceFile, pristine);
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await waitForHandshake(page);
+
+          // Resume adopts the cycling session, the source read finds no
+          // wrapper, retries, then self-discards: local session cleared.
+          const deadline = Date.now() + 30_000;
+          for (;;) {
+            const current = await readLiveSessionStorage(page);
+            if (!current?.id) break;
+            if (Date.now() > deadline) throw new Error('orphaned session was never discarded');
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+          t.diagnostic('Orphaned session discarded; verifying durable phase + picker rearm');
+
+          const snapshotPath = join(appRoot, '.impeccable/live/sessions', `${saved.id}.snapshot.json`);
+          const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'));
+          assert.equal(
+            snapshot.phase,
+            'discarded',
+            'an orphaned discard is terminalized server-side without agent involvement',
+          );
+
+          // The regression that mattered: the picker must arm again.
+          await pickElement(page, pickSelector, { position: fixture.runtime.pickPosition });
+        } finally {
+          await teardownAndResetBrowser(teardown);
+        }
+      });
+    }
+
+    if (shouldRunScenario('foreign') && fixture.runtime.foreignSessionScenario) {
+      it('clears another project\'s leftover browser session instead of resuming it', liveE2eTestOptions, async (t) => {
+        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+          t.skip('manual scenario filter is active');
+          return;
+        }
+        // Repro of the cross-project leak: localStorage is per-ORIGIN, and two
+        // projects routinely reuse the same localhost port across time. A
+        // leftover cycling session from the other project used to be resumed
+        // ("Variants ready" with no user action), and its checkpoints
+        // materialized a ghost session in THIS project's durable store that
+        // kept reattaching after every discard.
+        const agent = createFakeAgent();
+        const session = await bootFixtureSession({
+          name,
+          fixture,
+          browser,
+          agent,
+          wrapTarget: wrapTargetFromPickedElement,
+          log: (m) => t.diagnostic(m),
+        });
+        const { page, appRoot, teardown } = session;
+        const pickSelector = fixture.runtime.pickSelector || 'h1.hero-title';
+        try {
+          await waitForHandshake(page);
+
+          const cases = [
+            // Stamped with another app's root: dropped at load time, before
+            // any server roundtrip.
+            { id: 'f0e1d2c3', appRoot: '/somewhere/else/entirely' },
+            // Legacy shape without a stamp: dropped when the server refuses
+            // its first checkpoint as unknown_session.
+            { id: 'deadf00d' },
+          ];
+          for (const foreign of cases) {
+            t.diagnostic(`Seeding foreign session ${foreign.id}${foreign.appRoot ? ' (stamped)' : ' (legacy shape)'}`);
+            await page.evaluate((saved) => {
+              localStorage.setItem('impeccable-live-session', JSON.stringify(saved));
+              localStorage.removeItem('impeccable-live-session-handled');
+            }, {
+              id: foreign.id,
+              state: 'CYCLING',
+              expected: 3,
+              arrived: 3,
+              visible: 1,
+              sourceFile: 'src/App.jsx',
+              pageUrl: '/',
+              checkpointRevision: 5,
+              ...(foreign.appRoot ? { appRoot: foreign.appRoot } : {}),
+            });
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await waitForHandshake(page);
+
+            const deadline = Date.now() + 20_000;
+            for (;;) {
+              const current = await readLiveSessionStorage(page);
+              if (!current || current.id !== foreign.id) break;
+              if (Date.now() > deadline) throw new Error(`foreign session ${foreign.id} was never cleared`);
+              await new Promise((resolve) => setTimeout(resolve, 250));
+            }
+            const sessionsDir = join(appRoot, '.impeccable/live/sessions');
+            assert.equal(
+              existsSync(join(sessionsDir, `${foreign.id}.jsonl`)),
+              false,
+              `no ghost journal for ${foreign.id} may materialize in this project's store`,
+            );
+          }
+
+          // The surface is genuinely back: a fresh pick must work.
+          await pickElement(page, pickSelector, { position: fixture.runtime.pickPosition });
+        } finally {
+          await teardownAndResetBrowser(teardown);
+        }
+      });
+    }
 
     if (shouldRunScenario('manual') && Array.isArray(fixture.runtime.manualEditScenarios) && fixture.runtime.manualEditScenarios.length > 0) {
       const manualScenarioFilter = process.env.IMPECCABLE_E2E_MANUAL_SCENARIO || '';
@@ -746,7 +1297,7 @@ for (const { name, fixture } of fixtures) {
           assert.ok(existsSync(generateEvent.screenshotPath), 'annotation screenshot file exists');
           assert.match(generateEvent.screenshotPath, /\.impeccable\/live\/annotations\//, 'annotation screenshot is stored under live annotations');
 
-          const sourceFile = await locateSessionFile(session.tmp);
+          const sourceFile = await locateSessionFile(session.appRoot);
           const svelteComponentTarget = svelteComponentTargetFor(sourceFile);
           await clickNext(page);
           assert.equal(await getVisibleVariant(page), 2, 'variant 2 visible after annotated generate');
@@ -788,6 +1339,163 @@ for (const { name, fixture } of fixtures) {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * The params and failure-injection scenarios assert on deterministic variant
+ * content (exact CSS values, exact font weights). An LLM agent legitimately
+ * produces neither, so they only run against the fake agent.
+ */
+function canRunFakeAgentScenario(t) {
+  if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+    t.skip('manual scenario filter is active');
+    return false;
+  }
+  if ((process.env.IMPECCABLE_E2E_AGENT || 'fake') !== 'fake') {
+    t.skip('scenario asserts on deterministic fake-agent output');
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Boot a fixture straight to CYCLING on a component-preview session and hand
+ * back the handles the scenarios need: the manifest, the route source, and the
+ * session itself. Callers own teardown.
+ */
+async function bootComponentScenario({ t, name, fixture, expectedCount = 3, agent }) {
+  const session = await bootFixtureSession({
+    name,
+    fixture,
+    browser,
+    agent: agent || createFakeAgent(),
+    wrapTarget: wrapTargetFromPickedElement,
+    log: (m) => t.diagnostic(m),
+  });
+  try {
+    const { page, appRoot } = session;
+    await waitForHandshake(page);
+    if (fixture.runtime.preActions) await runPreActions(page, fixture.runtime.preActions);
+    await pickElement(page, fixture.runtime.pickSelector || 'h1.hero-title', {
+      position: fixture.runtime.pickPosition,
+    });
+    await clickGo(page);
+    await waitForCyclingRobust(page, expectedCount, {
+      agentMode: 'fake',
+      preActions: fixture.runtime.preActions,
+      log: (m) => t.diagnostic(m),
+    });
+    const manifestPath = await locateSessionFile(appRoot);
+    const svelteComponentTarget = svelteComponentTargetFor(manifestPath);
+    assert.ok(svelteComponentTarget, `expected a component-preview session, got ${manifestPath}`);
+    return {
+      session,
+      manifestPath,
+      svelteComponentTarget,
+      sourceFile: manifestPath,
+    };
+  } catch (err) {
+    await teardownAndResetBrowser(session.teardown);
+    throw err;
+  }
+}
+
+function readManifest(manifestPath) {
+  return JSON.parse(readFileSync(manifestPath, 'utf-8'));
+}
+
+/**
+ * The file the browser actually imports for a variant: the server snapshots
+ * every publish into a fresh `r<N>/` dir and points the manifest at it, so the
+ * session dir's copy is not what a mount reads.
+ */
+function revisionVariantPath(appRoot, manifestPath, variantNum) {
+  const manifest = readManifest(manifestPath);
+  const dir = manifest.revisionDir || manifest.componentDir;
+  assert.ok(dir, 'manifest carries a preview directory');
+  const extension = manifest.componentExtension || 'svelte';
+  return join(appRoot, dir, `v${variantNum}.${extension}`);
+}
+
+/** Poll the session journal for events of a given type. */
+async function waitForJournalEvent(appRoot, sessionId, type, timeoutMs = 15_000) {
+  const journalPath = join(appRoot, '.impeccable', 'live', 'sessions', `${sessionId}.jsonl`);
+  const deadline = Date.now() + timeoutMs;
+  let seen = [];
+  while (Date.now() < deadline) {
+    seen = readJournalEvents(journalPath).filter((event) => event?.type === type);
+    if (seen.length > 0) return seen;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(
+    `no ${type} event in ${journalPath} after ${timeoutMs}ms; saw types: ${
+      [...new Set(readJournalEvents(journalPath).map((e) => e?.type))].join(', ') || '(none)'
+    }`,
+  );
+}
+
+function readJournalEvents(journalPath) {
+  if (!existsSync(journalPath)) return [];
+  return readFileSync(journalPath, 'utf-8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      try { return JSON.parse(line)?.event || null; } catch { return null; }
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Assert the roots live.mjs resolved for an `appDir` fixture.
+ *
+ * The boot ran from the staged repo root, which carries no dev-server config
+ * of its own. Live mode has to pick the nested app, keep PRODUCT.md/DESIGN.md
+ * discovery at the git root, and leave its session state under the app plus a
+ * pointer at the repo root. A repo-root server.json means the session forked
+ * into a second, empty project — the failure this fixture exists to catch.
+ */
+function assertNestedAppRoots(session) {
+  const { tmp, appRoot, appDir, liveBoot } = session;
+  assert.ok(liveBoot, 'appDir fixtures boot through live.mjs and keep its payload');
+  assert.equal(liveBoot.ok, true, `live.mjs boot payload: ${JSON.stringify(liveBoot)}`);
+
+  const roots = liveBoot.roots || {};
+  assert.ok(
+    roots.appRoot && roots.appRoot.endsWith(`/${appDir}`),
+    `roots.appRoot should end with /${appDir}, got ${roots.appRoot}`,
+  );
+  assertSamePath(roots.appRoot, appRoot, 'roots.appRoot');
+  assertSamePath(roots.repoRoot, tmp, 'roots.repoRoot');
+  assertSamePath(roots.contextRoot, tmp, 'roots.contextRoot');
+  assertSamePath(liveBoot.projectRoot, appRoot, 'projectRoot');
+
+  assert.equal(liveBoot.hasProduct, true, 'PRODUCT.md at the repo root is read from the nested app');
+  assert.equal(liveBoot.hasDesign, true, 'DESIGN.md at the repo root is read from the nested app');
+
+  assert.ok(
+    existsSync(join(appRoot, '.impeccable/live/roots.json')),
+    'the resolved manifest is persisted under the app',
+  );
+  assert.ok(
+    existsSync(join(appRoot, '.impeccable/live/server.json')),
+    'the live server registers itself under the app',
+  );
+  assert.ok(
+    existsSync(join(tmp, '.impeccable/live/app-root.json')),
+    'the repo root gets a pointer to the app',
+  );
+  assert.equal(
+    existsSync(join(tmp, '.impeccable/live/server.json')),
+    false,
+    'no live session state may be written at the repo root',
+  );
+}
+
+function assertSamePath(actual, expected, label) {
+  const resolve = (p) => {
+    try { return realpathSync(String(p)); } catch { return String(p); }
+  };
+  assert.equal(resolve(actual), resolve(expected), `${label}: ${actual} !== ${expected}`);
+}
+
 function recordGenerateEvents(agent, events) {
   return {
     ...agent,
@@ -796,6 +1504,39 @@ function recordGenerateEvents(agent, events) {
       return agent.generateVariants(event, context);
     },
   };
+}
+
+function countSourceVariants(source) {
+  return (String(source).match(/<div\s+data-impeccable-variant="(?!original")/g) || []).length;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function waitForGenerationTimings(tmp, id, { timeoutMs = 5_000, requireAllVariants = true } = {}) {
+  const snapshotPath = join(tmp, '.impeccable', 'live', 'sessions', `${id}.snapshot.json`);
+  const journalPath = join(tmp, '.impeccable', 'live', 'sessions', `${id}.jsonl`);
+  const deadline = Date.now() + timeoutMs;
+  let lastTimings = null;
+  while (Date.now() < deadline) {
+    if (existsSync(snapshotPath)) {
+      const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'));
+      const timings = snapshot.generationTimings || {};
+      lastTimings = timings;
+      if (timings.generation_ready && timings.first_reviewable && (!requireAllVariants || timings.all_variants_ready)) return timings;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const checkpointReasons = existsSync(journalPath)
+    ? readFileSync(journalPath, 'utf-8')
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line)?.event)
+      .filter((event) => event?.type === 'checkpoint')
+      .map((event) => ({ reason: event.reason, arrivedVariants: event.arrivedVariants, expectedVariants: event.expectedVariants }))
+    : [];
+  throw new Error(`generation timings did not complete for ${id}: timings=${JSON.stringify(lastTimings)} checkpoints=${JSON.stringify(checkpointReasons)}`);
 }
 
 async function captureLiveE2eFailure({ name, fixture, session, sourceFile, error, log = () => {} }) {
@@ -810,6 +1551,11 @@ async function captureLiveE2eFailure({ name, fixture, session, sourceFile, error
     writeFileSync(join(dir, 'error.txt'), String(error?.stack || error?.message || error || ''), 'utf-8');
     writeFileSync(join(dir, 'fixture.json'), JSON.stringify(fixture, null, 2), 'utf-8');
     writeFileSync(join(dir, 'console-errors.log'), (session.consoleErrors || []).join('\n'), 'utf-8');
+    writeFileSync(
+      join(dir, 'failed-requests.log'),
+      (session.failedRequests || []).map((f) => `${f.reason} ${f.url}`).join('\n'),
+      'utf-8',
+    );
     writeFileSync(join(dir, 'dev-server.log'), session.dev?.log?.() || '', 'utf-8');
     writeCommandOutput(dir, 'git-status.txt', tmp, ['status', '--short']);
     writeCommandOutput(dir, 'git-diff.patch', tmp, ['diff', '--', '.']);
@@ -829,6 +1575,7 @@ async function captureLiveE2eFailure({ name, fixture, session, sourceFile, error
     for (const file of walkSources(tmp)) copyFileFromTmp(tmp, file, join(dir, 'sources'));
     copyDirIfExists(join(tmp, '.impeccable', 'live'), join(dir, 'impeccable-live'));
     copyDirIfExists(join(tmp, 'node_modules', '.impeccable-live'), join(dir, 'impeccable-live-preview'));
+    copyDirIfExists(join(tmp, '.impeccable', 'live', 'previews'), join(dir, 'impeccable-live-previews'));
 
     if (session.page) {
       const html = await withCaptureTimeout(session.page.content(), 5_000, 'page content').catch((err) => `capture failed: ${err.message}`);
@@ -1022,7 +1769,7 @@ async function runManualScenarioActions(page, actions, { t, fixture, session, de
 }
 
 async function runManualEditStage(page, stage, { t, fixture, session, agentMode, defaultSelector }) {
-  const { tmp } = session;
+  const tmp = session.appRoot;
 
   if (stage.beforeManualEdit) {
     await runManualScenarioActions(page, stage.beforeManualEdit, {
@@ -1169,7 +1916,7 @@ async function runAcceptedVariantCycle(page, { t, fixture, session, pickSelector
   await clickNext(page);
   assert.equal(await getVisibleVariant(page), 2, 'variant 2 visible before manual scenario accept');
   await clickAccept(page, { expectedVariant: 2 });
-  const sourceFile = await locateSessionFile(session.tmp);
+  const sourceFile = await locateSessionFile(session.appRoot);
   await waitForSourceClean(sourceFile, 20_000);
   await waitForBarHidden(page, { timeout: 10_000 }).catch(() => {});
 
@@ -1456,8 +2203,10 @@ function svelteComponentTargetFor(filePath) {
   if (manifest.previewMode !== 'svelte-component' || !manifest.sourceFile || !manifest.componentDir) return null;
   const sep = pathSepFor(filePath);
   const markers = [
+    `${sep}.impeccable${sep}live${sep}previews${sep}`,
     `${sep}node_modules${sep}.impeccable-live${sep}`,
     `${sep}src${sep}lib${sep}impeccable${sep}`,
+    `${sep}app${sep}.impeccable-live${sep}`,
   ];
   const marker = markers.find((candidate) => filePath.includes(candidate));
   const idx = marker ? filePath.indexOf(marker) : -1;
@@ -1547,18 +2296,20 @@ async function locateSessionFile(tmp) {
       return f;
     }
   }
-  for (const f of walkSvelteComponentManifests(tmp)) {
+  for (const f of walkComponentManifests(tmp)) {
     const body = readFileSync(f, 'utf-8');
-    if (body.includes('"previewMode": "svelte-component"')) return f;
+    if (/"previewMode": "(?:svelte|vue)-component"/.test(body)) return f;
   }
   throw new Error('Could not locate session source file under ' + tmp);
 }
 
-function walkSvelteComponentManifests(root) {
+function walkComponentManifests(root) {
   const results = [];
   const stack = [
+    join(root, '.impeccable/live/previews'),
     join(root, 'node_modules/.impeccable-live'),
     join(root, 'src/lib/impeccable'),
+    join(root, 'app/.impeccable-live'),
   ];
   while (stack.length) {
     const dir = stack.pop();
