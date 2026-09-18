@@ -41,6 +41,8 @@ all-skills/
 | | [swarm-coding](dev-workflow/swarm-coding/) | 多智能体编码协调（git worktree 隔离 / 设计优先 Web 应用） |
 | | [batch-download](dev-workflow/batch-download/) | 批量下载与数据采集编排（四阶段工作流） |
 | | [ljg-skills](dev-workflow/ljg-skills/) | 李继刚个人技能集合（15 个：内容创作 / 投资 / 关系 / 旅行 / 研究 / 写作，Darwin 评分 74-88） |
+| | [ecc](dev-workflow/ecc/) | Agent 工作台优化系统（286 skills + 68 agents + 94 commands：工程规范 / 编排 / 评测 / 安全 / 记忆） |
+| | [mattpocock-skills](dev-workflow/mattpocock-skills/) | Matt Pocock 工程技能集（18 个：TDD / implement / to-spec / to-tickets / wayfinder / codebase-design…） |
 | **frontend-ui** | [frontend-interface-design](frontend-ui/frontend-interface-design/) | 生产级前端界面构建与审查 |
 | | [react-best-practices](frontend-ui/react-best-practices/) | Vercel 出品的 React/Next.js 性能优化规则集 |
 | | [semi-ui-skills](frontend-ui/semi-ui-skills/) | Semi Design 企业级组件库使用指南 |
@@ -53,6 +55,7 @@ all-skills/
 | | [frontend-slides-main](frontend-ui/frontend-slides-main/) | 零依赖 HTML 演示文稿（12 种风格 / PPT 转换 / PDF 导出） |
 | | [html-component-builder](frontend-ui/html-component-builder/) | 组件化 HTML 构建规范（CSS 命名空间隔离 + 验证脚本） |
 | | [cinematic-slides](frontend-ui/cinematic-slides/) | AI 视频背景电影级 HTML 演示文稿 + GitHub Pages 部署 |
+| | [huashu-design](frontend-ui/huashu-design/) | 花叔 Design：HTML 高保真原型/幻灯片/动画/可视化（先出 3 个方向初稿 + 5 维评审，可导出 MP4/GIF） |
 | **creative** | [gpt-image-2](creative/gpt-image-2/) | GPT Image 2 图像生成/编辑（80+ 模板） |
 | | [guizang-ppt-skill](creative/guizang-ppt-skill/) | 杂志风横向翻页网页 PPT 生成 |
 | | [seedance2-skill-main](creative/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
@@ -108,6 +111,7 @@ all-skills/
 | | [docx](productivity/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
 | | [pdf](productivity/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
 | | [imap-smtp-email](productivity/imap-smtp-email/) | IMAP/SMTP 个人邮箱：6 平台支持、中文别名映射、反幻觉设计 |
+| | [huashu-excel](productivity/huashu-excel/) | 花叔 Excel 数据分析全流程：体检脏表→清洗→定口径→算指标→对账→出报告 |
 | | [yichen-skills](productivity/yichen-skills/) | 中文创作者工作流精选 9 个：研究编排（web-research / unified-search / content-archive）、ASR 转写与口播粗剪（asr / volc-asr）、公众号批量导出、企微官方 CLI、X 文章草稿上传、X 切片（个人非商业许可） |
 | **product** | [opportunity-solution-tree](product/opportunity-solution-tree/) | Teresa Torres OST 框架：outcome→opportunities→solutions→experiments |
 | | [identify-assumptions-new](product/identify-assumptions-new/) | 新产品 8 类风险假设识别（Value/Usability/Viability/Feasibility/GTM/Strategy/Team...） |
@@ -174,3 +178,8 @@ all-skills/
 | **hypit** | **AI 视频复刻平台（Skill + Runtime，改版 Apache 2.0）** |
 | **mcncarl/jianying-headless** | **剪映无界面自动化（个人非商业许可）** |
 | **mcncarl/yichen-skills** | **中文创作者工作流（精选 9 个，个人非商业许可）** |
+| **superduck-ai/agent-readiness** | **仓库 Agent 就绪度审计（82 项标准）** |
+| **affaan-m/ECC** | **Agent 工作台优化系统（286 skills + agents / commands / rules）** |
+| **mattpocock/skills** | **工程技能集（18 个，来自 Matt Pocock 的 .agents）** |
+| **alchaincyf/huashu-design** | **花叔 Design（HTML 原生设计 Skill，MIT）** |
+| **alchaincyf/huashu-excel** | **花叔 Excel 数据分析（MIT）** |

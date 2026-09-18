@@ -18,10 +18,15 @@
 
 - [writing/ad-creative](../writing/ad-creative/) — 制作跨平台推广素材
 - [creative/kinetic-video-creator](../creative/kinetic-video-creator/) — 将文章转为动态排版视频
+- [creative/directing-stickman-videos](../creative/directing-stickman-videos/) — 一分钟火柴人解释视频（4 种风格 + 6 段提示词包）
+- [creative/hypit](../creative/hypit/) — 爆款视频复刻/改编（需 Hypit Runtime）
+- [productivity/yichen-skills/yichen-x-slicer](../productivity/yichen-skills/yichen-x-slicer/) — X 推文/Thread → 3:4 图片切片 + 成片
 - [writing/news-aggregator-skill](../writing/news-aggregator-skill/) — 追踪 28 信源，二次创作热点
 
 ## 可选增强
 
 - [writing/copy-editing](../writing/copy-editing/) — 七轮精修文案
+- [productivity/yichen-skills/yichen-x-article-draft-uploader](../productivity/yichen-skills/yichen-x-article-draft-uploader/) — Markdown 长文上传为 X Article 草稿
+- [productivity/yichen-skills/yichen-wechat-mp-batch-exporter](../productivity/yichen-skills/yichen-wechat-mp-batch-exporter/) — 公众号历史文章与阅读/评论指标批量导出
 - [research/geo-content-optimizer](../research/geo-content-optimizer/) — 优化内容在 AI 搜索中的引用率
 - [code-quality/humanizer-zh](../code-quality/humanizer-zh/) — 去除中文 AI 痕迹

@@ -12,6 +12,8 @@
 
 - [writing/ad-creative](../writing/ad-creative/) — 生成全平台预热广告创意
 - [creative/kinetic-video-creator](../creative/kinetic-video-creator/) — 制作产品宣传视频
+- [creative/directing-stickman-videos](../creative/directing-stickman-videos/) — 制作一分钟火柴人解释视频（4 种风格）
+- [creative/hypit](../creative/hypit/) — 复刻/改编爆款视频做宣传素材（需 Hypit Runtime/生成服务）
 - [writing/presentation-architect](../writing/presentation-architect/) — 撰写发布会逐页演示脚本
 
 ## 阶段 3：交付物制作
