@@ -450,6 +450,14 @@
       "mappings": [
         { "source": "skill", "target": "agent/browser-skill" }
       ]
+    },
+    {
+      "name": "stickman-video-director",
+      "remoteUrl": "https://github.com/kaomei/stickman-video-director.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skills/directing-stickman-videos", "target": "creative/directing-stickman-videos" }
+      ]
     }
   ],
   "excludePatterns": [

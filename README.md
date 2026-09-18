@@ -63,6 +63,7 @@ all-skills/
 | | [tutorial-creator](creative/tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发） |
 | | [travel-memory-sticker-card](creative/travel-memory-sticker-card/) | 照片→水粉剪纸旅行记忆贴纸卡：3:2 卡片 + 主插画 + 3 英文关键词 + 6 枚贴纸 |
 | | [travel-memory-card-duo](creative/travel-memory-card-duo/) | 照片→双图交付：完整旅行记忆卡 + 同款六枚透明底（RGBA）贴纸 PNG |
+| | [directing-stickman-videos](creative/directing-stickman-videos/) | 文案→火柴人短视频：分镜提案 + 6 段 Gemini Omni Flash 提示词包（4 种风格） |
 | **writing** | [report-writing](writing/report-writing/) | 端到端长报告创建（4 阶段流水线 / 依赖图分析） |
 | | [paper-writing](writing/paper-writing/) | 端到端学术论文创建（贡献声明 / 4 级审校） |
 | | [copy-editing](writing/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
@@ -166,3 +167,4 @@ all-skills/
 | **carolinaaafy** | **旅行记忆贴纸卡系列（水粉剪纸贴纸化技能，2 个）** |
 | **reverse-skill** | **安全技能路由包（逆向工程 / 授权渗透 / 安全研究，89 个 SKILL.md，MIT）** |
 | **Tencent/BrowserSkill** | **腾讯官方浏览器自动化 Skill（bsk CLI + 扩展，MIT）** |
+| **stickman-video-director** | **火柴人短视频导演（Gemini Omni Flash 提示词工程，MIT）** |
