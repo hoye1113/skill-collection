@@ -65,6 +65,7 @@ all-skills/
 | | [travel-memory-card-duo](creative/travel-memory-card-duo/) | 照片→双图交付：完整旅行记忆卡 + 同款六枚透明底（RGBA）贴纸 PNG |
 | | [directing-stickman-videos](creative/directing-stickman-videos/) | 文案→火柴人短视频：分镜提案 + 6 段 Gemini Omni Flash 提示词包（4 种风格） |
 | | [hypit](creative/hypit/) | 爆款视频复刻/改编：SVML 创作语言 + 组件化导演流程（需 Hypit Runtime/生成服务） |
+| | [jianying-headless](creative/jianying-headless/) | 剪映无界面剪辑（Apple Silicon Mac）：草稿生成/修改/原生导出（个人非商业许可） |
 | **writing** | [report-writing](writing/report-writing/) | 端到端长报告创建（4 阶段流水线 / 依赖图分析） |
 | | [paper-writing](writing/paper-writing/) | 端到端学术论文创建（贡献声明 / 4 级审校） |
 | | [copy-editing](writing/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
@@ -170,3 +171,4 @@ all-skills/
 | **Tencent/BrowserSkill** | **腾讯官方浏览器自动化 Skill（bsk CLI + 扩展，MIT）** |
 | **stickman-video-director** | **火柴人短视频导演（Gemini Omni Flash 提示词工程，MIT）** |
 | **hypit** | **AI 视频复刻平台（Skill + Runtime，改版 Apache 2.0）** |
+| **mcncarl/jianying-headless** | **剪映无界面自动化（个人非商业许可）** |

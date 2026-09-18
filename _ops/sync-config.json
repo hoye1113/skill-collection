@@ -466,6 +466,13 @@
       "mappings": [
         { "source": "skills/hypit", "target": "creative/hypit" }
       ]
+    },
+    {
+      "name": "jianying-headless",
+      "remoteUrl": "https://github.com/mcncarl/jianying-headless.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "creative/jianying-headless"
     }
   ],
   "excludePatterns": [
