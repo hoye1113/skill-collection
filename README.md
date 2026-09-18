@@ -18,6 +18,7 @@ all-skills/
 ├── product/            # 产品管理 — 发现、策略、OKR、roadmap、PM 简历（来自 phuryn/pm-skills, MIT）
 ├── skill-management/   # Skill 管理 — 创建、发现、进化
 ├── agent/              # Agent 相关 — 工作空间生成与优化
+├── security/           # 安全研究 — 逆向工程、渗透测试、CTF、恶意样本（来自 reverse-skill, MIT）
 └── maps/               # 任务地图 — 按目标组合 skill（见下方）
 ```
 
@@ -129,6 +130,7 @@ all-skills/
 | | [claudability-analyzer](agent/claudability-analyzer/) | 分析各职业 Claude Code 自动化机会（6 维度 + PDF 报告） |
 | | [kimi-webbridge](agent/kimi-webbridge/) | 控制真实浏览器（导航/点击/输入/截图/PDF），通过本地 daemon 交互 |
 | | [deep-research-swarm](agent/deep-research-swarm/) | 多智能体深度研究编排（4 种路由 / 7 阶段 / 交叉验证） |
+| **security** | [reverse-skill](security/reverse-skill/) | 安全技能路由包：45+ 逆向/渗透模块（IDA/Ghidra/Frida/固件/EDR/LLM 安全/云原生/AD…）+ 42 个 CTF 场景 + 工具按需自举，MIT |
 
 ## 任务地图（Maps）
 
@@ -161,3 +163,4 @@ all-skills/
 | **luban-skill** | **鲁班 Skill 打磨系统（五道工序全生命周期）** |
 | **phuryn/pm-skills** | **PM 方法论合集（9 plugins / 68 skills，Darwin 精选 15 个，MIT 协议）** |
 | **carolinaaafy** | **旅行记忆贴纸卡系列（水粉剪纸贴纸化技能，2 个）** |
+| **reverse-skill** | **安全技能路由包（逆向工程 / 授权渗透 / 安全研究，89 个 SKILL.md，MIT）** |

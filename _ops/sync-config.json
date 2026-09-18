@@ -435,6 +435,13 @@
         { "source": "skills/productivity/writing-for-agents",         "target": "dev-workflow/mattpocock-skills/skills/writing-for-agents" },
         { "source": "skills/misc/git-guardrails-claude-code",         "target": "dev-workflow/mattpocock-skills/skills/git-guardrails-claude-code" }
       ]
+    },
+    {
+      "name": "reverse-skill",
+      "remoteUrl": "https://github.com/zhaoxuya520/reverse-skill.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "security/reverse-skill"
     }
   ],
   "excludePatterns": [
