@@ -458,6 +458,14 @@
       "mappings": [
         { "source": "skills/directing-stickman-videos", "target": "creative/directing-stickman-videos" }
       ]
+    },
+    {
+      "name": "hypit",
+      "remoteUrl": "https://github.com/hypit-ai/hypit.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skills/hypit", "target": "creative/hypit" }
+      ]
     }
   ],
   "excludePatterns": [
