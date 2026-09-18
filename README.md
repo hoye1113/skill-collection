@@ -130,6 +130,7 @@ all-skills/
 | | [claudability-analyzer](agent/claudability-analyzer/) | 分析各职业 Claude Code 自动化机会（6 维度 + PDF 报告） |
 | | [kimi-webbridge](agent/kimi-webbridge/) | 控制真实浏览器（导航/点击/输入/截图/PDF），通过本地 daemon 交互 |
 | | [deep-research-swarm](agent/deep-research-swarm/) | 多智能体深度研究编排（4 种路由 / 7 阶段 / 交叉验证） |
+| | [browser-skill](agent/browser-skill/) | 腾讯出品：操作真实已登录 Chromium（bsk CLI + 扩展，标签页借用 / Canvas 点击 / 人工协助，MIT） |
 | **security** | [reverse-skill](security/reverse-skill/) | 安全技能路由包：45+ 逆向/渗透模块（IDA/Ghidra/Frida/固件/EDR/LLM 安全/云原生/AD…）+ 42 个 CTF 场景 + 工具按需自举，MIT |
 
 ## 任务地图（Maps）
@@ -164,3 +165,4 @@ all-skills/
 | **phuryn/pm-skills** | **PM 方法论合集（9 plugins / 68 skills，Darwin 精选 15 个，MIT 协议）** |
 | **carolinaaafy** | **旅行记忆贴纸卡系列（水粉剪纸贴纸化技能，2 个）** |
 | **reverse-skill** | **安全技能路由包（逆向工程 / 授权渗透 / 安全研究，89 个 SKILL.md，MIT）** |
+| **Tencent/BrowserSkill** | **腾讯官方浏览器自动化 Skill（bsk CLI + 扩展，MIT）** |

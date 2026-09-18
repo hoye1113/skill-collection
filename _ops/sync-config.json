@@ -442,6 +442,14 @@
       "strategy": "whole",
       "source": ".",
       "target": "security/reverse-skill"
+    },
+    {
+      "name": "browser-skill",
+      "remoteUrl": "https://github.com/Tencent/BrowserSkill.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skill", "target": "agent/browser-skill" }
+      ]
     }
   ],
   "excludePatterns": [
