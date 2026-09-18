@@ -473,6 +473,26 @@
       "strategy": "whole",
       "source": ".",
       "target": "creative/jianying-headless"
+    },
+    {
+      "name": "yichen-skills",
+      "remoteUrl": "https://github.com/mcncarl/yichen-skills.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "LICENSE",              "target": "productivity/yichen-skills/LICENSE" },
+        { "source": "THIRD_PARTY_NOTICES.md", "target": "productivity/yichen-skills/THIRD_PARTY_NOTICES.md" },
+        { "source": "licenses",             "target": "productivity/yichen-skills/licenses" },
+        { "source": "docs",                 "target": "productivity/yichen-skills/docs" },
+        { "source": "yichen-web-research",              "target": "productivity/yichen-skills/yichen-web-research" },
+        { "source": "yichen-unified-search",            "target": "productivity/yichen-skills/yichen-unified-search" },
+        { "source": "yichen-content-archive",           "target": "productivity/yichen-skills/yichen-content-archive" },
+        { "source": "yichen-asr",                       "target": "productivity/yichen-skills/yichen-asr" },
+        { "source": "yichen-volc-asr",                  "target": "productivity/yichen-skills/yichen-volc-asr" },
+        { "source": "yichen-wechat-mp-batch-exporter",  "target": "productivity/yichen-skills/yichen-wechat-mp-batch-exporter" },
+        { "source": "yichen-wecom-operations",          "target": "productivity/yichen-skills/yichen-wecom-operations" },
+        { "source": "yichen-x-article-draft-uploader",  "target": "productivity/yichen-skills/yichen-x-article-draft-uploader" },
+        { "source": "yichen-x-slicer",                  "target": "productivity/yichen-skills/yichen-x-slicer" }
+      ]
     }
   ],
   "excludePatterns": [

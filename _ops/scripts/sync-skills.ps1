@@ -136,7 +136,13 @@ foreach ($repo in $config.repos) {
             foreach ($m in $repo.mappings) {
                 $src = Join-Path $repoPath $m.source
                 $dst = Join-Path $ProjectRoot $m.target
-                if (Test-Path $src) {
+                if (Test-Path $src -PathType Leaf) {
+                    $dstDir = Split-Path $dst -Parent
+                    if (-not (Test-Path $dstDir)) { New-Item -ItemType Directory -Path $dstDir -Force | Out-Null }
+                    Copy-Item -LiteralPath $src -Destination $dst -Force
+                    $syncedThisRepo = $true
+                    Log "  mapped $($m.source) -> $($m.target)"
+                } elseif (Test-Path $src) {
                     RoboSync $src $dst
                     $syncedThisRepo = $true
                     Log "  mapped $($m.source) -> $($m.target)"

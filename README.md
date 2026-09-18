@@ -108,6 +108,7 @@ all-skills/
 | | [docx](productivity/docx/) | Word 创建/编辑/转换（渐进式披露 / XSD 验证 / OOXML 处理） |
 | | [pdf](productivity/pdf/) | PDF 创建与处理（ReportLab/md2pdf/Process 三路由） |
 | | [imap-smtp-email](productivity/imap-smtp-email/) | IMAP/SMTP 个人邮箱：6 平台支持、中文别名映射、反幻觉设计 |
+| | [yichen-skills](productivity/yichen-skills/) | 中文创作者工作流精选 9 个：研究编排（web-research / unified-search / content-archive）、ASR 转写与口播粗剪（asr / volc-asr）、公众号批量导出、企微官方 CLI、X 文章草稿上传、X 切片（个人非商业许可） |
 | **product** | [opportunity-solution-tree](product/opportunity-solution-tree/) | Teresa Torres OST 框架：outcome→opportunities→solutions→experiments |
 | | [identify-assumptions-new](product/identify-assumptions-new/) | 新产品 8 类风险假设识别（Value/Usability/Viability/Feasibility/GTM/Strategy/Team...） |
 | | [identify-assumptions-existing](product/identify-assumptions-existing/) | 已有产品 4 类风险假设识别 |
@@ -172,3 +173,4 @@ all-skills/
 | **stickman-video-director** | **火柴人短视频导演（Gemini Omni Flash 提示词工程，MIT）** |
 | **hypit** | **AI 视频复刻平台（Skill + Runtime，改版 Apache 2.0）** |
 | **mcncarl/jianying-headless** | **剪映无界面自动化（个人非商业许可）** |
+| **mcncarl/yichen-skills** | **中文创作者工作流（精选 9 个，个人非商业许可）** |
