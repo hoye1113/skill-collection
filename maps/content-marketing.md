@@ -17,9 +17,9 @@
 ## 阶段 3：创意与分发
 
 - [writing/ad-creative](../writing/ad-creative/) — 制作跨平台推广素材
-- [creative/kinetic-video-creator](../creative/kinetic-video-creator/) — 将文章转为动态排版视频
-- [creative/directing-stickman-videos](../creative/directing-stickman-videos/) — 一分钟火柴人解释视频（4 种风格 + 6 段提示词包）
-- [creative/hypit](../creative/hypit/) — 爆款视频复刻/改编（需 Hypit Runtime）
+- [video/kinetic-video-creator](../video/kinetic-video-creator/) — 将文章转为动态排版视频
+- [video/directing-stickman-videos](../video/directing-stickman-videos/) — 一分钟火柴人解释视频（4 种风格 + 6 段提示词包）
+- [video/hypit](../video/hypit/) — 爆款视频复刻/改编（需 Hypit Runtime）
 - [productivity/yichen-skills/yichen-x-slicer](../productivity/yichen-skills/yichen-x-slicer/) — X 推文/Thread → 3:4 图片切片 + 成片
 - [writing/news-aggregator-skill](../writing/news-aggregator-skill/) — 追踪 28 信源，二次创作热点
 

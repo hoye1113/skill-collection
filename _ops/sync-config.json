@@ -82,7 +82,7 @@
         },
         {
           "source": "skills/kinetic-video-creator",
-          "target": "creative/kinetic-video-creator"
+          "target": "video/kinetic-video-creator"
         },
         {
           "source": "skills/learn",
@@ -102,7 +102,7 @@
         },
         {
           "source": "skills/tutorial-creator",
-          "target": "creative/tutorial-creator"
+          "target": "video/tutorial-creator"
         },
         {
           "source": "skills/aviz-skills-installer",
@@ -456,7 +456,7 @@
       "remoteUrl": "https://github.com/kaomei/stickman-video-director.git",
       "strategy": "mapped",
       "mappings": [
-        { "source": "skills/directing-stickman-videos", "target": "creative/directing-stickman-videos" }
+        { "source": "skills/directing-stickman-videos", "target": "video/directing-stickman-videos" }
       ]
     },
     {
@@ -464,7 +464,7 @@
       "remoteUrl": "https://github.com/hypit-ai/hypit.git",
       "strategy": "mapped",
       "mappings": [
-        { "source": "skills/hypit", "target": "creative/hypit" }
+        { "source": "skills/hypit", "target": "video/hypit" }
       ]
     },
     {
@@ -472,7 +472,7 @@
       "remoteUrl": "https://github.com/mcncarl/jianying-headless.git",
       "strategy": "whole",
       "source": ".",
-      "target": "creative/jianying-headless"
+      "target": "video/jianying-headless"
     },
     {
       "name": "yichen-skills",
@@ -492,6 +492,31 @@
         { "source": "yichen-wecom-operations",          "target": "productivity/yichen-skills/yichen-wecom-operations" },
         { "source": "yichen-x-article-draft-uploader",  "target": "productivity/yichen-skills/yichen-x-article-draft-uploader" },
         { "source": "yichen-x-slicer",                  "target": "productivity/yichen-skills/yichen-x-slicer" }
+      ]
+    },
+    {
+      "name": "story-to-handdrawn-video",
+      "remoteUrl": "https://github.com/gnipbao/story-to-handdrawn-video.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "video/story-to-handdrawn-video"
+    },
+    {
+      "name": "hand-drawn-video-prompts",
+      "remoteUrl": "https://github.com/kaomei/hand-drawn-video-prompts.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "hand-drawn-video-prompts", "target": "video/hand-drawn-video-prompts" },
+        { "source": "LICENSE",                  "target": "video/hand-drawn-video-prompts/LICENSE" }
+      ]
+    },
+    {
+      "name": "kid-papercraft",
+      "remoteUrl": "https://github.com/kaomei/kid-papercraft.git",
+      "strategy": "mapped",
+      "mappings": [
+        { "source": "skills/kid-papercraft", "target": "video/kid-papercraft" },
+        { "source": "LICENSE",               "target": "video/kid-papercraft/LICENSE" }
       ]
     }
   ],

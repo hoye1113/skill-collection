@@ -9,7 +9,8 @@ all-skills/
 ├── code-quality/       # 代码质量 — 审查、清理、审计、AI 痕迹去除
 ├── dev-workflow/       # 开发工作流 — 构思、计划、执行、调试、验证
 ├── frontend-ui/        # 前端/UI — 组件、设计系统、视觉工程、设计工具
-├── creative/           # 创意生成 — 图像、视频、音频、音乐、PPT
+├── creative/           # 创意生成 — 图像、音频、音乐、PPT
+├── video/              # 视频生产 — 端到端管线、提示词、渲染、剪辑
 ├── writing/            # 内容写作 — 报告、论文、文案、广告、新闻
 ├── research/           # 研究分析 — 市场、竞品、趋势、SEO/GEO、用户洞察
 ├── learning/           # 知识学习 — 阅读、知识库构建、自适应学习
@@ -35,7 +36,6 @@ all-skills/
 | | [ai-humanizer](code-quality/ai-humanizer/) | 去除英文 AI 写作痕迹：24 种模式检测、统计信号、词汇 3 tier 分级 |
 | | [content-density-review](code-quality/content-density-review/) | 前端页面内容密度审查：explanation-itis / 冗余文案 / 视觉过载，产出分级 Markdown 审计报告（不改代码） |
 | **dev-workflow** | [superpowers](dev-workflow/superpowers/) | 完整开发方法论框架（14 个子 Skill：构思→计划→执行→调试→测试→验证→收尾） |
-| | [remotion](dev-workflow/remotion/) | Remotion React 视频框架最佳实践（30+ 规则文件） |
 | | [html-to-pdf](dev-workflow/html-to-pdf/) | HTML 转 PDF（Puppeteer + 像素级渲染 + RTL 自动检测） |
 | | [html-to-pptx](dev-workflow/html-to-pptx/) | HTML 转 PowerPoint（文本/截图双模式 + 自动分割） |
 | | [swarm-coding](dev-workflow/swarm-coding/) | 多智能体编码协调（git worktree 隔离 / 设计优先 Web 应用） |
@@ -58,18 +58,22 @@ all-skills/
 | | [huashu-design](frontend-ui/huashu-design/) | 花叔 Design：HTML 高保真原型/幻灯片/动画/可视化（先出 3 个方向初稿 + 5 维评审，可导出 MP4/GIF） |
 | **creative** | [gpt-image-2](creative/gpt-image-2/) | GPT Image 2 图像生成/编辑（80+ 模板） |
 | | [guizang-ppt-skill](creative/guizang-ppt-skill/) | 杂志风横向翻页网页 PPT 生成 |
-| | [seedance2-skill-main](creative/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
 | | [web-video-presentation](creative/web-video-presentation/) | 文章转"伪视频"网页演示（可选 TTS） |
 | | [image-generation](creative/image-generation/) | Gemini/fal.ai 生图 + Grok/fal.ai 生视频（双 provider） |
 | | [music-generator](creative/music-generator/) | ElevenLabs AI 音乐生成（简单/详细双模式） |
-| | [kinetic-video-creator](creative/kinetic-video-creator/) | 动态排版视频：脚本→TTS→音乐→动画（Remotion） |
-| | [tutorial-creator](creative/tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发） |
 | | [travel-memory-sticker-card](creative/travel-memory-sticker-card/) | 照片→水粉剪纸旅行记忆贴纸卡：3:2 卡片 + 主插画 + 3 英文关键词 + 6 枚贴纸 |
 | | [travel-memory-card-duo](creative/travel-memory-card-duo/) | 照片→双图交付：完整旅行记忆卡 + 同款六枚透明底（RGBA）贴纸 PNG |
-| | [directing-stickman-videos](creative/directing-stickman-videos/) | 文案→火柴人短视频：分镜提案 + 6 段 Gemini Omni Flash 提示词包（4 种风格） |
-| | [hypit](creative/hypit/) | 爆款视频复刻/改编：SVML 创作语言 + 组件化导演流程（需 Hypit Runtime/生成服务） |
-| | [jianying-headless](creative/jianying-headless/) | 剪映无界面剪辑（Apple Silicon Mac）：草稿生成/修改/原生导出（个人非商业许可） |
-| | [openmontage](creative/openmontage/) | OpenMontage 入口指引：开源 agentic 视频生产系统（12 管线 / 100+ 工具 / 700+ 知识文件，薄壳收录，本体需外部安装，AGPL-3.0） |
+| **video** | [openmontage](video/openmontage/) | 开源 agentic 视频生产系统入口（12 管线 / 100+ 工具 / 700+ 知识文件，薄壳收录，本体需外部安装，AGPL-3.0） |
+| | [remotion](video/remotion/) | Remotion React 视频框架最佳实践（30+ 规则文件） |
+| | [story-to-handdrawn-video](video/story-to-handdrawn-video/) | 中文故事/小说→20 种手绘漫画风分镜 + Remotion 视频（技能包 + 本地渲染器，MIT） |
+| | [hand-drawn-video-prompts](video/hand-drawn-video-prompts/) | 中文口播稿→9:16 商业手绘解说分镜提示词（Q 版蜡笔风，MIT） |
+| | [kid-papercraft](video/kid-papercraft/) | 儿童折纸定格生日祝福短片：三段式剧情 + 5 大 IP 分镜提示词（MIT） |
+| | [directing-stickman-videos](video/directing-stickman-videos/) | 文案→火柴人短视频：分镜提案 + 6 段 Gemini Omni Flash 提示词包（4 种风格） |
+| | [seedance2-skill-main](video/seedance2-skill-main/) | 即梦 Seedance 2.0 视频提示词工程 |
+| | [kinetic-video-creator](video/kinetic-video-creator/) | 动态排版视频：脚本→TTS→音乐→动画（Remotion） |
+| | [tutorial-creator](video/tutorial-creator/) | 屏幕录制→专业教程（旁白/音乐/字幕/分发） |
+| | [hypit](video/hypit/) | 爆款视频复刻/改编：SVML 创作语言 + 组件化导演流程（需 Hypit Runtime/生成服务） |
+| | [jianying-headless](video/jianying-headless/) | 剪映无界面剪辑（Apple Silicon Mac）：草稿生成/修改/原生导出（个人非商业许可） |
 | **writing** | [report-writing](writing/report-writing/) | 端到端长报告创建（4 阶段流水线 / 依赖图分析） |
 | | [paper-writing](writing/paper-writing/) | 端到端学术论文创建（贡献声明 / 4 级审校） |
 | | [copy-editing](writing/copy-editing/) | 七轮逐层文案编辑（清晰度→语调→价值→证据→具体性→情感→零风险） |
@@ -185,3 +189,6 @@ all-skills/
 | **alchaincyf/huashu-design** | **花叔 Design（HTML 原生设计 Skill，MIT）** |
 | **alchaincyf/huashu-excel** | **花叔 Excel 数据分析（MIT）** |
 | **calesthio/OpenMontage** | **开源 agentic 视频生产系统（薄壳入口，本体需外部 clone 安装，AGPL-3.0）** |
+| **gnipbao/story-to-handdrawn-video** | **中文故事/小说→手绘漫画风分镜与视频（技能包 + Remotion 渲染器，MIT）** |
+| **kaomei/hand-drawn-video-prompts** | **中文口播稿→Q 版手绘解说分镜提示词（MIT）** |
+| **kaomei/kid-papercraft** | **儿童折纸定格生日祝福短片提示词（MIT）** |

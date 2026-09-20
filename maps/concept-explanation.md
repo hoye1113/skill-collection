@@ -53,7 +53,7 @@
 
 ### 转成讲解视频
 - [creative/web-video-presentation](../creative/web-video-presentation/) — 把寓言 + 解析作为视频脚本的章节结构（19:9 录屏演示）
-- [creative/directing-stickman-videos](../creative/directing-stickman-videos/) — 一分钟火柴人动画解释（分镜提案 + 6 段提示词包）
+- [video/directing-stickman-videos](../video/directing-stickman-videos/) — 一分钟火柴人动画解释（分镜提案 + 6 段提示词包）
 
 ## 阶段 4：质量校验
 
