@@ -15,6 +15,14 @@ LOCAL_DIRS = {'.git', 'work', '__pycache__', '.pytest_cache', '.venv'}
 LOCAL_CODEC = 'bridge/jy14_codec_hardened_11_4'
 SUFFIXES = {'.py', '.cpp', '.h', '.json', '.md', '.yaml', '.txt'}
 SPECIAL = {'.gitignore', 'NOTICE', 'LICENSE'}
+# User-approved public IG case derivatives. Never turn this into a general
+# media extension allowance: exact bytes, size and path are release-reviewed.
+PUBLIC_MEDIA = {
+    'docs/media/hypit-original-frames.png': ('0e7b55e8e1a7a759d6500d29a5d57ec8e93ac89e509504c8e9ed0daadd06d2cf', 947936),
+    'docs/media/jianying-import-frames.png': ('64d1a63d6bfaf2c3c2c75de1c58b2beab58ad36499752a6855add08aa43f81dd', 884490),
+    'docs/media/hypit-original-preview.mp4': ('0ac79c184ce093a71e73e4ad72f49e44bdf01134154834c983fd52d656095b83', 4421052),
+    'docs/media/jianying-import-preview.mp4': ('ccaf385b0683b9e6b155e3c3422c3e3b2d27a8bb82b2f196344f2baa64e586cc', 4223556),
+}
 PATTERNS = {
     'personal-home-path': re.compile(r'/(?:Users|home)/[A-Za-z0-9_.-]+/'),
     'private-key': re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
@@ -30,6 +38,15 @@ def require(value, message):
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def verify_public_media(path, relative):
+    require(relative in PUBLIC_MEDIA, 'Unapproved public media: ' + relative)
+    expected_hash, expected_size = PUBLIC_MEDIA[relative]
+    require(path.is_file() and not path.is_symlink(), 'Nonregular public media: ' + relative)
+    require(path.stat().st_size == expected_size and digest(path) == expected_hash,
+            'Public media bytes differ: ' + relative)
+    return expected_hash
 
 
 def literal(path, name):
@@ -51,7 +68,8 @@ def source_files():
             if relative == LOCAL_CODEC:
                 continue
             require(path.is_file() and not path.is_symlink(), 'Nonregular source: ' + relative)
-            require(path.suffix in SUFFIXES or name in SPECIAL, 'Unexpected source type: ' + relative)
+            require(path.suffix in SUFFIXES or name in SPECIAL or relative in PUBLIC_MEDIA,
+                    'Unexpected source type: ' + relative)
             files.append(path)
     return sorted(files)
 
@@ -61,6 +79,9 @@ def main():
     inventory = {}
     for path in files:
         relative = path.relative_to(ROOT).as_posix()
+        if relative in PUBLIC_MEDIA:
+            inventory[relative] = verify_public_media(path, relative)
+            continue
         raw = path.read_bytes()
         require(b'\x00' not in raw, 'Binary content in source: ' + relative)
         content = raw.decode('utf-8-sig')
@@ -101,6 +122,7 @@ def main():
     fingerprint = hashlib.sha256(json.dumps(inventory, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     print(json.dumps({'status': 'source-checks-passed', 'files': len(files), 'inventory_sha256': fingerprint,
                       'official_binaries_in_source_inventory': False, 'network_called': False,
+                      'approved_public_media': len(set(inventory).intersection(PUBLIC_MEDIA)),
                       'scope': 'syntax, known privacy patterns, relative links, source pins and tracked-file boundary'}))
 
 

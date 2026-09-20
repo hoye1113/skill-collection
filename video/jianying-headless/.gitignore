@@ -33,6 +33,11 @@ venv/
 *.jpg
 *.jpeg
 *.gif
+# Explicitly approved IG case previews only; all other media stays excluded.
+!/docs/media/hypit-original-frames.png
+!/docs/media/jianying-import-frames.png
+!/docs/media/hypit-original-preview.mp4
+!/docs/media/jianying-import-preview.mp4
 *.ttf
 *.otf
 *.sqlite

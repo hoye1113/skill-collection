@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import native_export as e
 
@@ -129,10 +130,34 @@ class ExportGuards(unittest.TestCase):
         self.assertEqual(value['audio_codec'], 'aac')
         self.assertEqual(value['frame_delta'], 0)
 
-    def test_native_one_frame_rounding_is_reported(self):
-        self.probe['streams'][0]['nb_frames'] = '149'
-        value = e.validate_probe(self.probe, self.settings, 6_000_000, True)
-        self.assertEqual(value['frame_delta'], -1)
+    def test_aligned_timeline_missing_or_extra_frame_rejected(self):
+        for count in ('149', '151'):
+            with self.subTest(count=count):
+                self.probe['streams'][0]['nb_frames'] = count
+                with self.assertRaisesRegex(ValueError, 'frame count'):
+                    e.validate_probe(self.probe, self.settings, 6_000_000, True)
+
+    def test_microsecond_precision_does_not_admit_a_missing_frame(self):
+        self.settings['fps'] = 30
+        self.probe['streams'][0]['r_frame_rate'] = '30/1'
+        self.probe['format']['duration'] = '1.233333'
+        self.probe['streams'][0]['nb_frames'] = '37'
+        value = e.validate_probe(self.probe, self.settings, 1_233_333, True)
+        self.assertEqual(value['frame_count_policy'], 'exact-aligned')
+        self.probe['streams'][0]['nb_frames'] = '36'
+        with self.assertRaisesRegex(ValueError, 'frame count'):
+            e.validate_probe(self.probe, self.settings, 1_233_333, True)
+
+    def test_fractional_timeline_allows_only_adjacent_frame_counts(self):
+        for count in (150, 151):
+            self.probe['streams'][0]['nb_frames'] = str(count)
+            value = e.validate_probe(self.probe, self.settings, 6_020_000, True)
+            self.assertEqual(value['accepted_frame_range'], [150, 151])
+            self.assertEqual(value['frame_count_policy'], 'adjacent-fractional')
+        for count in (149, 152):
+            self.probe['streams'][0]['nb_frames'] = str(count)
+            with self.assertRaisesRegex(ValueError, 'frame count'):
+                e.validate_probe(self.probe, self.settings, 6_020_000, True)
 
     def test_unknown_mask_identity_is_rejected(self):
         for node in ({'id': 'circle'}, {'resource_type': 'text'},
@@ -202,76 +227,24 @@ class ExportGuards(unittest.TestCase):
             e.supported_features({'materials': {'video_effects': [original]},
                                   'tracks': [{'type': 'video', 'segments': [{'material_id': original['id']}]}]})
 
-    def visual_fixture(self):
-        nodes = []
-        for key in ('filter/hd-monochrome', 'text-effect/orange-outline'):
-            node = e.resources.material(key, self.target)
-            node['id'] = key
-            nodes.append(node)
-        style = {'fill': {'alpha': 1, 'content': {'render_type': 'solid',
-                 'solid': {'alpha': 1, 'color': [1, 1, 1]}}},
-                 'effectStyle': {'id': nodes[1]['resource_id'], 'path': nodes[1]['path']}}
-        text = {'id': 'text', 'type': 'text', 'content': json.dumps({'text': '测试文字', 'styles': [style]})}
-        return {'materials': {'effects': nodes, 'texts': [text]},
-                'tracks': [{'type': 'filter', 'segments': [{'material_id': nodes[0]['id']}]},
-                           {'type': 'text', 'segments': [{'material_id': text['id'],
-                                                        'extra_material_refs': [nodes[1]['id']]}]}]}
+    def test_retired_filter_and_flower_rejected(self):
+        for kind in ('filter', 'text_effect'):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'support has been removed'):
+                e.supported_features({'materials': {'effects': [{'type': kind, 'id': 'retired'}]}})
 
-    def test_captured_filter_and_flower_accepted_with_usage_limits_preserved(self):
-        timeline = self.visual_fixture()
-        timeline['materials']['effects'][0]['value'] = .45
-        value = e.supported_features(timeline)
-        warnings = value['warnings']
-        self.assertEqual({w['resource'] for w in warnings}, {'filter/hd-monochrome', 'text-effect/orange-outline'})
-        for warning in warnings:
-            self.assertEqual(warning['usage'], e.resources.definition(warning['resource'])['usage'])
-            self.assertTrue(warning['usage']['paid_badge_observed'])
-            self.assertFalse(warning['usage']['entitlement_verified'])
-            self.assertFalse(warning['usage']['redistribution_authorized'])
+    def test_orphan_flower_style_still_rejected(self):
+        text = {'id': 'text', 'content': json.dumps({'styles': [{'effectStyle': {'id': 'retired'}}]})}
+        with self.assertRaisesRegex(ValueError, 'no captured material binding'):
+            e.supported_features({'materials': {'texts': [text]},
+                                  'tracks': [{'type': 'text', 'segments': [{'material_id': 'text'}]}]})
 
-    def test_filter_and_flower_identity_parameters_and_track_bindings_rejected(self):
-        for index, field, value in ((0, 'resource_id', 'not-captured'), (0, 'value', True),
-                                    (0, 'value', float('nan')), (1, 'value', .5),
-                                    (1, 'effect_id', 'other-style'), (1, 'path', '')):
-            bad = self.visual_fixture()
-            bad['materials']['effects'][index][field] = value
-            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
-                e.supported_features(bad)
-        for case in ('wrong-filter-track', 'filter-keyframe', 'missing-flower-ref', 'wrong-flower-id',
-                     'wrong-flower-path', 'changed-fill', 'orphan-filter'):
-            bad = self.visual_fixture()
-            if case == 'wrong-filter-track':
-                bad['tracks'][0]['type'] = 'video'
-            elif case == 'filter-keyframe':
-                bad['tracks'][0]['segments'][0]['common_keyframes'] = [{'id': 'not-verified'}]
-            elif case == 'missing-flower-ref':
-                bad['tracks'][1]['segments'][0]['extra_material_refs'] = []
-            elif case == 'orphan-filter':
-                bad['tracks'].pop(0)
-            else:
-                content = json.loads(bad['materials']['texts'][0]['content'])
-                style = content['styles'][0]
-                if case == 'changed-fill':
-                    style['fill']['content']['solid']['color'] = [1, 0, 0]
-                else:
-                    style['effectStyle']['id' if case == 'wrong-flower-id' else 'path'] = 'unverified'
-                bad['materials']['texts'][0]['content'] = json.dumps(content)
-            with self.subTest(case=case), self.assertRaises(ValueError):
-                e.supported_features(bad)
-
-    def test_forged_filter_or_flower_resource_is_not_staged(self):
-        for index, key in enumerate(('filter/hd-monochrome', 'text-effect/orange-outline')):
-            out = self.root / ('visual-output-' + str(index)); out.mkdir()
-            relative = Path('Resources/headless-native/forged-visual-' + str(index))
-            folder = self.folder / relative; folder.mkdir(parents=True)
-            (folder / 'config.json').write_bytes(b'{}')
-            node = e.resources.material(key, self.target)
-            node['path'] = str(self.target / relative)
-            record = {'target': str(self.target), 'files': {
-                str(relative / 'config.json'): {'size': 2, 'sha256': e.j.nd.digest(folder / 'config.json')}}}
-            with self.assertRaisesRegex(ValueError, 'captured native resource'):
-                e.stage_timeline({'materials': {'effects': [node]}}, record, self.folder, out)
-            self.assertFalse((out / relative).exists())
+    def test_retired_effects_fail_before_export_job_creation(self):
+        out = self.root / 'must-not-export'
+        timeline = {'materials': {'effects': [{'type': 'filter', 'id': 'retired'}]}}
+        with patch.object(e, 'verified_build', return_value=(self.folder, {}, timeline)):
+            with self.assertRaisesRegex(ValueError, 'support has been removed'):
+                e.run(self.folder, out)
+        self.assertFalse(out.exists())
 
     def test_changed_light_shake_resource_is_not_staged(self):
         out = self.root / 'output'; out.mkdir()

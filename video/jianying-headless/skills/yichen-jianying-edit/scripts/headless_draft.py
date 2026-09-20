@@ -32,18 +32,20 @@ def project_root():
 PROJECT_ROOT = project_root()
 BACKEND = PROJECT_ROOT / 'engine'
 PINS = {
-    'jy14_headless.py': 'fd9ec517f35e810b3e38b340a5b344861c7fb53e56053b1c39ed9e25ddbf437f',
+    'native_fonts.py': 'ddd7b4c1ecd55890bd645c14930f2c5f6687794691c2280daa32673e048da5e6',
+    'runtime_profiles.py': 'f285ddf16d5ad381a9165becc443dd11352663bdb28a1b5d7eccd31b2cd6209e',
+    'jy14_headless.py': '3240e4d6124a7e313e1a7ceb2542752378caefeea8f3349576b84cc9da33ecb9',
     'native_motion.py': '5d743caaa38c921779166e5663d36f72a0c3fdb130a690ac3942a7adcf62d6c2',
     'native_effects.py': 'c46b2fc9221dd613f220564b752e532f8f3753dd5595aaffc24f41d5236e4e97',
-    'native_resources.py': '0b0f3048902f7ebb4629882f2739508a828784183c949786da4024ae24bee369',
-    'native_visual_effects.py': 'f8a7a2d899383a5932deabe1c7adf644c61e37016e788d361ccd6ef6c95ac30d',
-    'native-resource-catalog.json': '68021d765aa212436891056d06f205ef96365e1b687a3fdc28691f00a50105c5',
-    'native_compound.py': '7b0df5a74d75d8f5623b11de3f4307569f84a4c6127ec316ed6fd133fc8d0d79',
+    'native_resources.py': '9bddfbb1cd688cebd69ac49f9bbf63c242522d9666a2ef7b412fe097113f68f2',
+    'native_visual_effects.py': '15df7e56cc7d575a552c180e72ec712f136c618d271b2f3ad2d32dd5929e844c',
+    'native-resource-catalog.json': '97af2df27463a9183fb1aa8f2ef534b37a644cb196f340fe88fdc50b456abde9',
+    'native_compound.py': 'eb9e7d5544e1726be291912c47a5cc917b80180a231242ca30b7b5aaf68f5bfc',
     'compound-blueprint.json': '9cba9435053280abf9072d5eaccb8586c841b11dac6854b32daf9cbdba76af8e',
-    'native_edit.py': '647a63e4346ae5514b7071a9de37f237bb1ff61abf2c399cb06683a6cd9bc777',
-    'native_export.py': 'dccdfaeefc44fd5419f9cd16a0f00518f7d64b5fca69f236e77bd70b998c6920',
-    'native_export.cpp': '3d74947a8b05c8ca31b0dc3909e0a08be4818985646c00cc64d63fb0645cee25',
-    'headless_runtime.py': 'bff4c918721295a2d98c61f9ef10a9a386e3b3a79f4c8bdeaee8682b9fa748c1',
+    'native_edit.py': '290d9e2f92a848f05bb6634778f93d56c0a2dad29524edd4f088d352aa4a6675',
+    'native_export.py': 'bf693c057e177be1e0d7e14e7b4692b546af04d6e40910b151089c5f0713e430',
+    'native_export.cpp': 'c60da6c65f5bb7ac733b8f5b619401be3921f9254b953a55903d4e7566156379',
+    'headless_runtime.py': '81d75135473eb531688099b45a5a2acf922b4c385a8feaf39f0c92963b46ccca',
     'blueprint.json': '91f7eddad5bff9af23eb88b53713c180e3e3d4054edd469140cfa9aa56bc1dc9',
 }
 

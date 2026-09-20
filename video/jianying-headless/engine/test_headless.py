@@ -21,7 +21,7 @@ class HeadlessTests(unittest.TestCase):
             j.validate_plan(self.plan)
 
     def test_real_four_local_assets(self):
-        assets, duration = j.validate_plan(self.plan)
+        assets, duration, _ = j.validate_plan(self.plan)
         self.assertEqual(len(assets), 4)
         self.assertEqual(duration, 6000000)
         self.assertEqual({a['kind'] for a in assets.values()}, {'video', 'audio'})
@@ -57,7 +57,7 @@ class HeadlessTests(unittest.TestCase):
 
     def test_blank_is_supported(self):
         self.plan['tracks'] = []
-        self.assertEqual(j.validate_plan(self.plan), ({}, 0))
+        self.assertEqual(j.validate_plan(self.plan), ({}, 0, {}))
 
     def test_unicode_text_uses_utf16_ranges(self):
         material = deepcopy(j.blueprint()['text']['materials'][0][1])
@@ -67,17 +67,27 @@ class HeadlessTests(unittest.TestCase):
         self.assertEqual(text['styles'][0]['fill']['content']['solid']['color'], [1, 0, 0])
 
     def test_unique_ids_and_same_source_dedup(self):
-        assets, _ = j.validate_plan(self.plan)
+        assets, _, font_assets = j.validate_plan(self.plan)
         for n, a in enumerate(assets.values()):
             a.update(relative='Resources/' + str(n), local_id=j.identifier())
         target = j.nd.DRAFT_ROOT / self.plan['name']
-        timeline, records = j.timeline_for(self.plan, assets, target, j.identifier(), j.blueprint())
+        timeline, records = j.timeline_for(self.plan, assets, target, j.identifier(), j.blueprint(), font_assets)
         ids = [m['id'] for mats in timeline['materials'].values() for m in mats]
         ids += [t['id'] for t in timeline['tracks']]
         ids += [s['id'] for t in timeline['tracks'] for s in t['segments']]
         self.assertEqual(len(ids), len(set(ids)))
-        video = timeline['materials']['videos']
-        self.assertEqual(len({m['local_material_id'] for m in video[:3]}), 1)
+        video = {m['id']: m for m in timeline['materials']['videos']}
+        # Match the fixture's actual sources, including a main track that mixes
+        # two files. Equal sources share a library identity, not a segment ID.
+        seen = {}
+        for planned, actual in zip(self.plan['tracks'], timeline['tracks']):
+            if planned['type'] != 'video':
+                continue
+            for before, after in zip(planned['segments'], actual['segments']):
+                local_id = video[after['material_id']]['local_material_id']
+                self.assertEqual(local_id, assets[before['source']]['local_id'])
+                self.assertEqual(seen.setdefault(before['source'], local_id), local_id)
+        self.assertEqual(len(set(seen.values())), len(seen))
         self.assertEqual(len(records), 6)
 
     def test_actual_encrypted_build_matches_plan(self):
@@ -182,7 +192,7 @@ class HeadlessTests(unittest.TestCase):
         self.assertEqual(len(result['sound_display_duration_adjustments']), 2)
         self.assertFalse(result['native_library_registration_created'])
         self.assertTrue(result['cached_sounds_as_local'])
-        assets, duration = j.validate_plan(plan)
+        assets, duration, _ = j.validate_plan(plan)
         self.assertEqual(len(assets), 2)
         self.assertEqual(duration, 2000000)
 
@@ -205,7 +215,7 @@ class HeadlessTests(unittest.TestCase):
         with patch.object(j.nd, 'DRAFT_ROOT', root), patch.object(j.nd, 'helper', return_value=isolated):
             j.build(plan_path, out)
             with patch.object(j.os, 'replace', side_effect=OSError('injected index commit failure')):
-                with self.assertRaisesRegex(OSError, 'injected'):
+                with self.assertRaisesRegex(ValueError, 'injected'):
                     j.publish(out, WORK / 'interrupted-audit')
             self.assertTrue((root / plan['name']).is_dir())
             self.assertEqual(j.read_json(root / 'root_meta_info.json'), original)

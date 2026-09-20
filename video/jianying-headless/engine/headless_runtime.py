@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 from types import SimpleNamespace
+from runtime_profiles import PROFILES, PRIMARY_VERSION, validate_identity
 
 APP = Path('/Applications/VideoFusion-macOS.app')
 DRAFT_ROOT = Path.home() / 'Movies/JianyingPro/User Data/Projects/com.lveditor.draft'
@@ -25,10 +26,6 @@ IO_MANIFEST_SHA = '473b05370d77f0835e11f0fde4f3cec2eec0b00777aa0018441bc9e7b53bb
 PINS = {
     'runtime_io.py': '487cf8c65bddad2ecdb351b16996d923bd6bcc6861dba12e801f679821b4ef70',
     'jy14_codec_hardened_11_4': 'b6533eb5eb1eea58dfa74fb1d16d3bb580970fe881f587605d358af1745f971d',
-}
-PROFILES = {
-    '11.4.0': 'a1693070036a6678bb5db35f71d2105812ad24a2370e7e91c78712cc0d6455f3',
-    '11.4.2': '632c8ddd09ff4a54f876cd8142eb505055ee26d944199506b230949b7e106bd1',
 }
 BUNDLE_ID = 'com.lemon.lvpro'
 TEAM = 'X2JNK7LY8J'
@@ -64,16 +61,13 @@ def doctor():
         if digest(path) != expected:
             raise ValueError('IO/codec component changed: ' + name)
     info = plistlib.loads((APP / 'Contents/Info.plist').read_bytes())
-    version = info.get('CFBundleShortVersionString')
-    if version not in PROFILES or info.get('CFBundleVersion') != version or info.get('CFBundleIdentifier') != BUNDLE_ID:
-        raise ValueError('Unsupported Jianying version/build/identity; stop native writes')
     library = APP / 'Contents/Frameworks/libvideoeditor.dylib'
     fingerprint = digest(library)
-    if fingerprint != PROFILES[version]:
-        raise ValueError('Editor library differs from its exact headless runtime profile')
+    version = validate_identity(info, fingerprint)
     if not all(shutil.which(name) for name in ('ffmpeg', 'ffprobe')):
         raise ValueError('ffmpeg and ffprobe are required')
     return {'status': 'ok', 'app_version': version, 'app_build': version,
+            'primary_version': PRIMARY_VERSION, 'compatibility_mode': version != PRIMARY_VERSION,
             'bundle_id': BUNDLE_ID, 'libvideoeditor_sha256': fingerprint,
             'runtime_profile': 'jy14-headless-macos-' + version,
             'codec_sha256': PINS['jy14_codec_hardened_11_4'],

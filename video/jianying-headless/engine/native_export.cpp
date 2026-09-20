@@ -1,4 +1,4 @@
-// Local, process-isolated adapter for the exact signed Jianying 11.4.2 engine.
+// Process-isolated adapters for exact signed Jianying 11.5.0 and 11.4.2 engines.
 // No UI attachment, account session, network, or modifications to the app.
 #include <CommonCrypto/CommonDigest.h>
 #include <atomic>
@@ -87,6 +87,25 @@ static std::atomic<bool> compile_done{false}, compile_error{false}, restore_done
 static std::atomic<int> callback_error{0};
 static std::mutex logging_mutex;
 
+struct NativeAbi {
+  const char* version;
+  const char* sha256;
+  size_t restore_draft, export_constructor, export_request_size, mask_hub;
+  int restore_line;
+  const char* restore_event;
+};
+// 11.4.2 constants are retained. Each new row requires disassembly and native
+// fixture validation; a matching marketing version alone is never sufficient.
+static const NativeAbi abi_profiles[] = {
+  {"11.5.0", "2041482a1aaeffa4d8bd69b836f8cf38807aaad8021bca410d567c59af3bccfa",
+   0x21b86dc, 0x274b018, 0x3d8, 0x7e8, 669,
+   "[draft_service.cpp:operator():669][LYRA] [LYRA] DraftService::restoreDraft driverRun, callback !"},
+  {"11.4.2", "632c8ddd09ff4a54f876cd8142eb505055ee26d944199506b230949b7e106bd1",
+   0x21234d0, 0x2681f98, 0x3d8, 0x7e8, 669,
+   "[draft_service.cpp:operator():669][LYRA] [LYRA] DraftService::restoreDraft driverRun, callback !"},
+};
+static const NativeAbi* active_abi = nullptr;
+
 static void nativeLog(const char*, const char* file, int line, const char* function,
                       int level, const char* format, ...) {
   char rendered[16384];
@@ -103,8 +122,8 @@ static void nativeLog(const char*, const char* file, int line, const char* funct
   // Nested clips restore asynchronously. Exporting after an arbitrary delay
   // can race the child timeline and produce audio-only or incomplete output.
   // This exact pinned callback occurs after the complete restore driver run.
-  if (line == 669 && file && std::strcmp(file, "operator()") == 0 &&
-      std::strstr(rendered, "[draft_service.cpp:operator():669][LYRA] [LYRA] DraftService::restoreDraft driverRun, callback !"))
+  if (active_abi && line == active_abi->restore_line && file && std::strcmp(file, "operator()") == 0 &&
+      std::strstr(rendered, active_abi->restore_event))
     restore_done = true;
   std::lock_guard<std::mutex> lock(logging_mutex);
   std::fprintf(stderr, "ENGINE [%d] %s:%d %s: %s\n", level,
@@ -130,8 +149,15 @@ static char* pinnedEngineBase() {
     hash += "0123456789abcdef"[byte >> 4];
     hash += "0123456789abcdef"[byte & 15];
   }
-  return hash == "632c8ddd09ff4a54f876cd8142eb505055ee26d944199506b230949b7e106bd1"
-         ? reinterpret_cast<char*>(info.dli_fbase) : nullptr;
+  if (input.bad()) return nullptr;
+  for (const auto& profile : abi_profiles) {
+    if (hash == profile.sha256) {
+      active_abi = &profile;
+      std::cerr << "JY_NATIVE_ABI " << profile.version << '\n';
+      return reinterpret_cast<char*>(info.dli_fbase);
+    }
+  }
+  return nullptr;
 }
 
 template <typename T> static T field(const void* pointer, size_t offset) {
@@ -153,8 +179,10 @@ static void configureCapturedMasks(const std::shared_ptr<void>& wrapper) {
   // manages construction, copies and destruction without guessed destructors.
   auto adapter = static_cast<lyra::wrapper::VeWrapper*>(wrapper.get())->getVeAdapterConfig();
   if (!adapter) throw std::runtime_error("native adapter configuration missing");
-  // This offset is used by addVideo 0x3c97268 in the pinned 11.4.2 library.
-  auto& hub = *reinterpret_cast<std::string*>(reinterpret_cast<char*>(adapter.get()) + 0x7e8);
+  // addVideo reads this hub in both reviewed libraries: 11.4.2 0x3c97268,
+  // 11.5.0 0x3d7a708 (field access at 0x3d7aacc).
+  if (!active_abi) throw std::runtime_error("native ABI was not selected");
+  auto& hub = *reinterpret_cast<std::string*>(reinterpret_cast<char*>(adapter.get()) + active_abi->mask_hub);
   if (!hub.empty()) throw std::runtime_error("unexpected native default effect resource path");
   const std::filesystem::path root = "/Applications/VideoFusion-macOS.app/Contents/Resources/lumi_js_resources_video";
   for (const char* relative : {"config.json", "js/video/video.js", "resources/feature-mask/config.json",
@@ -215,7 +243,7 @@ int main(int argc, char** argv) {
     binding->draft = lvve::GetDraftFromJson(json);
     if (!binding->draft) throw std::runtime_error("runtime draft decode failed");
     checkResponse(server.invoke(binding, sid), "runtime draft initialization failed");
-    reinterpret_cast<void (*)(long, bool, long)>(base + 0x21234d0)(sid, true, tid);
+    reinterpret_cast<void (*)(long, bool, long)>(base + active_abi->restore_draft)(sid, true, tid);
     const auto restore_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(timeout);
     while (!restore_done && std::chrono::steady_clock::now() < restore_deadline) pump(server, 20);
     if (!restore_done) throw std::runtime_error("native timeline restoration did not finish");
@@ -232,10 +260,10 @@ int main(int argc, char** argv) {
       }
     }, tid);
     if (!ready) throw std::runtime_error("session has no draft after initialization");
-    void* storage = ::operator new(0x3d8);
-    std::memset(storage, 0, 0x3d8);
+    void* storage = ::operator new(active_abi->export_request_size);
+    std::memset(storage, 0, active_abi->export_request_size);
     // The engine's own constructor/destructor manage its packed ExportConfig.
-    reinterpret_cast<void (*)(void*)>(base + 0x2681f98)(storage);
+    reinterpret_cast<void (*)(void*)>(base + active_abi->export_constructor)(storage);
     auto request = std::shared_ptr<lyra::ReqStruct>(reinterpret_cast<lyra::ReqStruct*>(storage), [](auto* p) {
       auto table = *reinterpret_cast<void***>(p);
       reinterpret_cast<void (*)(void*)>(table[0])(p);
@@ -246,7 +274,7 @@ int main(int argc, char** argv) {
     request->tid = tid;
     *reinterpret_cast<std::string*>(reinterpret_cast<char*>(storage) + 0x48) = output.string();
     auto config = reinterpret_cast<char*>(storage) + 0x60;
-    // Offsets confirmed in ToVeCompileSetting 0x3b7805c in the pinned binary.
+    // ToVeCompileSetting: 11.4.2 0x3b7805c; 11.5.0 0x3c59708.
     std::memcpy(config + 0x3f, &width, sizeof(width));
     std::memcpy(config + 0x43, &height, sizeof(height));
     config[0x47] = 0;  // Native hardware-encode preference, not an encoder guarantee.

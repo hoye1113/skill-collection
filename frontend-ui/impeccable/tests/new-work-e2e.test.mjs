@@ -9,8 +9,12 @@
  * live-e2e; run it with `bun run test:new-work-e2e`.
  *
  * The concept-seed direction roll (challengers, ASSIGNED INDEX, the no
- * PRODUCT.md gate) is already covered by tests/concept-seed.test.mjs and is
- * not repeated here.
+ * PRODUCT.md gate) is pinned by the oracle corpus (tests/oracle, `seed-*`
+ * cases) and is not repeated here.
+ *
+ * Both verbs (`serve-question`, `generate-image`) run through the engine
+ * binary from tests/lib/engine-bin.mjs (IMPECCABLE_BIN or
+ * skill/scripts/bin/<os>-<arch>/); the suite fails loudly without one.
  *
  * One-time setup:  npx playwright install chromium
  */
@@ -24,16 +28,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runUserBot } from './new-work-e2e/user-bot.mjs';
+import { ENGINE_MISSING_MESSAGE, engineEnv, findEngineBinary } from './lib/engine-bin.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SERVE = path.join(ROOT, 'skill', 'scripts', 'serve-question.mjs');
-const GENERATE = path.join(ROOT, 'skill', 'scripts', 'generate-image.mjs');
+const ENGINE_BIN = findEngineBinary();
 const CATALOG_DIR = path.join(ROOT, 'tests', 'fixtures', 'concept-catalog');
 
 let playwright;
 let browser;
 
 before(async () => {
+  if (!ENGINE_BIN) throw new Error(ENGINE_MISSING_MESSAGE);
   try {
     playwright = await import('playwright');
   } catch (err) {
@@ -67,9 +72,9 @@ function makeWorkspace() {
 // serve-question writes its state under cwd; run everything from the workspace.
 function run(args, cwd) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [SERVE, ...args], {
+    const child = spawn(ENGINE_BIN, ['serve-question', ...args], {
       cwd,
-      env: { ...process.env, IMPECCABLE_QUESTION_FORCE: '1', IMPECCABLE_CATALOG_DIR: CATALOG_DIR },
+      env: engineEnv(ENGINE_BIN, { IMPECCABLE_QUESTION_FORCE: '1', IMPECCABLE_CATALOG_DIR: CATALOG_DIR }),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let out = '';
@@ -112,10 +117,10 @@ function makeFakeImage(cwd, prompt, outName) {
 }
 
 function spawnSyncGen(prompt, out, size = null) {
-  const args = [GENERATE, '--prompt', prompt, '--out', out];
+  const args = ['generate-image', '--prompt', prompt, '--out', out];
   if (size) args.push('--size', size);
-  return spawnSync(process.execPath, args, {
-    env: { ...process.env, IMPECCABLE_IMAGE_GEN_FAKE: '1' },
+  return spawnSync(ENGINE_BIN, args, {
+    env: engineEnv(ENGINE_BIN, { IMPECCABLE_IMAGE_GEN_FAKE: '1' }),
     encoding: 'buffer',
   });
 }
@@ -124,6 +129,76 @@ function spawnSyncGen(prompt, out, size = null) {
 // serve-question interactive cycles
 // --------------------------------------------------------------------------
 describe('new-work-e2e: serve-question decision page', () => {
+  it('renders a light system-font picker without font or external requests', async () => {
+    const cwd = makeWorkspace();
+    const key = 'system-fonts';
+    const context = await browser.newContext({ colorScheme: 'dark' });
+    const externalRequests = [];
+    const fontResponses = [];
+    try {
+      const { url } = await startDaemon(cwd, {
+        title: 'Choose the visual world',
+        options: [{ id: 'assigned', label: 'Local typography' }],
+        buildPath: { value: 'code', toggle: true },
+      }, key);
+      const origin = new URL(url).origin;
+      await context.route('**/*', (route) => {
+        if (new URL(route.request().url()).origin !== origin) {
+          externalRequests.push(route.request().url());
+          return route.abort();
+        }
+        return route.continue();
+      });
+      const page = await context.newPage();
+      page.on('response', (response) => {
+        if (response.request().resourceType() === 'font') {
+          fontResponses.push({ url: response.url(), status: response.status(), type: response.headers()['content-type'] });
+        }
+      });
+      await page.goto(url);
+      const appearance = await page.evaluate(async () => {
+        await document.fonts.ready;
+        const tokenColor = (token) => {
+          const probe = document.createElement('span');
+          probe.style.color = `var(${token})`;
+          document.body.append(probe);
+          const color = getComputedStyle(probe).color;
+          probe.remove();
+          return color;
+        };
+        return {
+          fonts: document.fonts.size,
+          family: getComputedStyle(document.body).fontFamily,
+          scheme: getComputedStyle(document.documentElement).colorScheme,
+          logoPaths: document.querySelectorAll('.brand svg path').length,
+          logoText: document.querySelectorAll('.brand svg text').length,
+          kinpaku: tokenColor('--ks-kinpaku'),
+          rule: tokenColor('--ks-rule'),
+          leadBorder: getComputedStyle(document.querySelector('.face.lead')).borderTopColor,
+          switchBorder: getComputedStyle(document.querySelector('.bp-switch')).borderTopColor,
+          activeDot: getComputedStyle(document.querySelector('.bp-opt.active'), '::before').backgroundColor,
+        };
+      });
+      assert.equal(appearance.fonts, 0, 'no custom font faces');
+      assert.match(appearance.family, /^system-ui,/);
+      assert.equal(appearance.scheme, 'light', 'picker stays light even with a dark OS preference');
+      assert.ok(appearance.logoPaths > 2, 'the brand mark and wordmark are vector outlines');
+      assert.equal(appearance.logoText, 0, 'the logo does not depend on a font');
+      assert.equal(appearance.leadBorder, appearance.kinpaku, 'lead outline uses default Kinpaku');
+      assert.equal(appearance.activeDot, appearance.kinpaku, 'active switch dot uses default Kinpaku');
+      assert.equal(appearance.switchBorder, appearance.rule, 'switch track has a quiet border');
+      await page.locator('.card').first().hover();
+      assert.equal(await page.locator('.face.lead').evaluate((el) => getComputedStyle(el).borderTopColor), appearance.kinpaku, 'hover preserves the default Kinpaku outline');
+      await page.getByRole('img', { name: 'Impeccable', exact: true }).waitFor();
+      assert.deepEqual(externalRequests, [], 'dialog must not request third-party resources');
+      assert.deepEqual(fontResponses, [], 'no bundled or remote font downloads');
+    } finally {
+      await context.close();
+      await stopDaemon(cwd, key);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   it('(a) pick assigned returns the option, hero/board fields, and the CHOSEN CARD directive', async () => {
     const cwd = makeWorkspace();
     const key = 'pick';
@@ -843,7 +918,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       // the server keeps its real clock, so its own idle grace never fires.
       await page.clock.install();
       let beats = 0;
-      page.on('request', (r) => { if (r.url().endsWith('/heartbeat')) beats += 1; });
+      page.on('request', (r) => { if (new URL(r.url()).pathname === '/heartbeat') beats += 1; });
       await page.goto(url, { waitUntil: 'load' });
       // Playwright actionability waits on rAF, which the fake clock owns, so
       // dispatch the click directly.

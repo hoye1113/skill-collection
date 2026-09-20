@@ -7,6 +7,8 @@ description: 在装有匹配版本剪映的 Apple Silicon Mac 上，无界面生
 
 默认交付可继续编辑的原生草稿。用户明确要求成片时才运行原生导出。
 无界面不等于无需安装剪映；此 Skill 不包含官方程序库或完整剪辑后端。
+主版本为 11.5.0，兼容 11.4.2；按当前安装的精确版本和指纹选择配置，不能混用两版导出快照。
+高清黑白滤镜与橙色描边花字已移除，不再列为待验功能；旧计划或快照含这两项时明确拒绝，不静默去掉效果。
 
 ## 先确认依赖和本次范围
 
@@ -24,6 +26,8 @@ description: 在装有匹配版本剪映的 Apple Silicon Mac 上，无界面生
 
 - 新建：读 [无界面计划与命令](references/headless-macos.md)。直接创建独立草稿，
   不要求先在 UI 里准备模板；在线模板不在此发行范围。
+- Hypit 工程交接：读 [素材与字体交接](references/hypit-handoff.md)，将选定成片的素材、时间线和
+  实际字体文件写入新建计划；文字片段可用 `font_path` 直接指定字体。
 - 修改已有草稿：读 [独立副本编辑](references/edit-existing-macos.md)，保留原项目。
 - 明确要求成片：读 [原生导出](references/export-macos.md)，只导出已验证的冻结快照。
 - 口播语义剪辑：读 [语义与音频质检](references/editing-and-qc.md) 和
@@ -49,6 +53,6 @@ description: 在装有匹配版本剪映的 Apple Silicon Mac 上，无界面生
 
 ## 安装范围与许可
 
-该 Skill 与私有核心项目分别安装；有 Skill 不等于有私有仓库访问权限。
+该 Skill 与公开核心项目分别安装；只安装 Skill 不包含完整后端。
 代码许可、剪映协议、素材许可和账号权益分别适用。相关声明见
 [运行依赖与来源](references/dependencies-and-notices.md)。

@@ -12,9 +12,10 @@ import shutil
 import stat
 
 import headless_runtime as rt
+from runtime_profiles import validate_resource_profile
 
 HERE = Path(__file__).resolve().parent
-CATALOG_SHA = '68021d765aa212436891056d06f205ef96365e1b687a3fdc28691f00a50105c5'
+CATALOG_SHA = '97af2df27463a9183fb1aa8f2ef534b37a644cb196f340fe88fdc50b456abde9'
 SHAPES = ('circle', 'rectangle', 'line', 'mirror', 'star', 'heart')
 
 
@@ -100,7 +101,7 @@ def prepare(plan, folder, runtime):
     if not keys:
         return []
     data = catalog()
-    require(runtime['runtime_profile'] == data['runtime_profile'], 'Native resources need their captured runtime profile')
+    validate_resource_profile(runtime['runtime_profile'], data['runtime_profile'])
     records = []
     for key in keys:
         entry = definition(key)

@@ -18,12 +18,13 @@ import time
 
 import jy14_headless as j
 import native_edit as edit
+import native_fonts as fonts
 import native_motion as motion
 import native_resources as resources
 import native_compound as compound
+from runtime_profiles import EXPORT_PROFILES, validate_export_profiles
 
 HERE = Path(__file__).resolve().parent
-PROFILE = 'jy14-headless-macos-11.4.2'
 SCHEMA = 'jy14-native-export/v1'
 
 
@@ -73,19 +74,8 @@ def captured_video_effect(node):
 
 
 def captured_filter_or_text_effect(node):
-    """Exact local captures, with use restrictions preserved, not granted."""
-    keys = {'filter': 'filter/hd-monochrome', 'text_effect': 'text-effect/orange-outline'}
-    kind = node.get('type')
-    j.require(isinstance(kind, str) and kind in keys, 'Unverified native filter/text effect type')
-    entry = resources.definition(keys[kind])
-    for field in ('type', 'effect_id', 'resource_id', 'third_resource_id', 'sub_type',
-                  'source_platform', 'category_id'):
-        j.require(node.get(field) == entry['material'][field],
-                  'Unverified native filter/text effect identity: ' + field)
-    j.require(isinstance(node.get('path'), str) and node['path'], 'Missing captured filter/text effect path')
-    j.number(node.get('value'), 'Native filter/text effect strength', 0, 1)
-    j.require(kind != 'text_effect' or node['value'] == 1, 'Unverified text effect strength')
-    return keys[kind], entry
+    """Retired resources must fail, including in older frozen snapshots."""
+    raise ValueError('Native filter/text effect support has been removed; do not silently omit effects')
 
 
 def check_filter_and_text_bindings(timeline):
@@ -201,7 +191,7 @@ def local_supported_features(timeline):
                          'message': 'Technical rendering verified on the same-machine local sample after successful native UI export. '
                                     'This does not acquire or prove ongoing account entitlement, commercial rights, or redistribution rights. '
                                     'Use only within existing native authorization; account data is not read.'})
-    return {'content_scope': 'local single-timeline video, text, audio, linear keyframes, captured dissolve, six static geometric masks and three captured visual resources',
+    return {'content_scope': 'local single-timeline video, text, audio, linear keyframes, captured dissolve, six static geometric masks and captured light-shake',
             'mask_export': 'six captured shapes verified on the synthetic sample; inspect each actual output',
             'visual_acceptance': 'requires viewing the exported output',
             'audio_acceptance': 'requires checking the exported audio; stream presence is not audio quality acceptance',
@@ -231,7 +221,7 @@ def verified_build(path):
         record = edit.verify_build(path)
     else:
         raise ValueError('Export requires a supported verified headless/edit build')
-    j.require(record['runtime_profile'] == PROFILE, 'Export requires the captured 11.4.2 build profile')
+    j.require(record['runtime_profile'] in EXPORT_PROFILES, 'Export requires a reviewed build profile')
     timeline = j.nd.helper()._decrypt_metadata_in_memory(path / 'draft/draft_info.json')
     compound.validate(timeline, edit.basic_validation)
     j.require(timeline.get('duration', 0) > 0 and timeline.get('tracks'), 'Cannot export an empty timeline')
@@ -273,6 +263,16 @@ def stage_timeline(timeline, record, folder, out):
     nodes = [(bucket, node) for _, timeline_node in graph
              for bucket in ('videos', 'audios', 'common_mask', 'transitions', 'video_effects', 'audio_effects', 'effects')
              for node in timeline_node.get('materials', {}).get(bucket, [])]
+    # Fonts are draft-owned dependencies outside the media-library buckets.
+    font_assets = fonts.recorded_assets(record)
+    if font_assets is not None:
+        fonts.verify_assets(font_assets, value, target, folder)
+    for asset in font_assets or ():
+        raw = str(target / asset['relative'])
+        source, relative = source_in_build(raw, target, folder)
+        copy_file(relative, {'sha256': asset['sha256'], 'size': asset['size']})
+        mapping[raw] = str(out / relative)
+        canonical_mapping[str(j.native_media_path(raw, target))] = str(out / relative)
     for bucket, node in nodes:
         raw = node.get('path')
         if not raw:
@@ -398,8 +398,18 @@ def validate_probe(info, settings, duration_us, audio_expected):
     j.require((v.get('width'), v.get('height')) == (settings['width'], settings['height']), 'Export canvas changed')
     actual_fps = float(Fraction(v['r_frame_rate']))
     j.require(math.isclose(actual_fps, settings['fps'], abs_tol=0.001), 'Export frame rate changed')
-    expected_frames = round(duration_us / 1_000_000 * settings['fps'])
-    j.require(abs(int(v.get('nb_frames', -999)) - expected_frames) <= 1, 'Export frame count is incomplete')
+    frame_span = Fraction(duration_us, 1_000_000) * Fraction(str(settings['fps']))
+    expected_frames = round(frame_span)
+    # Draft times have microsecond precision. An aligned timeline has exactly
+    # one valid count; a missing tail frame is not a rounding allowance. For a
+    # genuinely fractional span retain only its two adjacent integer counts.
+    aligned = abs(frame_span - expected_frames) <= Fraction(str(settings['fps'])) / 1_000_000
+    minimum_frames = expected_frames if aligned else math.floor(frame_span)
+    maximum_frames = expected_frames if aligned else math.ceil(frame_span)
+    actual_frames = int(v.get('nb_frames', -999))
+    j.require(minimum_frames <= actual_frames <= maximum_frames,
+              f'Export frame count is incomplete or excessive: got {actual_frames}, '
+              f'expected {minimum_frames}..{maximum_frames}; partial output is not a deliverable')
     actual_duration = float(fmt.get('duration', 0))
     j.require(math.isfinite(actual_duration) and abs(actual_duration - duration_us / 1_000_000) <=
               max(0.05, 1 / settings['fps']), 'Export duration changed')
@@ -407,6 +417,8 @@ def validate_probe(info, settings, duration_us, audio_expected):
     j.require(all(a.get('codec_name') == 'aac' for a in audio), 'Unexpected export audio codec')
     return {'duration_seconds': actual_duration, 'frames': int(v['nb_frames']),
             'expected_frames': expected_frames, 'frame_delta': int(v['nb_frames']) - expected_frames,
+            'frame_count_policy': 'exact-aligned' if aligned else 'adjacent-fractional',
+            'accepted_frame_range': [minimum_frames, maximum_frames],
             'duration_delta_seconds': round(actual_duration - duration_us / 1_000_000, 6),
             'width': v['width'], 'height': v['height'], 'fps': actual_fps,
             'video_codec': 'h264', 'audio_codec': 'aac' if audio else None,
@@ -423,7 +435,7 @@ def run(build, out, bitrate=4_000_000, timeout=600):
     j.require(not job.resolve().is_relative_to(build) and not job.resolve().is_relative_to(j.nd.DRAFT_ROOT),
               'Export job cannot be inside a build or live draft')
     runtime = j.nd.validate_runtime()
-    j.require(runtime['runtime_profile'] == PROFILE, 'No native export ABI for this runtime')
+    validate_export_profiles(record['runtime_profile'], runtime['runtime_profile'])
     job = j.nd.fresh_directory(job)
     started = time.monotonic()
     evidence = {'schema': SCHEMA, 'status': 'preparing', 'build': str(build),

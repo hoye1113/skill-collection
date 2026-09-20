@@ -41,7 +41,17 @@ The sticker PNG is a real RGBA file with an Alpha channel, not a flattened image
 
 Copy this repository folder into your Codex skills directory, then invoke it as `$travel-memory-card-duo`.
 
-##案例
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/6bf06b40-9115-4619-b4bc-9cb2250031ee" />
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/2cab6521-dde5-4af7-9fec-2d5609585354" />
+## 案例
 
+<img width="1536" height="1024" alt="Travel memory card example" src="https://github.com/user-attachments/assets/6bf06b40-9115-4619-b4bc-9cb2250031ee" />
+<img width="1536" height="1024" alt="Transparent sticker PNG example" src="https://github.com/user-attachments/assets/2cab6521-dde5-4af7-9fec-2d5609585354" />
+
+## License and usage restrictions
+
+Copyright © 2026 carolinaaafy. All rights reserved.
+
+Personal, non-commercial use is permitted. Re-uploading, mirroring, repackaging, copying for redistribution, selling, paid-service use, client projects, and other commercial exploitation are prohibited.
+
+Source photographs, likenesses, landmarks, trademarks, and other third-party content are not licensed by this repository.
+
+See [LICENSE.md](LICENSE.md) for the complete terms. This repository is source-available, not open source.
