@@ -518,6 +518,13 @@
         { "source": "skills/kid-papercraft", "target": "video/kid-papercraft" },
         { "source": "LICENSE",               "target": "video/kid-papercraft/LICENSE" }
       ]
+    },
+    {
+      "name": "agent-reach",
+      "remoteUrl": "https://github.com/Panniantong/Agent-Reach.git",
+      "strategy": "whole",
+      "source": ".",
+      "target": "agent/agent-reach"
     }
   ],
   "excludePatterns": [

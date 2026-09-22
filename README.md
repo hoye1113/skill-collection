@@ -144,6 +144,7 @@ all-skills/
 | | [kimi-webbridge](agent/kimi-webbridge/) | 控制真实浏览器（导航/点击/输入/截图/PDF），通过本地 daemon 交互 |
 | | [deep-research-swarm](agent/deep-research-swarm/) | 多智能体深度研究编排（4 种路由 / 7 阶段 / 交叉验证） |
 | | [browser-skill](agent/browser-skill/) | 腾讯出品：操作真实已登录 Chromium（bsk CLI + 扩展，标签页借用 / Canvas 点击 / 人工协助，MIT） |
+| | [agent-reach](agent/agent-reach/) | 多平台互联网能力层（CLI 安装、路由与诊断；外部 CLI/MCP/浏览器登录态可选，MIT） |
 | **security** | [reverse-skill](security/reverse-skill/) | 安全技能路由包：45+ 逆向/渗透模块（IDA/Ghidra/Frida/固件/EDR/LLM 安全/云原生/AD…）+ 42 个 CTF 场景 + 工具按需自举，MIT |
 
 ## 任务地图（Maps）
@@ -179,6 +180,7 @@ all-skills/
 | **carolinaaafy** | **旅行记忆贴纸卡系列（水粉剪纸贴纸化技能，2 个）** |
 | **reverse-skill** | **安全技能路由包（逆向工程 / 授权渗透 / 安全研究，89 个 SKILL.md，MIT）** |
 | **Tencent/BrowserSkill** | **腾讯官方浏览器自动化 Skill（bsk CLI + 扩展，MIT）** |
+| **Panniantong/Agent-Reach** | **多平台互联网能力层（CLI 安装、路由与 Doctor 诊断，MIT）** |
 | **stickman-video-director** | **火柴人短视频导演（Gemini Omni Flash 提示词工程，MIT）** |
 | **hypit** | **AI 视频复刻平台（Skill + Runtime，改版 Apache 2.0）** |
 | **mcncarl/jianying-headless** | **剪映无界面自动化（个人非商业许可）** |
